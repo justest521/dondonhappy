@@ -118,51 +118,61 @@ async function fetchAllPrices(syms) {
 /* ══════════════════════════════════════════════════════════════════════════════
    Unusual Whales API
 ══════════════════════════════════════════════════════════════════════════════ */
-async function fetchUWFlow(key,limit=30){
+/* UW API — 透過 Cloudflare Worker 代理 */
+const UW_WORKER = "https://solitary-wood-898d.justest521.workers.dev";
+
+async function uwFetch(key, endpoint) {
   try {
-    const r=await fetch(`https://api.unusualwhales.com/api/option-trades/flow?limit=${limit}`,
-      {headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"}});
-    if(!r.ok)throw new Error("UW "+r.status);
-    const j=await r.json();
-    const rows=j?.data??j?.results??[];
-    return rows.slice(0,limit).map((f,i)=>({
-      id:i,
-      time: f.filled_at||f.time||f.date_expiration||"",
-      sym:  f.ticker_symbol||f.symbol||"—",
-      type: (f.put_call||f.option_type||"CALL").toUpperCase(),
-      strike:f.strike_price||f.strike||"—",
-      exp:  f.expiry_date||f.expiry||"—",
-      prem: Number(f.premium||f.total_premium||0),
-      size: Number(f.size||f.volume||0),
-      oi:   Number(f.open_interest||0),
-      iv:   Number(f.implied_volatility||f.iv||0).toFixed(2),
-      sent: (f.sentiment||(f.put_call==="CALL"?"BULLISH":"BEARISH")).toUpperCase(),
-      unusual:!!(f.is_unusual||f.unusual),
-      sweep:!!(f.is_sweep||f.sweep),
-      exchange:f.exchange||f.venue||"—",
-    }));
-  } catch(e){console.warn("UW flow:",e.message);return null;}
+    const workerUrl = UW_WORKER + endpoint +
+      (endpoint.includes("?") ? "&" : "?") + `_key=${encodeURIComponent(key)}`;
+    const r = await fetch(workerUrl);
+    if (!r.ok) throw new Error("Worker HTTP " + r.status);
+    const j = await r.json();
+    if (j?.error) throw new Error(j.error);
+    return j;
+  } catch(e) {
+    console.warn("UW Worker fetch failed:", endpoint, e?.message);
+    return null;
+  }
+}
+
+async function fetchUWFlow(key,limit=30){
+  const j = await uwFetch(key, `/api/option-trades/flow?limit=${limit}`);
+  if (!j) return null;
+  const rows=j?.data??j?.results??[];
+  return rows.slice(0,limit).map((f,i)=>({
+    id:i,
+    time: f.filled_at||f.time||f.date_expiration||"",
+    sym:  f.ticker_symbol||f.symbol||"—",
+    type: (f.put_call||f.option_type||"CALL").toUpperCase(),
+    strike:f.strike_price||f.strike||"—",
+    exp:  f.expiry_date||f.expiry||"—",
+    prem: Number(f.premium||f.total_premium||0),
+    size: Number(f.size||f.volume||0),
+    oi:   Number(f.open_interest||0),
+    iv:   Number(f.implied_volatility||f.iv||0).toFixed(2),
+    sent: (f.sentiment||(f.put_call==="CALL"?"BULLISH":"BEARISH")).toUpperCase(),
+    unusual:!!(f.is_unusual||f.unusual),
+    sweep:!!(f.is_sweep||f.sweep),
+    exchange:f.exchange||f.venue||"—",
+  }));
 }
 
 async function fetchUWDark(key,limit=20){
-  try {
-    const r=await fetch(`https://api.unusualwhales.com/api/darkpool/recent?limit=${limit}`,
-      {headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"}});
-    if(!r.ok)throw new Error("UW dark "+r.status);
-    const j=await r.json();
-    const rows=j?.data??j?.results??[];
-    return rows.slice(0,limit).map((d,i)=>({
-      id:i,
-      time:d.time||d.executed_at||"",
-      sym: d.ticker_symbol||d.symbol||"—",
-      price:Number(d.price||0).toFixed(2),
-      shares:Number(d.size||d.quantity||0),
-      notional:Number(d.premium||d.notional||(d.price*(d.size||0))||0),
-      type:d.trade_type||(Number(d.size||0)>10000?"BLOCK":"DARK"),
-      side:(d.side||(Math.random()>.5?"BUY":"SELL")).toUpperCase(),
-      venue:d.venue||d.exchange||"—",
-    }));
-  } catch(e){console.warn("UW dark:",e.message);return null;}
+  const j = await uwFetch(key, `/api/darkpool/recent?limit=${limit}`);
+  if (!j) return null;
+  const rows=j?.data??j?.results??[];
+  return rows.slice(0,limit).map((d,i)=>({
+    id:i,
+    time:d.time||d.executed_at||"",
+    sym: d.ticker_symbol||d.symbol||"—",
+    price:Number(d.price||0).toFixed(2),
+    shares:Number(d.size||d.quantity||0),
+    notional:Number(d.premium||d.notional||(d.price*(d.size||0))||0),
+    type:d.trade_type||(Number(d.size||0)>10000?"BLOCK":"DARK"),
+    side:(d.side||(Math.random()>.5?"BUY":"SELL")).toUpperCase(),
+    venue:d.venue||d.exchange||"—",
+  }));
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
