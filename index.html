@@ -1219,7 +1219,7 @@ function App(){
             <span style={{fontSize:12,flex:1,color:yfOk===true?"#00e5a080":yfOk===false?"#ff4d6d80":"#ffffff40"}}>
               {yfOk===true?"Yahoo 報價 ✓":yfOk===false?"Yahoo 報價 失敗":yfLoading?"Yahoo 連線中…":"Yahoo 報價 待機"}
             </span>
-            <div onClick={loadPrices} style={{fontSize:10,padding:"1px 6px",borderRadius:3,cursor:"pointer",
+            <div onClick={loadPrices} style={{fontSize:12,padding:"3px 8px",borderRadius:4,cursor:"pointer",
               background:"#1e1f2a",border:"1px solid #ffffff12",color:"#7880a0"}}>↻</div>
           </div>
           {/* 失敗提示 */}
@@ -1510,12 +1510,12 @@ function App(){
               <div style={{flex:1,background:"#1a1b24",border:"1px solid #252738",borderRadius:10,overflow:"hidden",display:"flex",flexDirection:"column",minHeight:0}}>
                 {/* 表頭 */}
                 <div style={{display:"grid",
-                  gridTemplateColumns:"64px 78px 50px 64px 62px 120px 95px 52px 56px 52px 1fr",
-                  padding:"7px 12px",borderBottom:"1px solid #222334",
-                  fontSize:11,color:"#6a7090",letterSpacing:0.5,flexShrink:0,
+                  gridTemplateColumns:"90px 110px 70px 88px 100px 160px 120px 68px 76px 1fr",
+                  padding:"10px 16px",borderBottom:"1px solid #222334",
+                  fontSize:13,color:"#6a7090",letterSpacing:0.5,flexShrink:0,
                   background:"#16172080"}}>
                   <span>時間</span><span>標的</span><span>類型</span><span>行使價</span><span>到期</span>
-                  <span>溢價</span><span>量/倉</span><span>IV</span><span>情緒</span><span>交易所</span><span>策略/標記</span>
+                  <span>溢價</span><span>量/倉</span><span>IV</span><span>情緒</span><span>策略/標記</span>
                 </div>
                 {/* 置頂標籤 */}
                 {top20.length>0&&(
@@ -1534,37 +1534,36 @@ function App(){
                     var maxPrem = Math.max(1,...filteredFlow.map(x=>x.prem));
                     return(
                     <div key={f.id||fi} className="tr" style={{display:"grid",
-                      gridTemplateColumns:"64px 78px 50px 64px 62px 120px 95px 52px 56px 52px 1fr",
-                      padding:"6px 12px",borderBottom:"1px solid #ffffff05",alignItems:"center",
+                      gridTemplateColumns:"90px 110px 70px 88px 100px 160px 120px 68px 76px 1fr",
+                      padding:"10px 16px",borderBottom:"1px solid #ffffff05",alignItems:"center",
                       background:isTop?"#ffa7260c":f.unusual?"#ba68c806":"transparent",
                       borderLeft:isTop?"3px solid #ffa72645":"3px solid transparent",
                       transition:"background .12s"}}>
-                      <span style={{fontSize:11,color:"#6a7090"}}>{String(f.time).slice(-8)}</span>
+                      <span style={{fontSize:13,color:"#6a7090"}}>{String(f.time).slice(-8)}</span>
                       <div style={{display:"flex",flexDirection:"column",gap:0}}>
-                        <span style={{fontSize:13,fontWeight:700,color:"#f0f0f5",lineHeight:1.2}}>{f.sym}</span>
-                        <span style={{fontSize:10,color:priceOf(f.sym).color,fontFamily:"monospace"}}>{priceOf(f.sym).price}</span>
+                        <span style={{fontSize:15,fontWeight:700,color:"#f0f0f5",lineHeight:1.2}}>{f.sym}</span>
+                        <span style={{fontSize:12,color:priceOf(f.sym).color,fontFamily:"monospace"}}>{priceOf(f.sym).price}</span>
                       </div>
                       <Pill color={typeColor(f.type)}>{f.type}</Pill>
-                      <span style={{fontSize:12,color:"#8890a8"}}>${f.strike}</span>
-                      <span style={{fontSize:11,color:"#7880a0"}}>{String(f.exp).slice(0,7)}</span>
+                      <span style={{fontSize:14,color:"#8890a8"}}>${f.strike}</span>
+                      <span style={{fontSize:13,color:"#7880a0"}}>{String(f.exp).slice(0,10)}</span>
                       <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                        <span style={{fontSize:12,fontWeight:600,color:isTop?"#ffa726":f.prem>500000?"#ffd580":"#c0c4d8"}}>{fmtM(f.prem)}</span>
-                        <div style={{height:2,borderRadius:2,background:"#202130",overflow:"hidden"}}>
+                        <span style={{fontSize:14,fontWeight:600,color:isTop?"#ffa726":f.prem>500000?"#ffd580":"#c0c4d8"}}>{fmtM(f.prem)}</span>
+                        <div style={{height:3,borderRadius:2,background:"#202130",overflow:"hidden"}}>
                           <div style={{height:"100%",borderRadius:2,
                             width:`${Math.min(100,f.prem/maxPrem*100)}%`,
                             background:f.type==="CALL"?"#00e5a070":"#ff4d6d70",
                             transition:"width .3s"}}/>
                         </div>
                       </div>
-                      <span style={{fontSize:10,color:"#7880a0"}}>{Number(f.size).toLocaleString()}/{Number(f.oi)>999?(Number(f.oi)/1000).toFixed(0)+"K":f.oi}</span>
-                      <span style={{fontSize:11,color:"#7880a0"}}>{(Number(f.iv)*100).toFixed(0)}%</span>
+                      <span style={{fontSize:12,color:"#7880a0"}}>{Number(f.size).toLocaleString()}/{Number(f.oi)>999?(Number(f.oi)/1000).toFixed(0)+"K":f.oi}</span>
+                      <span style={{fontSize:13,color:"#7880a0"}}>{(Number(f.iv)*100).toFixed(0)}%</span>
                       <Pill color={sentColor(f.sent)}>{sentZh(f.sent)}</Pill>
-                      <Tag>{f.exchange}</Tag>
                       <div style={{display:"flex",gap:3,alignItems:"center",flexWrap:"wrap"}}>
                         {f.unusual&&<Pill color="#ba68c8">⚡</Pill>}
                         {f.sweep&&<Pill color="#29b6f6">掃</Pill>}
                         {isTop&&(()=>{var st=inferStrategy(f);return(
-                          <span title={st.tip} style={{fontSize:10,padding:"1px 6px",borderRadius:3,
+                          <span title={st.tip} style={{fontSize:12,padding:"3px 8px",borderRadius:4,
                             background:st.color+"22",color:st.color,border:"1px solid "+st.color+"40",
                             whiteSpace:"nowrap",cursor:"help"}}>
                             {st.label}
