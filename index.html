@@ -545,6 +545,7 @@ const NAV_ITEMS=[
   {id:"strategies",icon:"⬡",label:"策略"},
   {id:"signals",   icon:"⊛",label:"訊號"},
   {id:"risk",      icon:"◬",label:"風控"},
+  {id:"research",  icon:"🔬",label:"研究"},
 ];
 const sentColor=s=>s==="BULLISH"?"#00e5a0":s==="BEARISH"?"#ff4d6d":"#888";
 const sentZh   =s=>s==="BULLISH"?"看漲":s==="BEARISH"?"看跌":"中性";
@@ -720,6 +721,164 @@ function App(){
     if(!p?.price)return{price:"—",pct:"—",color:"#888"};
     const chg=p.price-p.prev,cp=chg/(p.prev||1)*100;
     return{price:"$"+p.price.toFixed(2),pct:(chg>=0?"+":"")+cp.toFixed(2)+"%",color:chg>=0?"#00e5a0":"#ff4d6d"};
+  };
+
+
+  /* ══ 研究報告 state ══ */
+  const [rReports,setRReports]   = React.useState(()=>{
+    try{
+      const d=JSON.parse(localStorage.getItem("hym_reports")||"[]");
+      const cutoff=Date.now()-180*86400000; // 6個月
+      return d.filter(r=>r.ts>cutoff);
+    }catch{return[];}
+  });
+  const [rInput,setRInput]       = React.useState("");
+  const [rTitle,setRTitle]       = React.useState("");
+  const [rAnalysis,setRAnalysis] = React.useState(null);
+  const [rLoading,setRLoading]   = React.useState(false);
+  const [rSelected,setRSelected] = React.useState(null);
+  const [rReminders,setRReminders] = React.useState(()=>{
+    try{return JSON.parse(localStorage.getItem("hym_reminders")||"[]");}catch{return[];}
+  });
+  const [rApiKey,setRApiKey]     = React.useState(()=>localStorage.getItem("hym_claude_key")||"");
+  const [rApiInput,setRApiInput] = React.useState("");
+  const [rShowApiSetting,setRShowApiSetting] = React.useState(false);
+
+  /* 儲存報告到 localStorage */
+  React.useEffect(()=>{
+    localStorage.setItem("hym_reports", JSON.stringify(rReports));
+  },[rReports]);
+
+  /* 儲存提醒到 localStorage */
+  React.useEffect(()=>{
+    localStorage.setItem("hym_reminders", JSON.stringify(rReminders));
+  },[rReminders]);
+
+  /* 快照期權流/暗池資料（每次更新時存一份，保留1個月）*/
+  React.useEffect(()=>{
+    if(!flow.length&&!dark.length)return;
+    try{
+      const cutoff=Date.now()-30*86400000;
+      const prev=JSON.parse(localStorage.getItem("hym_flow_snapshots")||"[]");
+      const filtered=prev.filter(s=>s.ts>cutoff);
+      const snap={ts:Date.now(),flow:flow.slice(0,50),dark:dark.slice(0,50)};
+      filtered.push(snap);
+      // 最多保留 500 筆快照
+      localStorage.setItem("hym_flow_snapshots",JSON.stringify(filtered.slice(-500)));
+    }catch{}
+  },[flow,dark]);
+
+  /* 瀏覽器提醒檢查（每分鐘）*/
+  React.useEffect(()=>{
+    const check=()=>{
+      const now=Date.now();
+      rReminders.forEach(r=>{
+        if(!r.fired&&r.ts<=now){
+          if(Notification.permission==="granted"){
+            new Notification("📊 HYM 交易提醒",{body:r.msg,icon:"/favicon.ico"});
+          }
+          setRReminders(prev=>prev.map(x=>x.id===r.id?{...x,fired:true}:x));
+        }
+      });
+    };
+    const id=setInterval(check,60000);
+    check();
+    return()=>clearInterval(id);
+  },[rReminders]);
+
+  /* AI 分析函數 */
+  const runResearchAI=async(report)=>{
+    const key=rApiKey;
+    if(!key){setRShowApiSetting(true);return;}
+    setRLoading(true);
+    setRAnalysis(null);
+    try{
+      // 準備近期期權流/暗池摘要
+      const flowSummary=flow.slice(0,20).map(f=>
+        \`\${f.time} \${f.sym} \${f.type} \$\${f.strike} exp:\${f.exp} prem:\${fmtM(f.prem)} \${f.unusual?"⚡異常":""} \${f.sweep?"掃單":""}\`
+      ).join("\n");
+      const darkSummary=dark.slice(0,20).map(d=>
+        \`\${d.time} \${d.sym} \$\${d.price} \${fmtM(d.notional)} \${d.side} \${d.type}\`
+      ).join("\n");
+
+      const prompt=\`你是一位資深美股期權交易員。請根據以下研究報告與即時市場數據，給出最佳期權操作建議。
+
+## 研究報告
+\${report.text}
+
+## 目前期權流（最新20筆）
+\${flowSummary||"暫無數據"}
+
+## 目前暗池成交（最新20筆）
+\${darkSummary||"暫無數據"}
+
+## 可用策略清單
+買入CALL（看漲）、買入PUT（看跌）、Covered CALL（收租）、Cash-Secured PUT（收租）、Bull Call Spread、Bear PUT Spread、Iron Condor、Straddle（賭波動）、Strangle、Wheel Strategy
+
+請以JSON格式回覆（不要有markdown代碼塊），格式如下：
+{
+  "summary": "整體市場看法（2-3句）",
+  "targets": [
+    {
+      "sym": "股票代號",
+      "direction": "看漲/看跌/中性",
+      "strategy": "建議策略名稱",
+      "reason": "理由（結合報告+期權流+暗池）",
+      "entry": "進場時機",
+      "risk": "風險提示",
+      "reminder_days": 數字（幾天後提醒操作，0代表今天）
+    }
+  ],
+  "flow_signals": "期權流信號解讀",
+  "dark_signals": "暗池信號解讀",
+  "reminders": ["提醒事項1","提醒事項2"]
+}\`;
+
+      const res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01"},
+        body:JSON.stringify({
+          model:"claude-opus-4-5",
+          max_tokens:2000,
+          messages:[{role:"user",content:prompt}]
+        })
+      });
+      if(!res.ok)throw new Error("API "+res.status);
+      const j=await res.json();
+      const txt=j.content?.[0]?.text||"{}";
+      const clean=txt.replace(/\`\`\`json|\`\`\`/g,"").trim();
+      const parsed=JSON.parse(clean);
+      setRAnalysis(parsed);
+
+      // 自動建立提醒
+      if(parsed.targets){
+        const newReminders=parsed.targets
+          .filter(t=>t.reminder_days>=0)
+          .map(t=>({
+            id:Date.now()+Math.random(),
+            ts:Date.now()+t.reminder_days*86400000,
+            msg:\`\${t.sym} \${t.strategy} 操作提醒：\${t.entry}\`,
+            sym:t.sym,
+            strategy:t.strategy,
+            fired:t.reminder_days===0,
+            reportTitle:report.title
+          }));
+        setRReminders(prev=>[...newReminders,...prev].slice(0,100));
+        // 申請通知權限
+        if(Notification.permission==="default")Notification.requestPermission();
+      }
+    }catch(e){
+      setRAnalysis({error:e.message});
+    }
+    setRLoading(false);
+  };
+
+  const saveReport=()=>{
+    if(!rInput.trim())return;
+    const r={id:Date.now(),ts:Date.now(),title:rTitle||"未命名報告 "+new Date().toLocaleDateString(),text:rInput.trim(),analysis:null};
+    setRReports(prev=>[r,...prev]);
+    setRInput("");setRTitle("");
+    runResearchAI(r);
   };
 
   /* ── 渲染 ───────────────────────────────────────────────────────────────── */
@@ -1075,7 +1234,7 @@ function App(){
                       <div style={{display:"flex",flexDirection:"column",gap:3}}>
                         <span style={{fontSize:13,fontWeight:600,color:f.prem>500000?"#ffa726":"#ffffff80"}}>{fmtM(f.prem)}</span>
                         <div style={{height:3,borderRadius:2,background:"#ffffff10",overflow:"hidden"}}>
-                          <div style={{height:"100%",borderRadius:2,width:`${Math.min(100,f.prem/Math.max(1,...filteredFlow.map(x=>x.prem))*100)}%`,background:f.type==="CALL"?"#00e5a060":"#ff4d6d60",transition:"width .3s"}}/>
+                          <div style={{height:"100%",borderRadius:2,width:`${Math.min(100,f.prem/Math.max(...filteredFlow.map(x=>x.prem))*100)}%`,background:f.type==="CALL"?"#00e5a060":"#ff4d6d60",transition:"width .3s"}}/>
                         </div>
                       </div>
                       <span style={{fontSize:12,color:"#ffffff50"}}>{Number(f.size).toLocaleString()}/{Number(f.oi)>999?(Number(f.oi)/1000).toFixed(0)+"K":f.oi}</span>
@@ -1099,7 +1258,7 @@ function App(){
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
                 <KCard label="暗池總成交額" value={fmtM(dark.reduce((a,d)=>a+d.notional,0))} sub="最近成交" color="#ab47bc" badge={uwKey?"UW":"模擬"}/>
                 <KCard label="大宗交易"     value={dark.filter(d=>d.type==="BLOCK").length} sub="≥1萬股" color="#ffa726"/>
-                <KCard label="最大單筆"     value={fmtM(Math.max(0,...dark.map(d=>d.notional)))} sub="單筆最高" color="#ff4d6d"/>
+                <KCard label="最大單筆"     value={fmtM(Math.max(...dark.map(d=>d.notional)))} sub="單筆最高" color="#ff4d6d"/>
                 <KCard label="買方比例"     value={`${(dark.filter(d=>d.side==="BUY").length/Math.max(1,dark.length)*100).toFixed(0)}%`} sub="暗池成交量" color="#00e5a0"/>
               </div>
               <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,overflow:"hidden"}}>
@@ -1123,7 +1282,7 @@ function App(){
                       <div style={{display:"flex",flexDirection:"column",gap:3}}>
                         <span style={{fontSize:13,fontWeight:600,color:d.notional>1e6?"#ab47bc":"#ffffff80"}}>{fmtM(d.notional)}</span>
                         <div style={{height:3,borderRadius:2,background:"#ffffff10",overflow:"hidden"}}>
-                          <div style={{height:"100%",borderRadius:2,width:`${Math.min(100,d.notional/Math.max(1,...dark.map(x=>x.notional))*100)}%`,background:d.side==="BUY"?"#00e5a060":"#ff4d6d60",transition:"width .3s"}}/>
+                          <div style={{height:"100%",borderRadius:2,width:`${Math.min(100,d.notional/Math.max(...dark.map(x=>x.notional))*100)}%`,background:d.side==="BUY"?"#00e5a060":"#ff4d6d60",transition:"width .3s"}}/>
                         </div>
                       </div>
                       <span style={{fontSize:13,color:"#ffffff50"}}>{Number(d.shares).toLocaleString()}</span>
@@ -1293,6 +1452,202 @@ function App(){
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* ══════ 研究 ══════ */}
+          {tab==="research"&&(
+            <div className="anim" style={{display:"flex",flexDirection:"column",gap:14,height:"calc(100vh - 60px)",overflow:"hidden"}}>
+
+              {/* ── Claude API Key 設定 ── */}
+              {rShowApiSetting&&(
+                <div style={{background:"#131317",border:"1px solid #ffa72630",borderRadius:10,padding:"16px 20px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
+                  <span style={{fontSize:13,color:"#ffa726",flexShrink:0}}>🔑 Claude API Key</span>
+                  <input value={rApiInput} onChange={e=>setRApiInput(e.target.value)}
+                    placeholder="sk-ant-..." type="password"
+                    style={{flex:1,background:"#0b0b0e",border:"1px solid #ffffff15",borderRadius:6,
+                      padding:"7px 12px",color:"#fff",fontSize:13}}/>
+                  <div onClick={()=>{if(rApiInput.startsWith("sk-")){setRApiKey(rApiInput);localStorage.setItem("hym_claude_key",rApiInput);setRShowApiSetting(false);setRApiInput("");}}}
+                    style={{padding:"7px 16px",background:"#ffa72620",border:"1px solid #ffa72640",
+                      borderRadius:6,cursor:"pointer",fontSize:13,color:"#ffa726",flexShrink:0}}>儲存</div>
+                  <div onClick={()=>setRShowApiSetting(false)}
+                    style={{fontSize:12,color:"#ffffff30",cursor:"pointer",flexShrink:0}}>✕</div>
+                </div>
+              )}
+
+              {/* ── 提醒卡片區 ── */}
+              {rReminders.filter(r=>!r.fired&&r.ts-Date.now()<3*86400000).length>0&&(
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",flexShrink:0}}>
+                  {rReminders.filter(r=>!r.fired&&r.ts-Date.now()<3*86400000).map(r=>{
+                    const diff=Math.ceil((r.ts-Date.now())/86400000);
+                    return(
+                      <div key={r.id} style={{background:"#ffa72610",border:"1px solid #ffa72630",
+                        borderRadius:8,padding:"8px 14px",display:"flex",alignItems:"center",gap:10}}>
+                        <span style={{fontSize:16}}>⏰</span>
+                        <div>
+                          <div style={{fontSize:13,color:"#ffa726",fontWeight:700}}>{r.sym} · {r.strategy}</div>
+                          <div style={{fontSize:11,color:"#ffffff60"}}>{diff<=0?"今天操作":`${diff}天後操作`} · {r.msg}</div>
+                        </div>
+                        <div onClick={()=>setRReminders(p=>p.map(x=>x.id===r.id?{...x,fired:true}:x))}
+                          style={{fontSize:11,color:"#ffffff25",cursor:"pointer",marginLeft:4}}>✕</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div style={{display:"flex",gap:14,flex:1,minHeight:0}}>
+                {/* ── 左欄：輸入 + 報告列表 ── */}
+                <div style={{width:320,flexShrink:0,display:"flex",flexDirection:"column",gap:10}}>
+
+                  {/* 新增報告 */}
+                  <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,padding:14}}>
+                    <div style={{fontSize:11,color:"#ffa726",letterSpacing:2,marginBottom:8}}>NEW REPORT</div>
+                    <input value={rTitle} onChange={e=>setRTitle(e.target.value)}
+                      placeholder="報告標題（選填）"
+                      style={{width:"100%",background:"#0b0b0e",border:"1px solid #ffffff10",borderRadius:6,
+                        padding:"7px 10px",color:"#fff",fontSize:13,marginBottom:8,boxSizing:"border-box"}}/>
+                    <textarea value={rInput} onChange={e=>setRInput(e.target.value)}
+                      placeholder={"貼上你的研究報告內容...
+
+例如：NVDA 財報優於預期，資料中心業務成長 120%，預期下季持續強勁..."}
+                      style={{width:"100%",height:160,background:"#0b0b0e",border:"1px solid #ffffff10",
+                        borderRadius:6,padding:"8px 10px",color:"#e0e0e0",fontSize:13,resize:"none",
+                        lineHeight:1.6,boxSizing:"border-box"}}/>
+                    <div style={{display:"flex",gap:8,marginTop:8}}>
+                      <div onClick={saveReport}
+                        style={{flex:1,padding:"8px 0",background:rLoading?"#ffffff10":"#ffa72620",
+                          border:`1px solid ${rLoading?"#ffffff15":"#ffa72640"}`,borderRadius:6,
+                          cursor:rLoading?"not-allowed":"pointer",fontSize:13,color:"#ffa726",textAlign:"center"}}>
+                        {rLoading?"🤖 AI 分析中...":"🔬 儲存並分析"}
+                      </div>
+                      <div onClick={()=>setRShowApiSetting(v=>!v)}
+                        style={{padding:"8px 10px",background:"#ffffff08",border:"1px solid #ffffff10",
+                          borderRadius:6,cursor:"pointer",fontSize:12,color:"#ffffff40"}}>
+                        🔑
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 報告列表 */}
+                  <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:6}}>
+                    {rReports.length===0&&(
+                      <div style={{fontSize:12,color:"#ffffff25",textAlign:"center",marginTop:20}}>尚無報告</div>
+                    )}
+                    {rReports.map(r=>(
+                      <div key={r.id} onClick={()=>{setRSelected(r);setRAnalysis(r.analysis);}}
+                        style={{background:rSelected?.id===r.id?"#ffa72610":"#131317",
+                          border:`1px solid ${rSelected?.id===r.id?"#ffa72630":"#ffffff08"}`,
+                          borderRadius:8,padding:"10px 12px",cursor:"pointer",transition:"all .12s"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                          <div style={{fontSize:13,fontWeight:600,color:"#fff",marginBottom:3,flex:1,marginRight:8}}>{r.title}</div>
+                          <div onClick={e=>{e.stopPropagation();setRReports(p=>p.filter(x=>x.id!==r.id));if(rSelected?.id===r.id)setRSelected(null);}}
+                            style={{fontSize:11,color:"#ffffff20",cursor:"pointer",flexShrink:0}}>✕</div>
+                        </div>
+                        <div style={{fontSize:11,color:"#ffffff40"}}>{new Date(r.ts).toLocaleDateString()}</div>
+                        <div style={{fontSize:11,color:"#ffffff30",marginTop:3,
+                          overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>
+                          {r.text.slice(0,80)}...
+                        </div>
+                        {r.analysis&&!r.analysis.error&&(
+                          <div style={{fontSize:10,color:"#00e5a060",marginTop:4}}>✓ 已分析</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── 右欄：AI 分析結果 ── */}
+                <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:12}}>
+                  {!rAnalysis&&!rLoading&&(
+                    <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}>
+                      <div style={{fontSize:48,opacity:.2}}>🔬</div>
+                      <div style={{fontSize:13,color:"#ffffff25"}}>貼上研究報告，AI 將結合期權流與暗池數據給出操作建議</div>
+                    </div>
+                  )}
+
+                  {rLoading&&(
+                    <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16}}>
+                      <div style={{fontSize:13,color:"#ffa726",animation:"pulse 1.5s infinite"}}>🤖 AI 正在分析報告與市場數據...</div>
+                      <div style={{fontSize:11,color:"#ffffff30"}}>正在比對期權流、暗池數據與策略庫</div>
+                    </div>
+                  )}
+
+                  {rAnalysis&&rAnalysis.error&&(
+                    <div style={{background:"#ff4d6d10",border:"1px solid #ff4d6d30",borderRadius:10,padding:16}}>
+                      <div style={{fontSize:13,color:"#ff4d6d"}}>分析失敗：{rAnalysis.error}</div>
+                      <div style={{fontSize:11,color:"#ffffff40",marginTop:4}}>請確認 Claude API Key 是否正確設定</div>
+                    </div>
+                  )}
+
+                  {rAnalysis&&!rAnalysis.error&&(
+                    <>
+                      {/* 整體看法 */}
+                      <div style={{background:"#131317",border:"1px solid #ffa72620",borderRadius:10,padding:"14px 18px",flexShrink:0}}>
+                        <div style={{fontSize:10,color:"#ffa726",letterSpacing:2,marginBottom:8}}>MARKET OVERVIEW</div>
+                        <div style={{fontSize:14,color:"#ffffff90",lineHeight:1.7}}>{rAnalysis.summary}</div>
+                      </div>
+
+                      {/* 信號解讀 */}
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,flexShrink:0}}>
+                        <div style={{background:"#131317",border:"1px solid #00e5a020",borderRadius:10,padding:"12px 16px"}}>
+                          <div style={{fontSize:10,color:"#00e5a0",letterSpacing:2,marginBottom:6}}>⟡ 期權流信號</div>
+                          <div style={{fontSize:13,color:"#ffffff70",lineHeight:1.6}}>{rAnalysis.flow_signals||"—"}</div>
+                        </div>
+                        <div style={{background:"#131317",border:"1px solid #ab47bc20",borderRadius:10,padding:"12px 16px"}}>
+                          <div style={{fontSize:10,color:"#ab47bc",letterSpacing:2,marginBottom:6}}>◉ 暗池信號</div>
+                          <div style={{fontSize:13,color:"#ffffff70",lineHeight:1.6}}>{rAnalysis.dark_signals||"—"}</div>
+                        </div>
+                      </div>
+
+                      {/* 操作建議 */}
+                      <div style={{flexShrink:0}}>
+                        <div style={{fontSize:10,color:"#ffffff40",letterSpacing:2,marginBottom:10}}>TRADE RECOMMENDATIONS</div>
+                        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                          {(rAnalysis.targets||[]).map((t,i)=>{
+                            const dc=t.direction==="看漲"?"#00e5a0":t.direction==="看跌"?"#ff4d6d":"#ffa726";
+                            return(
+                              <div key={i} style={{background:"#131317",border:`1px solid ${dc}20`,borderRadius:10,padding:"14px 18px"}}>
+                                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:18,fontWeight:700,color:"#fff"}}>{t.sym}</span>
+                                  <span style={{fontSize:11,padding:"2px 8px",borderRadius:3,background:`${dc}15`,border:`1px solid ${dc}30`,color:dc}}>{t.direction}</span>
+                                  <span style={{fontSize:12,padding:"2px 10px",borderRadius:3,background:"#ffffff08",color:"#ffa726",border:"1px solid #ffa72630"}}>{t.strategy}</span>
+                                  {t.reminder_days===0&&<span style={{fontSize:11,color:"#ff4d6d"}}>⏰ 今天操作</span>}
+                                  {t.reminder_days>0&&<span style={{fontSize:11,color:"#ffa72680"}}>{t.reminder_days}天後提醒</span>}
+                                </div>
+                                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:13}}>
+                                  <div>
+                                    <div style={{color:"#ffffff30",fontSize:10,letterSpacing:1,marginBottom:3}}>分析依據</div>
+                                    <div style={{color:"#ffffff80",lineHeight:1.6}}>{t.reason}</div>
+                                  </div>
+                                  <div>
+                                    <div style={{color:"#ffffff30",fontSize:10,letterSpacing:1,marginBottom:3}}>進場時機</div>
+                                    <div style={{color:"#00e5a080",lineHeight:1.6,marginBottom:8}}>{t.entry}</div>
+                                    <div style={{color:"#ffffff30",fontSize:10,letterSpacing:1,marginBottom:3}}>風險提示</div>
+                                    <div style={{color:"#ff4d6d80",lineHeight:1.6}}>{t.risk}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* 提醒事項 */}
+                      {rAnalysis.reminders?.length>0&&(
+                        <div style={{background:"#131317",border:"1px solid #ffffff08",borderRadius:10,padding:"12px 16px",flexShrink:0}}>
+                          <div style={{fontSize:10,color:"#ffffff40",letterSpacing:2,marginBottom:8}}>REMINDERS</div>
+                          {rAnalysis.reminders.map((r,i)=>(
+                            <div key={i} style={{fontSize:13,color:"#ffffff60",marginBottom:4,display:"flex",gap:8,alignItems:"flex-start"}}>
+                              <span style={{color:"#ffa726",flexShrink:0}}>·</span>{r}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           )}
