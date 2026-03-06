@@ -12,6 +12,184 @@
   <style>
     html,body,#root{height:100%;margin:0;padding:0;background:#0b0b0e}
   </style>
+<script type="application/json" id="guide-data">
+[
+  {
+    "num": "01",
+    "c": "#ffa726",
+    "t": "期權是什麼",
+    "items": [
+      [
+        "核心概念",
+        "期權是買賣權利的合約。花一筆權利金，換來在未來以特定價格買進或賣出的權利（不是義務）。\n\n買方：付錢買權利，最大虧損是權利金，獲利無限。\n賣方：收錢賣權利，最大獲利是權利金，風險較大。"
+      ],
+      [
+        "四大要素",
+        "① 標的資產 Underlying — AAPL、SPY、TSLA 等\n② 行使價 Strike Price — 你有權以這個價格買入/賣出\n③ 到期日 Expiration — 合約有效期限\n④ 權利金 Premium — 購買這個權利需要付的錢"
+      ]
+    ]
+  },
+  {
+    "num": "02",
+    "c": "#00e5a0",
+    "t": "CALL vs PUT",
+    "items": [
+      [
+        "CALL 買權（看漲）",
+        "最大虧損：權利金。最大獲利：無限。\n盈虧平衡：行使價 + 權利金\n適合：強勢突破前、機構掃單看漲時"
+      ],
+      [
+        "PUT 賣權（看跌）",
+        "最大虧損：權利金。最大獲利：行使價 × 100。\n盈虧平衡：行使價 - 權利金\n適合：高位反轉前、對沖持股下跌風險"
+      ],
+      [
+        "價內/價平/價外",
+        "ITM 價內 = 有內在價值（CALL：股價 > 行使價）\nATM 價平 = 股價 約等於 行使價，時間價值最高\nOTM 價外 = 無內在價值，便宜但難獲利"
+      ]
+    ]
+  },
+  {
+    "num": "03",
+    "c": "#29b6f6",
+    "t": "Greeks 希臘字母",
+    "items": [
+      [
+        "Delta 方向敏感度",
+        "股價每漲 $1，期權漲多少。CALL 為正(0~1)，PUT 為負(0~-1)。\nATM 約 0.5，ITM 接近 1，OTM 接近 0"
+      ],
+      [
+        "Theta 時間殺手",
+        "每天因時間流逝損失的價值。對買方是敵人，對賣方是朋友。\n越近到期，Theta 越大。注意：買 OTM 後股票沒動，每天都在虧 Theta！"
+      ],
+      [
+        "Vega 波動率敏感度",
+        "IV 每漲 1%，期權漲多少。財報前 IV 高，財報後 IV 暴跌（IV Crush）。\n警告：財報前買期權，方向對了也可能因 IV Crush 而虧損！"
+      ],
+      [
+        "Gamma Delta加速度",
+        "Delta 每天的變化速度。ATM 時最大，臨近到期時爆炸性增長。"
+      ]
+    ]
+  },
+  {
+    "num": "04",
+    "c": "#ab47bc",
+    "t": "單腿基本策略",
+    "items": [
+      [
+        "買入 CALL（看漲）",
+        "最大虧損：權利金。最大獲利：無限。\n建議選 30-60 天到期，避免 Theta 損耗太快。\n適合：強勢突破前、機構掃單看漲時"
+      ],
+      [
+        "買入 PUT（看跌）",
+        "最大虧損：權利金。可對沖持股下跌。\n適合：高位反轉、VIX CALL 爆量時買保護"
+      ],
+      [
+        "賣出 Covered CALL（收租）",
+        "持有股票同時賣出 CALL，每月收租。建議選 Delta 0.3 左右。\n適合：橫盤或溫和看漲時，穩定現金流"
+      ],
+      [
+        "賣出 Cash-Secured PUT（低接收租）",
+        "準備好現金，賣出 PUT 收租。不跌就收租，跌破就用更低價買入。\n適合：想低接優質股票時，Wheel 策略的第一步"
+      ]
+    ]
+  },
+  {
+    "num": "05",
+    "c": "#ff4d6d",
+    "t": "價差 Spread 策略",
+    "items": [
+      [
+        "Bull Call Spread（溫和看漲）",
+        "買低行使價 CALL + 賣高行使價 CALL。降低成本，獲利有上限。\n最大獲利 = 價差 - 淨權利金，最大虧損 = 淨權利金"
+      ],
+      [
+        "Bear PUT Spread（溫和看跌）",
+        "買高行使價 PUT + 賣低行使價 PUT。降低做空成本，獲利有上限。"
+      ],
+      [
+        "Iron Condor（區間收租）",
+        "同時賣出 Put Spread + Call Spread，賭市場盤整。\n最大獲利 = 收到的淨權利金，VIX > 25 時賣出最佳"
+      ],
+      [
+        "Straddle 馬鞍式（賭大波動）",
+        "同時買相同行使價的 CALL + PUT，不管漲跌都能獲利。\n適合財報前 IV 低時買入。IV 高時買會被 IV Crush！"
+      ],
+      [
+        "The Wheel 收租循環",
+        "第一步：賣 Cash-Secured PUT 收租\n第二步：被指派後持股\n第三步：賣 Covered CALL 繼續收租\n第四步：股票被叫走後回到第一步\n每月可穩定收取 1-3% 租金，新手最推薦策略！"
+      ]
+    ]
+  },
+  {
+    "num": "06",
+    "c": "#ffa726",
+    "t": "隱含波動率 IV",
+    "items": [
+      [
+        "IV 的本質",
+        "市場對未來波動程度的預期，直接決定期權的貴或便宜。\nVIX < 15 = 市場平靜，期權便宜，適合買方策略\nVIX > 25 = 市場恐慌，期權貴，適合賣方策略"
+      ],
+      [
+        "IV Crush 警告",
+        "財報公布後即使方向對了，IV 暴跌也會讓你虧損！\n這是方向對但賠錢的最常見原因。\n解法：財報前賣期權（賣 Straddle 或 Iron Condor）而不是買。"
+      ]
+    ]
+  },
+  {
+    "num": "07",
+    "c": "#00e5a0",
+    "t": "期權流實戰解讀",
+    "items": [
+      [
+        "如何解讀儀表板數據",
+        "大額 CALL + 掃單 → 機構急著建倉看漲 → 考慮跟進做多\n大額 PUT + 掃單 → 機構急著買保護或做空 → 謹慎或做空\nVIX CALL 爆量 → 大戶買恐慌險預期大跌 → 減倉或買 PUT\nP/C 比率 > 3 → 市場整體偏空 → 偏空操作\n買方溢價遠大於賣方 → 資金流入看漲方向 → 偏多操作"
+      ],
+      [
+        "三步驟確認信號",
+        "第一步：期權流出現大額異常掃單\n第二步：K 線圖確認技術面（突破支撐或阻力？趨勢方向？）\n第三步：暗池確認機構是否同步在場外建倉\n\n三者共振才是最強信號！單一信號謹慎對待。"
+      ]
+    ]
+  },
+  {
+    "num": "08",
+    "c": "#ff4d6d",
+    "t": "風險管理",
+    "items": [
+      [
+        "核心規則（必須遵守）",
+        "① 單筆風險不超過總資金 2%（期權全損很常見）\n② 期權部位不超過總資金 5%\n③ 虧損 50% 就出場，不等到歸零\n④ 財報前降低部位\n⑤ 不賣裸期權，一定要用 Spread 保護\n⑥ 分散到期日，不集中在同一天"
+      ],
+      [
+        "新手致命錯誤",
+        "All-in 一張超級 OTM 期權 + 等財報翻倍 + 捨不得止損 + 越跌越加碼。\n這個組合已讓無數人爆倉。期權是工具，不是賭場。"
+      ]
+    ]
+  },
+  {
+    "num": "09",
+    "c": "#ffa726",
+    "t": "每日交易清單",
+    "items": [
+      [
+        "開盤前 8:00-9:30",
+        "VIX 高於 25 考慮賣方策略，低於 15 考慮買方策略\n查看期權流儀表板：有無大額異常訂單\n確認今日財報、Fed、經濟數據發布時間\n標記關鍵支撐阻力位，SPY 最重要"
+      ],
+      [
+        "盤中 9:30-16:00",
+        "掃單加異常標記出現，立刻查看該標的 K 線\nVIX 突然飆升超過 5%，考慮減倉或對沖\n暗池出現大宗成交，確認機構方向\nP/C 比率極端偏高或偏低，注意反轉"
+      ],
+      [
+        "給新手的第一步",
+        "從紙上交易開始，在 Thinkorswim 模擬帳戶練習至少 3 個月。\n熟悉 Greeks 後用小資金（1000 到 5000 美元）開始，主力做 Wheel Strategy。"
+      ]
+    ]
+  }
+]
+</script>
+<script>
+window.__GUIDE_DATA = JSON.parse(document.getElementById("guide-data").textContent);
+</script>
 </head>
 <body>
   <div id="root"></div>
@@ -33,7 +211,7 @@ const fmtM = n => n>=1e6?"$"+(n/1e6).toFixed(2)+"M":n>=1e3?"$"+(n/1e3).toFixed(1
 const limPct = (u,l) => Math.min(100,(u/l)*100);
 
 const SYMS = ["TSLA","NVDA","AAPL","MSFT","SPY","QQQ","AMZN","META","GOOGL","AMD"];
-const STRATS = [
+const GUIDE_DATA=window.__GUIDE_DATA;const STRATS = [
   {id:1,name:"動能突破",   type:"動能",uni:"NASDAQ100",tf:"5m", sharpe:2.41,dd:-8.2, trades:1842,on:true},
   {id:2,name:"統計套利",   type:"套利",uni:"SP500",    tf:"1m", sharpe:1.87,dd:-5.1, trades:3210,on:true},
   {id:3,name:"波動率曲面", type:"期權",uni:"大型股",   tf:"15m",sharpe:3.12,dd:-12.4,trades:547, on:false},
@@ -142,7 +320,7 @@ async function fetchUWFlow(key,limit=30){
   const rows=j?.data??j?.results??[];
   return rows.slice(0,limit).map((f,i)=>({
     id:i,
-    time: f.created_at||f.filled_at||f.time||"",
+    time: (t=>t?new Date(t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"}):"—")(f.created_at||f.filled_at||f.time),
     sym:  f.ticker||f.ticker_symbol||f.symbol||"—",
     type: (f.type||f.put_call||f.option_type||"CALL").toUpperCase(),
     strike:f.strike||f.strike_price||"—",
@@ -150,10 +328,10 @@ async function fetchUWFlow(key,limit=30){
     prem: Number(f.total_premium||f.total_bid_side_prem||f.premium||0),
     size: Number(f.volume||f.total_size||f.size||0),
     oi:   Number(f.open_interest||0),
-    iv:   Number(f.implied_volatility||f.iv||0).toFixed(2),
-    sent: (f.sentiment||(f.put_call==="CALL"?"BULLISH":"BEARISH")).toUpperCase(),
-    unusual:!!(f.is_unusual||f.unusual),
-    sweep:!!(f.is_sweep||f.sweep),
+    iv:   Number(f.iv_start||f.implied_volatility||0).toFixed(2),
+    sent: (f.type||f.put_call||"call").toLowerCase()==="call"?"BULLISH":"BEARISH",
+    unusual:!!(f.alert_rule&&f.alert_rule!=="RepeatedHits"||f.is_unusual),
+    sweep:!!(f.has_sweep||f.is_sweep),
     exchange:f.exchange||f.venue||"—",
   }));
 }
@@ -164,14 +342,14 @@ async function fetchUWDark(key,limit=20){
   const rows=j?.data??j?.results??[];
   return rows.slice(0,limit).map((d,i)=>({
     id:i,
-    time:d.time||d.executed_at||"",
+    time:(t=>t?new Date(t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"}):"—")(d.executed_at||d.time),
     sym: d.ticker||d.ticker_symbol||d.underlying||d.symbol||"—",
-    price:Number(d.price||0).toFixed(2),
-    shares:Number(d.size||d.quantity||0),
-    notional:Number(d.premium||d.notional||(d.price*(d.size||0))||0),
+    price:Number(d.price||d.executed_price||0).toFixed(2),
+    shares:Number(d.size||d.volume||d.quantity||0),
+    notional:Number(d.notional_value||d.premium||d.notional||(Number(d.price||0)*Number(d.size||0))||0),
     type:d.trade_type||(Number(d.size||0)>10000?"BLOCK":"DARK"),
-    side:(d.side||(Math.random()>.5?"BUY":"SELL")).toUpperCase(),
-    venue:d.venue||d.exchange||"—",
+    side:(d.side||d.aggressor_side||(Math.random()>.5?"BUY":"SELL")).toUpperCase(),
+    venue:d.venue||d.exchange||d.market_center||"—",
   }));
 }
 
@@ -270,6 +448,8 @@ function KCard({label,value,sub,spark,color="#ffa726",badge,dim=false}){
         <span style={{fontSize:14,color:sub?.startsWith("+")||sub?.startsWith("▲")?"#00e5a0":sub?.startsWith("-")||sub?.startsWith("▼")?"#ff4d6d":"#ffffff45"}}>{sub}</span>
         {spark&&<Spark data={spark} color={color}/>}
       </div>
+      {/* ════════════════ 登入 Modal ════════════════ */}
+
     </div>
   );
 }
@@ -280,6 +460,8 @@ function Toggle({on,onChange}){
       background:on?"#ffa72635":"#ffffff12",border:`1px solid ${on?"#ffa72660":"#ffffff1f"}`,transition:"all .2s"}}>
       <div style={{position:"absolute",top:3,left:on?18:3,width:14,height:14,borderRadius:"50%",
         background:on?"#ffa726":"#ffffff40",transition:"all .2s"}}/>
+      {/* ════════════════ 登入 Modal ════════════════ */}
+
     </div>
   );
 }
@@ -345,6 +527,8 @@ function TVChart({symbol}){
   return(
     <div className="tradingview-widget-container" ref={ref} style={{height:"100%"}}>
       <div className="tradingview-widget-container__widget" style={{height:"100%"}}/>
+      {/* ════════════════ 登入 Modal ════════════════ */}
+
     </div>
   );
 }
@@ -354,6 +538,7 @@ function TVChart({symbol}){
 ══════════════════════════════════════════════════════════════════════════════ */
 const NAV_ITEMS=[
   {id:"command",   icon:"◈",label:"指揮中心"},
+  {id:"guide",     icon:"📖",label:"期權手冊"},
   {id:"flow",      icon:"⟡",label:"期權流"},
   {id:"darkpool",  icon:"◉",label:"暗池"},
   {id:"chart",     icon:"▲",label:"K 線圖"},
@@ -380,9 +565,18 @@ function App(){
   const [tvInput,setTvInput]  = useState("NASDAQ:NVDA");
 
   // API state
-  const [uwKey,setUwKey]      = useState(()=>localStorage.getItem('ddh_uw_key')||'');
+  const [uwKey,setUwKey]      = useState("");
   const [showKey,setShowKey]  = useState(false);
   const [uwOk,setUwOk]        = useState(null);   // null/true/false
+  // 登入系統
+  const [loginOpen,setLoginOpen]   = useState(true);
+  const [loginMode,setLoginMode]   = useState("login"); // "login" | "setup"
+  const [loginPwd,setLoginPwd]     = useState("");
+  const [setupPwd,setSetupPwd]     = useState("");
+  const [setupKey,setSetupKey]     = useState("");
+  const [loginErr,setLoginErr]     = useState("");
+  const [loginLoading,setLoginLoading] = useState(false);
+  const [configured,setConfigured] = useState(null); // null=checking
   const [yfOk,setYfOk]        = useState(null);
   const [prices,setPrices]    = useState({});
   const [yfLoading,setYfLoading] = useState(false);
@@ -433,17 +627,62 @@ function App(){
     setUwLoading(false);
   },[]);
 
-  useEffect(()=>{
-    if(uwKey){
-      localStorage.setItem('ddh_uw_key', uwKey);
-      loadUW(uwKey);
-    }
-  },[uwKey]);
+  useEffect(()=>{if(uwKey)loadUW(uwKey);},[uwKey]);
   useEffect(()=>{
     if(!uwKey)return;
     const id=setInterval(()=>loadUW(uwKey),15000);
     return()=>clearInterval(id);
   },[uwKey]);
+
+  /* ── 登入 / 設定 ───────────────────────────────────────────────────────── */
+  const WORKER = "https://solitary-wood-898d.justest521.workers.dev";
+
+  useEffect(()=>{
+    // 啟動時檢查是否已設定金鑰
+    fetch(`${UW_WORKER}/auth/status`)
+      .then(r=>r.json())
+      .then(j=>{
+        setConfigured(j.configured);
+        setLoginMode(j.configured?"login":"setup");
+      })
+      .catch(()=>setConfigured(false));
+  },[]);
+
+  const handleLogin = useCallback(async()=>{
+    if(!loginPwd){setLoginErr("請輸入密碼");return;}
+    setLoginLoading(true); setLoginErr("");
+    try{
+      const r=await fetch(`${UW_WORKER}/auth/login`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({password:loginPwd})
+      });
+      const j=await r.json();
+      if(!r.ok){setLoginErr(j.error||"密碼錯誤");return;}
+      setUwKey(j.uwKey);
+      setLoginOpen(false);
+      setLoginPwd("");
+    }catch(e){setLoginErr("連線失敗："+e.message);}
+    finally{setLoginLoading(false);}
+  },[loginPwd]);
+
+  const handleSetup = useCallback(async()=>{
+    if(!setupPwd||!setupKey){setLoginErr("請填寫密碼和金鑰");return;}
+    if(setupPwd.length<6){setLoginErr("密碼至少 6 個字元");return;}
+    setLoginLoading(true); setLoginErr("");
+    try{
+      const r=await fetch(`${UW_WORKER}/auth/save`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({password:setupPwd,uwKey:setupKey})
+      });
+      const j=await r.json();
+      if(!r.ok){setLoginErr(j.error||"儲存失敗");return;}
+      setConfigured(true);
+      setLoginMode("login");
+      setLoginErr("✅ 金鑰已儲存！請用剛設定的密碼登入");
+      setSetupPwd(""); setSetupKey("");
+    }catch(e){setLoginErr("連線失敗："+e.message);}
+    finally{setLoginLoading(false);}
+  },[setupPwd,setupKey]);
 
   /* ── 模擬跳動 ───────────────────────────────────────────────────────────── */
   useEffect(()=>{
@@ -579,16 +818,20 @@ function App(){
 
         {/* UW Key + stats */}
         <div style={{marginTop:"auto",padding:"14px",borderTop:"1px solid #ffffff08"}}>
-          <div style={{fontSize:11,color:"#ffffff30",letterSpacing:1,marginBottom:6}}>UW API 金鑰</div>
-          <div style={{display:"flex",gap:5,marginBottom:4}}>
-            <input type={showKey?"text":"password"} value={uwKey}
-              onChange={e=>setUwKey(e.target.value)}
-              placeholder="uw_key_••••••" style={{flex:1,fontSize:12}}/>
-            <div onClick={()=>setShowKey(v=>!v)} style={{padding:"5px 8px",background:"#ffffff08",
-              border:"1px solid #ffffff15",borderRadius:5,cursor:"pointer",fontSize:13,color:"#ffffff40"}}>👁</div>
-          </div>
-          {uwKey&&<div onClick={()=>loadUW(uwKey)} style={{fontSize:12,color:"#ffa72680",cursor:"pointer",textAlign:"center",
-            padding:"4px",background:"#ffa72610",borderRadius:5,border:"1px solid #ffa72625",marginBottom:8}}>↻ 重新連線</div>}
+          {uwKey?(
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+              <span style={{fontSize:11,color:"#00e5a080",letterSpacing:1}}>● 已登入</span>
+              <div onClick={()=>{setUwKey("");setUwOk(null);setLoginOpen(true);setLoginPwd("");}}
+                style={{fontSize:11,padding:"2px 8px",borderRadius:4,cursor:"pointer",
+                  background:"#ffffff08",border:"1px solid #ffffff12",color:"#ffffff40"}}>登出</div>
+            </div>
+          ):(
+            <div onClick={()=>setLoginOpen(true)}
+              style={{width:"100%",padding:"8px",marginBottom:8,borderRadius:6,cursor:"pointer",textAlign:"center",
+                background:"#ffa72618",border:"1px solid #ffa72640",fontSize:13,color:"#ffa726",fontWeight:600}}>
+              🔐 登入取得 UW 數據
+            </div>
+          )}
           <div style={{display:"flex",gap:8,marginTop:8}}>
             <div>
               <div style={{fontSize:10,color:"#ffffff30",letterSpacing:1}}>策略</div>
@@ -813,7 +1056,7 @@ function App(){
                       gridTemplateColumns:"90px 70px 60px 70px 65px 90px 100px 70px 70px 65px 1fr",
                       padding:"11px 16px",borderBottom:"1px solid #ffffff05",alignItems:"center",
                       background:f.unusual?"#ba68c806":"transparent",transition:"background .12s"}}>
-                      <span style={{fontSize:12,color:"#ffffff35"}}>{(t=>{try{const d=new Date(t);return isNaN(d)?t:d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}catch(e){return t}})(f.time)}</span>
+                      <span style={{fontSize:12,color:"#ffffff35"}}>{String(f.time).slice(-8)}</span>
                       <span style={{fontSize:16,fontWeight:700,color:"#fff"}}>{f.sym}</span>
                       <Pill color={typeColor(f.type)}>{f.type}</Pill>
                       <span style={{fontSize:14,color:"#ffffff70"}}>${f.strike}</span>
@@ -854,7 +1097,7 @@ function App(){
                       gridTemplateColumns:"90px 70px 70px 90px 110px 80px 70px 80px",
                       padding:"11px 16px",borderBottom:"1px solid #ffffff05",alignItems:"center",
                       background:d.notional>1e6?"#ab47bc06":"transparent",transition:"background .12s"}}>
-                      <span style={{fontSize:12,color:"#ffffff35"}}>{(t=>{try{const d=new Date(t);return isNaN(d)?t:d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}catch(e){return t}})(d.time)}</span>
+                      <span style={{fontSize:12,color:"#ffffff35"}}>{String(d.time).slice(-8)}</span>
                       <span style={{fontSize:16,fontWeight:700,color:"#fff"}}>{d.sym}</span>
                       <Pill color={d.type==="BLOCK"?"#ffa726":"#ab47bc"}>{d.type==="BLOCK"?"大宗":"暗池"}</Pill>
                       <span style={{fontSize:14,color:"#ffffff70"}}>${d.price}</span>
@@ -893,6 +1136,30 @@ function App(){
             </div>
           )}
 
+          {tab==="guide"&&(
+            <div className="anim" style={{maxHeight:"calc(100vh - 100px)",overflowY:"auto",paddingRight:8}}>
+              <div style={{padding:"28px 32px 20px",background:"linear-gradient(135deg,#ffa72608,#0a0a0d)",border:"1px solid #ffa72620",borderRadius:14,marginBottom:32,position:"relative",overflow:"hidden"}}>
+                <div style={{position:"absolute",right:20,top:"50%",transform:"translateY(-50%)",fontFamily:"'Syne',sans-serif",fontSize:110,fontWeight:900,color:"#ffa72806",lineHeight:1,pointerEvents:"none"}}>期</div>
+                <div style={{fontSize:10,letterSpacing:2,color:"#ffa726",marginBottom:8}}>COMPLETE GUIDE</div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontSize:26,fontWeight:900,marginBottom:6,color:"#fff"}}>期權完全手冊</div>
+                <div style={{fontSize:13,color:"#ffffff45",lineHeight:1.8}}>從零開始理解期權的本質、策略邏輯與實戰應用</div>
+              </div>
+              {GUIDE_DATA.map(ch=>(
+                <div key={ch.num} style={{marginBottom:28}}>
+                  <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:ch.c,letterSpacing:3,marginBottom:4}}>CHAPTER {ch.num}</div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontSize:18,fontWeight:900,marginBottom:10,paddingBottom:8,borderBottom:"1px solid #ffffff0c"}}>{ch.t}</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                    {ch.items.map((item,i)=>(
+                      <div key={i} style={{background:"#131317",borderRadius:9,padding:"12px 14px",border:"1px solid #ffffff08",borderLeft:"3px solid "+ch.c+"40"}}>
+                        <div style={{fontSize:13,fontWeight:700,color:ch.c,marginBottom:5}}>{item[0]}</div>
+                        <div style={{fontSize:13,color:"#aaaaaa",lineHeight:1.8,whiteSpace:"pre-line"}}>{item[1]}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {/* ══════ 策略 ══════ */}
           {tab==="strategies"&&(
             <div className="anim" style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -1008,6 +1275,95 @@ function App(){
 
         </div>
       </div>
+      {/* ════════════════ 登入 Modal ════════════════ */}
+      {loginOpen&&(
+        <div style={{position:"fixed",inset:0,background:"#000000cc",zIndex:9999,
+          display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{background:"#0f0f14",border:"1px solid #ffffff15",borderRadius:14,
+            padding:"36px 32px",width:360,boxShadow:"0 20px 60px #000"}}>
+            {/* Logo */}
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24}}>
+              <div style={{width:36,height:36,borderRadius:9,
+                background:"linear-gradient(135deg,#ffa726,#ff6d00)",
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,fontWeight:900,color:"#000"}}>D</div>
+              <div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontSize:14,fontWeight:900,color:"#fff"}}>DONDONHAPPY</div>
+                <div style={{fontSize:10,color:"#ffffff35",letterSpacing:1.5}}>期權 · 量化 · 暗池</div>
+              </div>
+            </div>
+
+            {/* Tab */}
+            <div style={{display:"flex",gap:6,marginBottom:20}}>
+              {["login","setup"].map(m=>(
+                <div key={m} onClick={()=>{setLoginMode(m);setLoginErr("");}}
+                  style={{flex:1,padding:"7px",borderRadius:6,cursor:"pointer",textAlign:"center",fontSize:13,
+                    background:loginMode===m?"#ffa72620":"#ffffff08",
+                    border:`1px solid ${loginMode===m?"#ffa72650":"#ffffff10"}`,
+                    color:loginMode===m?"#ffa726":"#ffffff40",fontWeight:loginMode===m?700:400}}>
+                  {m==="login"?"🔐 登入":"⚙️ 首次設定"}
+                </div>
+              ))}
+            </div>
+
+            {loginMode==="login"?(
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                <div style={{fontSize:12,color:"#ffffff40"}}>輸入你設定的密碼解鎖 UW API 金鑰</div>
+                <input
+                  type="password" value={loginPwd}
+                  onChange={e=>setLoginPwd(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+                  placeholder="密碼" autoFocus
+                  style={{padding:"10px 12px",fontSize:14,borderRadius:7,
+                    background:"#0a0a0d",border:"1px solid #ffffff20",color:"#fff"}}/>
+                <div onClick={handleLogin}
+                  style={{padding:"11px",borderRadius:7,cursor:"pointer",textAlign:"center",
+                    background:loginLoading?"#ffffff10":"#ffa72625",
+                    border:"1px solid #ffa72650",fontSize:14,color:"#ffa726",fontWeight:700}}>
+                  {loginLoading?"解密中…":"登入"}
+                </div>
+              </div>
+            ):(
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                <div style={{fontSize:12,color:"#ffffff40"}}>設定一組密碼保護你的 UW API 金鑰，儲存於雲端</div>
+                <input
+                  type="text" value={setupKey}
+                  onChange={e=>setSetupKey(e.target.value)}
+                  placeholder="UW API 金鑰 (UUID 格式)"
+                  style={{padding:"10px 12px",fontSize:13,borderRadius:7,
+                    background:"#0a0a0d",border:"1px solid #ffffff20",color:"#fff"}}/>
+                <input
+                  type="password" value={setupPwd}
+                  onChange={e=>setSetupPwd(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&handleSetup()}
+                  placeholder="設定密碼（至少 6 字元）"
+                  style={{padding:"10px 12px",fontSize:14,borderRadius:7,
+                    background:"#0a0a0d",border:"1px solid #ffffff20",color:"#fff"}}/>
+                <div onClick={handleSetup}
+                  style={{padding:"11px",borderRadius:7,cursor:"pointer",textAlign:"center",
+                    background:loginLoading?"#ffffff10":"#ffa72625",
+                    border:"1px solid #ffa72650",fontSize:14,color:"#ffa726",fontWeight:700}}>
+                  {loginLoading?"儲存中…":"加密儲存金鑰"}
+                </div>
+              </div>
+            )}
+
+            {loginErr&&(
+              <div style={{marginTop:12,padding:"8px 12px",borderRadius:6,fontSize:12,
+                background:loginErr.startsWith("✅")?"#00e5a010":"#ff4d6d10",
+                border:`1px solid ${loginErr.startsWith("✅")?"#00e5a030":"#ff4d6d30"}`,
+                color:loginErr.startsWith("✅")?"#00e5a0":"#ff4d6d"}}>
+                {loginErr}
+              </div>
+            )}
+
+            {/* 跳過 */}
+            <div onClick={()=>setLoginOpen(false)}
+              style={{marginTop:16,textAlign:"center",fontSize:12,color:"#ffffff25",cursor:"pointer"}}>
+              略過，使用模擬數據
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
