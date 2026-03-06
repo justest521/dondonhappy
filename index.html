@@ -165,7 +165,7 @@ async function fetchUWDark(key,limit=20){
   return rows.slice(0,limit).map((d,i)=>({
     id:i,
     time:d.time||d.executed_at||"",
-    sym: d.ticker_symbol||d.symbol||"—",
+    sym: d.ticker||d.ticker_symbol||d.symbol||"—",
     price:Number(d.price||0).toFixed(2),
     shares:Number(d.size||d.quantity||0),
     notional:Number(d.premium||d.notional||(d.price*(d.size||0))||0),
@@ -436,7 +436,7 @@ function App(){
   useEffect(()=>{if(uwKey)loadUW(uwKey);},[uwKey]);
   useEffect(()=>{
     if(!uwKey)return;
-    const id=setInterval(()=>loadUW(uwKey),30000);
+    const id=setInterval(()=>loadUW(uwKey),15000);
     return()=>clearInterval(id);
   },[uwKey]);
 
