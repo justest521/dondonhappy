@@ -842,6 +842,29 @@ function App(){
   }, []);  // 只跑一次
 
   /* ── AI 分析研究報告 ── */
+  // ── 期權策略推斷（依溢價、類型、情緒、IV、sweep） ──
+  const inferStrategy = (f) => {
+    var type = f.type;
+    var iv = Number(f.iv)*100;
+    var sent = (f.sent||"").toLowerCase();
+    var unusual = f.unusual;
+    var sweep = f.sweep;
+    var daysToExp = Math.max(0, Math.round((new Date(f.exp)-Date.now())/86400000));
+
+    if(sweep && type==="CALL" && daysToExp<=14) return {label:"急攻多單", color:"#00e5a0", tip:"掃單+短期CALL → 機構快速建倉看漲"};
+    if(sweep && type==="PUT"  && daysToExp<=14) return {label:"急攻空單", color:"#ff4d6d", tip:"掃單+短期PUT → 機構快速建倉看跌"};
+    if(unusual && type==="CALL" && iv>60)       return {label:"高IV買權", color:"#ffa726", tip:"異常高IV CALL → 可能財報前保護性買入或賭漲"};
+    if(unusual && type==="PUT"  && iv>60)       return {label:"高IV保護", color:"#ba68c8", tip:"異常高IV PUT → 機構對沖/防守性保護倉"};
+    if(type==="CALL" && daysToExp>=30 && daysToExp<=90 && sent==="bullish") return {label:"波段做多", color:"#00e5a0", tip:"中期CALL+看多情緒 → 波段持有策略"};
+    if(type==="PUT"  && daysToExp>=30 && daysToExp<=90 && sent==="bearish") return {label:"波段做空", color:"#ff4d6d", tip:"中期PUT+看空情緒 → 波段空頭策略"};
+    if(type==="CALL" && daysToExp>90)           return {label:"長多佈局", color:"#29b6f6", tip:"長期CALL → 長線看多或LEAPS策略"};
+    if(type==="PUT"  && daysToExp>90)           return {label:"長空對沖", color:"#ab47bc", tip:"長期PUT → 長線對沖或方向性空頭"};
+    if(iv<30 && type==="CALL")                  return {label:"低IV收租", color:"#80cbc4", tip:"低IV賣出covered call或牛市價差"};
+    if(iv<30 && type==="PUT")                   return {label:"低IV賣PUT", color:"#ef9a9a", tip:"低IV賣出現金擔保PUT，收取時間價值"};
+    if(daysToExp<=7)                            return {label:"週選賭注", color:"#ffd54f", tip:"極短期期權 → 高風險方向性賭注"};
+    return {label: type==="CALL"?"看多佈局":"看空佈局", color: type==="CALL"?"#00e5a080":"#ff4d6d80", tip:""};
+  };
+
   // ── 從文章內容萃取作者日期 ──
   const extractArticleDate = (text) => {
     if(!text) return null;
@@ -1443,7 +1466,7 @@ function App(){
             <div className="anim" style={{display:"flex",flexDirection:"column",gap:10,height:"calc(100vh - 60px)",overflow:"hidden"}}>
 
               {/* ── 頂部統計列 ── */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,flexShrink:0}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6,flexShrink:0}}>
                 <KCard label="買權溢價" value={fmtM(totalCall)} sub="▲" color="#00e5a0" badge={uwKey?"UW":"模擬"}/>
                 <KCard label="賣權溢價" value={fmtM(totalPut)}  sub="▼" color="#ff4d6d" badge={uwKey?"UW":"模擬"}/>
                 <KCard label="P/C 比率" value={(totalPut/(totalCall||1)).toFixed(2)} sub={sentBull>55?"偏多傾向":"偏空傾向"} color="#ffa726"/>
@@ -1487,12 +1510,12 @@ function App(){
               <div style={{flex:1,background:"#1a1b24",border:"1px solid #252738",borderRadius:10,overflow:"hidden",display:"flex",flexDirection:"column",minHeight:0}}>
                 {/* 表頭 */}
                 <div style={{display:"grid",
-                  gridTemplateColumns:"72px 90px 58px 72px 68px 1fr 110px 62px 64px 62px 90px",
-                  padding:"9px 14px",borderBottom:"1px solid #222334",
-                  fontSize:11,color:"#6a7090",letterSpacing:0.8,flexShrink:0,
+                  gridTemplateColumns:"64px 78px 50px 64px 62px 120px 95px 52px 56px 52px 1fr",
+                  padding:"7px 12px",borderBottom:"1px solid #222334",
+                  fontSize:11,color:"#6a7090",letterSpacing:0.5,flexShrink:0,
                   background:"#16172080"}}>
                   <span>時間</span><span>標的</span><span>類型</span><span>行使價</span><span>到期</span>
-                  <span>溢價</span><span>量/未平倉</span><span>隱波</span><span>情緒</span><span>交易所</span><span>標記</span>
+                  <span>溢價</span><span>量/倉</span><span>IV</span><span>情緒</span><span>交易所</span><span>策略/標記</span>
                 </div>
                 {/* 置頂標籤 */}
                 {top20.length>0&&(
@@ -1511,36 +1534,42 @@ function App(){
                     var maxPrem = Math.max(1,...filteredFlow.map(x=>x.prem));
                     return(
                     <div key={f.id||fi} className="tr" style={{display:"grid",
-                      gridTemplateColumns:"72px 90px 58px 72px 68px 1fr 110px 62px 64px 62px 90px",
-                      padding:"9px 14px",borderBottom:"1px solid #ffffff05",alignItems:"center",
-                      background:isTop?"#ffa7260d":f.unusual?"#ba68c806":"transparent",
-                      borderLeft:isTop?"3px solid #ffa72650":"3px solid transparent",
+                      gridTemplateColumns:"64px 78px 50px 64px 62px 120px 95px 52px 56px 52px 1fr",
+                      padding:"6px 12px",borderBottom:"1px solid #ffffff05",alignItems:"center",
+                      background:isTop?"#ffa7260c":f.unusual?"#ba68c806":"transparent",
+                      borderLeft:isTop?"3px solid #ffa72645":"3px solid transparent",
                       transition:"background .12s"}}>
                       <span style={{fontSize:11,color:"#6a7090"}}>{String(f.time).slice(-8)}</span>
-                      <div style={{display:"flex",flexDirection:"column",gap:1}}>
-                        <span style={{fontSize:14,fontWeight:700,color:"#f0f0f5",lineHeight:1.2}}>{f.sym}</span>
-                        <span style={{fontSize:11,color:priceOf(f.sym).color,fontFamily:"monospace"}}>{priceOf(f.sym).price}</span>
+                      <div style={{display:"flex",flexDirection:"column",gap:0}}>
+                        <span style={{fontSize:13,fontWeight:700,color:"#f0f0f5",lineHeight:1.2}}>{f.sym}</span>
+                        <span style={{fontSize:10,color:priceOf(f.sym).color,fontFamily:"monospace"}}>{priceOf(f.sym).price}</span>
                       </div>
                       <Pill color={typeColor(f.type)}>{f.type}</Pill>
-                      <span style={{fontSize:13,color:"#8890a8"}}>${f.strike}</span>
+                      <span style={{fontSize:12,color:"#8890a8"}}>${f.strike}</span>
                       <span style={{fontSize:11,color:"#7880a0"}}>{String(f.exp).slice(0,7)}</span>
-                      <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                        <span style={{fontSize:13,fontWeight:600,color:isTop?"#ffa726":f.prem>500000?"#ffd580":"#c0c4d8"}}>{fmtM(f.prem)}</span>
-                        <div style={{height:3,borderRadius:2,background:"#202130",overflow:"hidden"}}>
+                      <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                        <span style={{fontSize:12,fontWeight:600,color:isTop?"#ffa726":f.prem>500000?"#ffd580":"#c0c4d8"}}>{fmtM(f.prem)}</span>
+                        <div style={{height:2,borderRadius:2,background:"#202130",overflow:"hidden"}}>
                           <div style={{height:"100%",borderRadius:2,
                             width:`${Math.min(100,f.prem/maxPrem*100)}%`,
                             background:f.type==="CALL"?"#00e5a070":"#ff4d6d70",
                             transition:"width .3s"}}/>
                         </div>
                       </div>
-                      <span style={{fontSize:11,color:"#7880a0"}}>{Number(f.size).toLocaleString()}/{Number(f.oi)>999?(Number(f.oi)/1000).toFixed(0)+"K":f.oi}</span>
-                      <span style={{fontSize:12,color:"#7880a0"}}>{(Number(f.iv)*100).toFixed(0)}%</span>
+                      <span style={{fontSize:10,color:"#7880a0"}}>{Number(f.size).toLocaleString()}/{Number(f.oi)>999?(Number(f.oi)/1000).toFixed(0)+"K":f.oi}</span>
+                      <span style={{fontSize:11,color:"#7880a0"}}>{(Number(f.iv)*100).toFixed(0)}%</span>
                       <Pill color={sentColor(f.sent)}>{sentZh(f.sent)}</Pill>
                       <Tag>{f.exchange}</Tag>
-                      <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                        {f.unusual&&<Pill color="#ba68c8">⚡異常</Pill>}
-                        {f.sweep&&<Pill color="#29b6f6">掃單</Pill>}
-                        {isTop&&!f.unusual&&!f.sweep&&<Pill color="#ffa726">🔥TOP</Pill>}
+                      <div style={{display:"flex",gap:3,alignItems:"center",flexWrap:"wrap"}}>
+                        {f.unusual&&<Pill color="#ba68c8">⚡</Pill>}
+                        {f.sweep&&<Pill color="#29b6f6">掃</Pill>}
+                        {isTop&&(()=>{var st=inferStrategy(f);return(
+                          <span title={st.tip} style={{fontSize:10,padding:"1px 6px",borderRadius:3,
+                            background:st.color+"22",color:st.color,border:"1px solid "+st.color+"40",
+                            whiteSpace:"nowrap",cursor:"help"}}>
+                            {st.label}
+                          </span>
+                        );})()}
                       </div>
                     </div>
                     );
