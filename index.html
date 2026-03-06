@@ -795,9 +795,9 @@ function App(){
   const analyzeReport = async(reportText)=>{
     setAiLoading(true); setAiResult(null);
     try{
-      const recentFlow = flow.slice(0,15).map(f=>`${f.time} ${f.sym} ${f.type} $${f.strike} ${f.exp} ${fmtM(f.prem)} ${f.unusual?"[異常]":""} ${f.sweep?"[掃單]":""}`).join("
+      const recentFlow = flow.slice(0,15).map(f=>`${f.time} ${f.sym} ${f.type} ${"$"+f.strike} ${f.exp} ${fmtM(f.prem)} ${f.unusual?"[異常]":""} ${f.sweep?"[掃單]":""}`).join("
 ");
-      const recentDark = dark.slice(0,10).map(d=>`${d.time} ${d.sym} ${d.type} $${d.price} ${fmtM(d.notional)} ${d.side}`).join("
+      const recentDark = dark.slice(0,10).map(d=>`${d.time} ${d.sym} ${d.type} ${"$"+d.price} ${fmtM(d.notional)} ${d.side}`).join("
 ");
       const prompt = `你是專業美股期權分析師。根據以下研究報告，結合期權流和暗池數據，給出具體的期權操作建議。
 
