@@ -792,6 +792,42 @@ function App(){
     return()=>clearInterval(id);
   },[reminders]);
 
+  // ── 舊報告標題修正 + 排序（新到舊）──
+  useEffect(()=>{
+    if(!reports.length) return;
+    var needUpdate = false;
+    var fixed = reports.map(function(r){
+      // 判斷是否需要修正標題（舊格式：財報研究 2026/xx/xx 或太短）
+      var needFix = !r.title || /^(財報|總經|技術|產業|期權|其他)研究\s/.test(r.title) || r.title.length < 6;
+      if(!needFix) return r;
+      needUpdate = true;
+      // 從 AI 分析結果萃取
+      var newTitle = "";
+      if(r.aiAnalysis){
+        var aiLines = r.aiAnalysis.split("\n")
+          .map(function(l){ return l.trim().replace(/^#+\s*/,"").replace(/\*\*/g,"").trim(); })
+          .filter(function(l){ return l.length>8 && !/^[1-5][.、]$/.test(l) && !/^【.{1,4}】$/.test(l); });
+        if(aiLines.length) newTitle = aiLines[0].length>45 ? aiLines[0].slice(0,45)+"…" : aiLines[0];
+      }
+      // 從報告內文萃取
+      if(!newTitle && r.content){
+        var cLines = r.content.split("\n")
+          .map(function(l){ return l.trim().replace(/^[#*>\-=_~`]+\s*/,"").replace(/\*\*/g,"").trim(); })
+          .filter(function(l){ return l.length>6; });
+        if(cLines.length) newTitle = cLines[0].length>45 ? cLines[0].slice(0,45)+"…" : cLines[0];
+      }
+      // 加日期前綴
+      var d = new Date(r.ts);
+      var prefix = "["+(d.getMonth()+1).toString().padStart(2,"0")+"/"+(d.getDate()).toString().padStart(2,"0")+"] ";
+      return Object.assign({},r,{title: newTitle ? prefix+newTitle : r.title});
+    });
+    // 排序：新到舊
+    fixed.sort(function(a,b){ return b.ts - a.ts; });
+    // 只有真的有變化才更新
+    var sortChanged = fixed.some(function(r,i){ return r.id !== reports[i].id; });
+    if(needUpdate || sortChanged) setReports(fixed);
+  }, []);  // 只跑一次
+
   /* ── AI 分析研究報告 ── */
   // ── AI 結果解析成卡片 ──
   const renderAiCards = (text) => {
@@ -1780,7 +1816,7 @@ function App(){
                     </div>
                   </div>
                   <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                    {reports.filter(function(r){return reportCat==="全部"||(r.category||"其他")===reportCat;}).map(r=>(
+                    {reports.slice().sort(function(a,b){return b.ts-a.ts;}).filter(function(r){return reportCat==="全部"||(r.category||"其他")===reportCat;}).map(r=>(
                       <div key={r.id}
                         style={{background:selectedReport?.id===r.id?"#0b0b0e":"#0f0f14",
                           border:`1px solid ${selectedReport?.id===r.id?"#ffa72630":"#ffffff08"}`,
