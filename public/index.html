@@ -150,10 +150,10 @@ async function fetchUWFlow(key,limit=30){
     prem: Number(f.total_premium||f.total_bid_side_prem||f.premium||0),
     size: Number(f.volume||f.total_size||f.size||0),
     oi:   Number(f.open_interest||0),
-    iv:   Number(f.implied_volatility||f.iv||0).toFixed(2),
-    sent: (f.sentiment||(f.put_call==="CALL"?"BULLISH":"BEARISH")).toUpperCase(),
-    unusual:!!(f.is_unusual||f.unusual),
-    sweep:!!(f.is_sweep||f.sweep),
+    iv:   Number(f.iv_start||f.implied_volatility||0).toFixed(2),
+    sent: (f.type||"call")==="call"?"BULLISH":"BEARISH",
+    unusual:!!(f.alert_rule&&f.alert_rule!=="RepeatedHits"||f.is_unusual),
+    sweep:!!(f.has_sweep||f.is_sweep),
     exchange:f.exchange||f.venue||"—",
   }));
 }
@@ -165,7 +165,7 @@ async function fetchUWDark(key,limit=20){
   return rows.slice(0,limit).map((d,i)=>({
     id:i,
     time:d.time||d.executed_at||"",
-    sym: d.ticker||d.ticker_symbol||d.underlying||d.symbol||"—",
+    sym: d.ticker_symbol||d.symbol||"—",
     price:Number(d.price||0).toFixed(2),
     shares:Number(d.size||d.quantity||0),
     notional:Number(d.premium||d.notional||(d.price*(d.size||0))||0),
@@ -436,7 +436,7 @@ function App(){
   useEffect(()=>{if(uwKey)loadUW(uwKey);},[uwKey]);
   useEffect(()=>{
     if(!uwKey)return;
-    const id=setInterval(()=>loadUW(uwKey),15000);
+    const id=setInterval(()=>loadUW(uwKey),30000);
     return()=>clearInterval(id);
   },[uwKey]);
 
