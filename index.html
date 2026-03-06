@@ -795,30 +795,21 @@ function App(){
   const analyzeReport = async(reportText)=>{
     setAiLoading(true); setAiResult(null);
     try{
-      const recentFlow = flow.slice(0,15).map(f=>`${f.time} ${f.sym} ${f.type} ${"$"+f.strike} ${f.exp} ${fmtM(f.prem)} ${f.unusual?"[異常]":""} ${f.sweep?"[掃單]":""}`).join("
-");
-      const recentDark = dark.slice(0,10).map(d=>`${d.time} ${d.sym} ${d.type} ${"$"+d.price} ${fmtM(d.notional)} ${d.side}`).join("
-");
-      const prompt = `你是專業美股期權分析師。根據以下研究報告，結合期權流和暗池數據，給出具體的期權操作建議。
-
-【研究報告】
-${reportText}
-
-【最新期權流（前15筆）】
-${recentFlow||"暫無數據"}
-
-【最新暗池數據（前10筆）】
-${recentDark||"暫無數據"}
-
-請分析：
-1. 報告中提到的股票，目前期權流/暗池有無相關信號
-2. 根據報告觀點，推薦2-3個最適合的期權策略（含具體執行方式、行使價選擇建議、到期日建議）
-3. 風險提示
-4. 建議的操作時間點（給出具體條件，例如：當股價突破XX時、財報前N天等）
-5. 給出1-2個提醒設定建議（格式：[提醒] 條件 | 建議操作）
-
-用繁體中文回答，結構清晰，重點突出。`;
-
+      const recentFlow = flow.slice(0,15).map(f=>[f.time,f.sym,f.type,"$"+f.strike,f.exp,fmtM(f.prem),f.unusual?"[異常]":"",f.sweep?"[掃單]":""].join(" ")).join("\n");
+      const recentDark = dark.slice(0,10).map(d=>[d.time,d.sym,d.type,"$"+d.price,fmtM(d.notional),d.side].join(" ")).join("\n");
+      const prompt = [
+        "你是專業美股期權分析師。根據以下研究報告，結合期權流和暗池數據，給出具體的期權操作建議。",
+        "", "【研究報告】", reportText, "",
+        "【最新期權流（前15筆）】", recentFlow||"暫無數據", "",
+        "【最新暗池數據（前10筆）】", recentDark||"暫無數據", "",
+        "請分析：",
+        "1. 報告中提到的股票，目前期權流/暗池有無相關信號",
+        "2. 根據報告觀點，推薦2-3個最適合的期權策略（含具體執行方式、行使價選擇建議、到期日建議）",
+        "3. 風險提示",
+        "4. 建議的操作時間點（給出具體條件，例如：當股價突破XX時、財報前N天等）",
+        "5. 給出1-2個提醒設定建議（格式：[提醒] 條件 | 建議操作）",
+        "", "用繁體中文回答，結構清晰，重點突出。"
+      ].join("\n");
       const resp = await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -829,14 +820,13 @@ ${recentDark||"暫無數據"}
         })
       });
       const data = await resp.json();
-      const text = data?.content?.[0]?.text||"分析失敗，請重試";
+      const text = data&&data.content&&data.content[0]&&data.content[0].text||"分析失敗，請重試";
       setAiResult(text);
     }catch(e){
       setAiResult("AI 分析失敗："+e.message);
     }
     setAiLoading(false);
   };
-
   const saveReport = ()=>{
     if(!reportInput.trim())return;
     const r={
