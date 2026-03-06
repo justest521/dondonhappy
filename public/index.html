@@ -425,7 +425,7 @@ function App(){
 
   /* ── Unusual Whales ─────────────────────────────────────────────────────── */
   const loadUW=useCallback(async(key)=>{
-    if(!key||key.length<10)return;
+    if(!key||key.length<8)return;
     setUwLoading(true);
     const [fd,dd]=await Promise.all([fetchUWFlow(key,30),fetchUWDark(key,20)]);
     if(fd){setFlow(fd);setUwOk(true);}else setUwOk(false);
@@ -548,7 +548,7 @@ function App(){
           {uwOk===false&&(
             <div style={{fontSize:10,color:"#ff4d6d60",padding:"3px 6px 3px",lineHeight:1.5,
               background:"#ff4d6d08",borderRadius:5,border:"1px solid #ff4d6d15"}}>
-              ⚠ 請確認金鑰格式：<span style={{color:"#ffa72670"}}>uw_••••••••</span><br/>
+              ⚠ 請確認金鑰格式：UUID 或 uw_ 開頭<br/>
               <span style={{color:"#ffffff30"}}>前往 unusualwhales.com 取得金鑰</span>
             </div>
           )}
