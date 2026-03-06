@@ -1604,7 +1604,29 @@ function App(){
           {tab==="research"&&(
             <div className="anim" style={{display:"flex",flexDirection:"column",gap:16,height:"calc(100vh - 60px)",overflow:"auto",paddingBottom:32}}>
 
-              {/* 提醒卡片 */}
+              {/* ── 研究頁 Tab 切換 ── */}
+              <div style={{display:"flex",gap:0,borderBottom:"1px solid #ffffff10",marginBottom:4}}>
+                {["新分析","報告庫"].map(function(t){
+                  var isActive = researchTab===t;
+                  var count = t==="報告庫" ? reports.length : 0;
+                  return(
+                    <div key={t} onClick={()=>setResearchTab(t)}
+                      style={{padding:"10px 24px",cursor:"pointer",fontSize:14,fontWeight:isActive?700:400,
+                        color:isActive?"#ffa726":"#ffffff40",
+                        borderBottom:isActive?"2px solid #ffa726":"2px solid transparent",
+                        marginBottom:-1,transition:"all 0.15s",display:"flex",alignItems:"center",gap:6}}>
+                      {t==="新分析"?"✏️ 新分析":"📚 報告庫"}
+                      {count>0&&<span style={{fontSize:11,background:"#ffa72620",color:"#ffa726",
+                        padding:"1px 6px",borderRadius:10,fontWeight:700}}>{count}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 提醒卡片 - 兩個 tab 都顯示 */}
+
+              {researchTab==="新分析"&&(
+              <React.Fragment>
               {reminders.filter(r=>!r.fired).length>0&&(
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   {reminders.filter(r=>!r.fired).map(r=>(
@@ -1687,8 +1709,20 @@ function App(){
                 </div>
               )}
 
+              </React.Fragment>
+              )}
+
+              {/* 報告庫 tab */}
+              {researchTab==="報告庫"&&(
+              <React.Fragment>
               {/* 已儲存報告列表 */}
-              {reports.length>0&&(
+              {reports.length===0?(
+                <div style={{textAlign:"center",padding:60,color:"#ffffff25",fontSize:16}}>
+                  <div style={{fontSize:48,marginBottom:16}}>📭</div>
+                  <div>尚無儲存的報告</div>
+                  <div style={{fontSize:13,marginTop:8,color:"#ffffff15"}}>分析完成後會自動儲存</div>
+                </div>
+              ):(
                 <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:12,padding:20}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:8}}>
                     <div style={{fontSize:13,color:"#ffffff35"}}>已儲存報告（{reports.length}份）</div>
@@ -1772,6 +1806,8 @@ function App(){
                     ))}
                   </div>
                 </div>
+              )}
+              </React.Fragment>
               )}
             </div>
           )}
