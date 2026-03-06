@@ -815,17 +815,13 @@ function App(){
         "","用繁體中文回答，結構清晰，重點突出。"
       ];
       var prompt = parts.join(NL);
-      var resp = await fetch("https://api.anthropic.com/v1/messages",{
+      var resp = await fetch(UW_WORKER+"/ai/analyze",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",
-          max_tokens:1500,
-          messages:[{role:"user",content:prompt}]
-        })
+        body:JSON.stringify({prompt:prompt})
       });
       var data = await resp.json();
-      var text = (data&&data.content&&data.content[0]&&data.content[0].text)||"分析失敗，請重試";
+      var text = (data&&data.result)||"分析失敗，請重試";
       setAiResult(text);
     }catch(e){
       setAiResult("AI 分析失敗："+e.message);
