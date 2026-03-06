@@ -593,6 +593,7 @@ function App(){
   const [fFilter,setFFilter]  = useState("全部");
   const [reportCat,setReportCat] = useState("全部");
   const [researchTab,setResearchTab] = useState("新分析");
+  const [remindersOpen,setRemindersOpen] = useState(false);
 
   // ── 研究報告 ──
   const [reports,setReports]       = useState(()=>{
@@ -798,7 +799,7 @@ function App(){
           if(Notification.permission==="granted"){
             new Notification("📋 研究報告提醒",{body:r.msg,icon:"/favicon.ico"});
           }
-          setReminders(prev=>prev.map(x=>x.id===r.id?{...x,fired:true}:x));
+          setReminders(prev=>prev.map(x=>x.id===r.id?{...x,fired:true,firedAt:Date.now()}:x));
         }
       });
     },30000);
