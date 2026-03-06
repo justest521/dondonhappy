@@ -433,17 +433,17 @@ function Spark({data=[],color="#ffa726",w=100,h=36}){
 
 function KCard({label,value,sub,spark,color="#ffa726",badge,dim=false}){
   return(
-    <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,padding:"16px 18px",
+    <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,padding:"16px 18px",
       display:"flex",flexDirection:"column",gap:5,position:"relative",overflow:"hidden",opacity:dim?.5:1}}>
       <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,${color}70,transparent)`}}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-        <span style={{fontSize:13,letterSpacing:1,color:"#ffffff40",fontFamily:"'IBM Plex Mono',monospace"}}>{label}</span>
+        <span style={{fontSize:13,letterSpacing:1,color:"#909090",fontFamily:"'IBM Plex Mono',monospace"}}>{label}</span>
         {badge&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:20,
           background:badge==="即時"?"#00e5a018":badge==="UW"?"#ba68c818":"#ffffff0e",
           color:badge==="即時"?"#00e5a0":badge==="UW"?"#ba68c8":"#ffffff50",
           border:`1px solid ${badge==="即時"?"#00e5a035":badge==="UW"?"#ba68c835":"#ffffff12"}`}}>{badge}</span>}
       </div>
-      <div style={{fontSize:28,fontWeight:700,color:"#fff",letterSpacing:-0.5,fontFamily:"'IBM Plex Mono',monospace",lineHeight:1.1}}>{value}</div>
+      <div style={{fontSize:28,fontWeight:700,color:"#111",letterSpacing:-0.5,fontFamily:"'IBM Plex Mono',monospace",lineHeight:1.1}}>{value}</div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:2}}>
         <span style={{fontSize:14,color:sub?.startsWith("+")||sub?.startsWith("▲")?"#00e5a0":sub?.startsWith("-")||sub?.startsWith("▼")?"#ff4d6d":"#ffffff45"}}>{sub}</span>
         {spark&&<Spark data={spark} color={color}/>}
@@ -470,7 +470,7 @@ function Pill({children,color="#ffa726"}){
     color,background:`${color}18`,border:`1px solid ${color}35`}}>{children}</span>;
 }
 function Tag({children,color="#ffffff40"}){
-  return <span style={{fontSize:13,padding:"3px 8px",borderRadius:4,background:"#ffffff08",color,border:"1px solid #ffffff10"}}>{children}</span>;
+  return <span style={{fontSize:13,padding:"3px 8px",borderRadius:4,background:"#d8d8d4",color,border:"1px solid #d4d4d4"}}>{children}</span>;
 }
 function Dot({ok}){
   return <div style={{width:7,height:7,borderRadius:"50%",flexShrink:0,
@@ -805,21 +805,21 @@ function App(){
       if(isHeader){
         if(current && current.lines.length) sections.push(current);
         var title = trimmed.replace(/^#{1,3}\s+/,"").replace(/^[1-5][.、]\s+/,"").replace(/\*\*/g,"").trim();
-        var icon="📋", color="#1a1a22", border="#ffffff15", accent="#ffffff60";
-        if(/交叉|比對|信號|機構/.test(title)){icon="🔍";color="#0d1f35";border="#29b6f640";accent="#29b6f6";}
-        else if(/策略|推薦/.test(title)){icon="⚡";color="#0a2018";border="#00e5a040";accent="#00e5a0";}
-        else if(/時間|操作|條件/.test(title)){icon="🕐";color="#1e1505";border="#ffa72640";accent="#ffa726";}
-        else if(/提醒/.test(title)){icon="🔔";color="#1e1505";border="#ffa72640";accent="#ffa726";}
-        else if(/驗證|準確|印證/.test(title)){icon="✅";color="#18102a";border="#ab47bc40";accent="#ab47bc";}
-        else if(/風險/.test(title)){icon="⚠️";color="#200d0d";border="#ff4d6d40";accent="#ff4d6d";}
+        var icon="📋", color="#f5f5f0", border="#ffffff15", accent="#ffffff60";
+        if(/交叉|比對|信號|機構/.test(title)){icon="🔍";color="#ddeeff";border="#29b6f640";accent="#29b6f6";}
+        else if(/策略|推薦/.test(title)){icon="⚡";color="#d4f5e8";border="#00e5a040";accent="#00e5a0";}
+        else if(/時間|操作|條件/.test(title)){icon="🕐";color="#fff5e0";border="#ffa72640";accent="#ffa726";}
+        else if(/提醒/.test(title)){icon="🔔";color="#fff5e0";border="#ffa72640";accent="#ffa726";}
+        else if(/驗證|準確|印證/.test(title)){icon="✅";color="#f0e8ff";border="#ab47bc40";accent="#ab47bc";}
+        else if(/風險/.test(title)){icon="⚠️";color="#ffe8ee";border="#ff4d6d40";accent="#ff4d6d";}
         current={title,icon,color,border,accent,lines:[]};
       } else if(trimmed){
-        if(!current) current={title:"分析摘要",icon:"📋",color:"#1a1a22",border:"#ffffff15",accent:"#ffffff60",lines:[]};
+        if(!current) current={title:"分析摘要",icon:"📋",color:"#f5f5f0",border:"#ffffff15",accent:"#ffffff60",lines:[]};
         current.lines.push(trimmed);
       }
     });
     if(current && current.lines.length) sections.push(current);
-    if(!sections.length) return React.createElement("div",{style:{fontSize:18,color:"#f0f0f0",lineHeight:2,whiteSpace:"pre-wrap"}},text);
+    if(!sections.length) return React.createElement("div",{style:{fontSize:18,color:"#1e1e1e",lineHeight:2,whiteSpace:"pre-wrap"}},text);
 
     return React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:14}},
       sections.map(function(sec,si){
@@ -828,7 +828,7 @@ function App(){
           border:"1px solid "+sec.border,
           borderRadius:12,
           padding:"18px 20px",
-          boxShadow:"0 2px 12px #00000030",
+          boxShadow:"0 2px 8px #00000015",
           position:"relative",
           overflow:"hidden"
         }},
@@ -864,13 +864,13 @@ function App(){
                   border:"1px solid "+sec.border,
                   borderLeft:"3px solid "+sec.accent,
                   borderRadius:8, padding:"10px 14px",
-                  fontSize:18, color:"#ffffff",
+                  fontSize:18, color:"#111111",
                   lineHeight:1.8, fontWeight:500
                 }}, clean);
               }
               return React.createElement("div",{key:li,style:{
                 display:"flex",gap:8,alignItems:"flex-start",
-                fontSize:18,color:"#e8e8e8",lineHeight:1.8
+                fontSize:18,color:"#222222",lineHeight:1.8
               }},
                 isBullet && React.createElement("span",{style:{color:sec.accent,marginTop:4,flexShrink:0,fontSize:12}},"▸"),
                 React.createElement("span",null, clean)
@@ -1051,25 +1051,20 @@ function App(){
 
   /* ── 渲染 ───────────────────────────────────────────────────────────────── */
   return(
-    <div style={{display:"flex",height:"100vh",background:"#0b0b0e",
-      fontFamily:"'IBM Plex Mono','Noto Sans TC',monospace",color:"#e0e0e0",overflow:"hidden"}}>
+    <div style={{display:"flex",height:"100vh",background:"#f0f0ec",
+      fontFamily:"'IBM Plex Mono','Noto Sans TC',monospace",color:"#1a1a1a",overflow:"hidden"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Syne:wght@800;900&family=Noto+Sans+TC:wght@400;500;700&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        ::-webkit-scrollbar{width:3px;height:3px}
-        ::-webkit-scrollbar-thumb{background:#ffffff18;border-radius:2px}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.15}}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes slideR{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
-        .nb:hover{background:#ffffff09!important}
-        .tr:hover{background:#ffa72606!important}
-        .anim{animation:fadeUp .3s ease}
-        .sig{animation:slideR .22s ease}
-        .chip:hover{border-color:#ffa72670!important;color:#ffa726!important;cursor:pointer}
-        input{background:#0a0a0d;border:1px solid #ffffff15;color:#e0e0e0;border-radius:6px;
-          padding:6px 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none}
-        input:focus{border-color:#ffa72660}
-      `}</style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Syne:wght@800;900&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  ::-webkit-scrollbar{width:4px;height:4px}
+  ::-webkit-scrollbar-thumb{background:#c0c0c0;border-radius:2px}
+  ::-webkit-scrollbar-track{background:#e8e8e8}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .anim{animation:fadeIn .18s ease}
+  input,textarea{outline:none}
+  input::placeholder,textarea::placeholder{color:#aaaaaa}
+`}</style>
 
       {/* ════════════════ 側欄 ════════════════ */}
       <div style={{width:238,background:"#080810",borderRight:"1px solid #ffffff09",
@@ -1082,15 +1077,15 @@ function App(){
               background:"linear-gradient(135deg,#ffa726,#ff6d00)",
               display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,fontWeight:900,color:"#000"}}>D</div>
             <div>
-              <div style={{fontFamily:"'Syne',sans-serif",fontSize:14,fontWeight:900,letterSpacing:-.5,color:"#fff"}}>DONDONHAPPY</div>
-              <div style={{fontSize:10,color:"#ffffff35",letterSpacing:1.5}}>期權 · 量化 · 暗池</div>
+              <div style={{fontFamily:"'Syne',sans-serif",fontSize:14,fontWeight:900,letterSpacing:-.5,color:"#111"}}>DONDONHAPPY</div>
+              <div style={{fontSize:10,color:"#999999",letterSpacing:1.5}}>期權 · 量化 · 暗池</div>
             </div>
           </div>
         </div>
 
         {/* 連線狀態 */}
         <div style={{margin:"0 12px 14px",padding:"10px 12px",background:"#0d0d12",
-          border:"1px solid #ffffff0c",borderRadius:8,display:"flex",flexDirection:"column",gap:8}}>
+          border:"1px solid #dadada",borderRadius:8,display:"flex",flexDirection:"column",gap:8}}>
           {/* Yahoo Finance */}
           <div style={{display:"flex",alignItems:"center",gap:7}}>
             <Dot ok={yfOk===true}/>
@@ -1098,14 +1093,14 @@ function App(){
               {yfOk===true?"Yahoo 報價 ✓":yfOk===false?"Yahoo 報價 失敗":yfLoading?"Yahoo 連線中…":"Yahoo 報價 待機"}
             </span>
             <div onClick={loadPrices} style={{fontSize:10,padding:"1px 6px",borderRadius:3,cursor:"pointer",
-              background:"#ffffff0a",border:"1px solid #ffffff12",color:"#ffffff40"}}>↻</div>
+              background:"#e8e8e8",border:"1px solid #ffffff12",color:"#909090"}}>↻</div>
           </div>
           {/* 失敗提示 */}
           {yfOk===false&&(
             <div style={{fontSize:10,color:"#ff4d6d60",lineHeight:1.5,padding:"5px 6px",
               background:"#ff4d6d08",borderRadius:5,border:"1px solid #ff4d6d15"}}>
               ⚠ 代理連線失敗<br/>
-              <span style={{color:"#ffffff30"}}>
+              <span style={{color:"#aaaaaa"}}>
                 · Claude 預覽沙盒會封鎖外部請求<br/>
                 · 部署到 GitHub Pages 後通常正常<br/>
                 · 可改用 <span style={{color:"#ffa72670"}}>index.html</span> 版本測試
@@ -1128,12 +1123,12 @@ function App(){
             <div style={{fontSize:10,color:"#ff4d6d60",padding:"3px 6px 3px",lineHeight:1.5,
               background:"#ff4d6d08",borderRadius:5,border:"1px solid #ff4d6d15"}}>
               ⚠ 請確認金鑰格式：UUID 或 uw_ 開頭<br/>
-              <span style={{color:"#ffffff30"}}>前往 unusualwhales.com 取得金鑰</span>
+              <span style={{color:"#aaaaaa"}}>前往 unusualwhales.com 取得金鑰</span>
             </div>
           )}
         </div>
 
-        <div style={{height:1,background:"#ffffff08",margin:"0 0 10px"}}/>
+        <div style={{height:1,background:"#d8d8d4",margin:"0 0 10px"}}/>
 
         {/* 導覽 */}
         {NAV_ITEMS.map(n=>(
@@ -1145,36 +1140,36 @@ function App(){
             <span style={{fontSize:16,color:tab===n.id?"#ffa726":"#ffffff28",width:20,textAlign:"center"}}>{n.icon}</span>
             <span style={{fontSize:14,color:tab===n.id?"#fff":"#ffffff50"}}>{n.label}</span>
             {n.id==="flow"&&<div style={{marginLeft:"auto",fontSize:11,padding:"1px 6px",borderRadius:3,
-              background:"#00e5a015",color:"#00e5a0",border:"1px solid #00e5a030"}}>{flow.filter(f=>f.unusual).length}</div>}
+              background:"#00e5a015",color:"#00926a",border:"1px solid #00e5a030"}}>{flow.filter(f=>f.unusual).length}</div>}
             {n.id==="signals"&&<div style={{marginLeft:"auto",fontSize:11,padding:"1px 6px",borderRadius:3,
-              background:"#ffa72615",color:"#ffa726",border:"1px solid #ffa72630"}}>{sigs.filter(s=>!s.filled).length}</div>}
+              background:"#fff0d4",color:"#d4840a",border:"1px solid #ffa72630"}}>{sigs.filter(s=>!s.filled).length}</div>}
           </div>
         ))}
 
         {/* UW Key + stats */}
-        <div style={{marginTop:"auto",padding:"14px",borderTop:"1px solid #ffffff08"}}>
+        <div style={{marginTop:"auto",padding:"14px",borderTop:"1px solid #e0e0e0"}}>
           {uwKey?(
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
               <span style={{fontSize:11,color:"#00e5a080",letterSpacing:1}}>● 已登入</span>
               <div onClick={()=>{setUwKey("");setUwOk(null);setLoginOpen(true);setLoginPwd("");}}
                 style={{fontSize:11,padding:"2px 8px",borderRadius:4,cursor:"pointer",
-                  background:"#ffffff08",border:"1px solid #ffffff12",color:"#ffffff40"}}>登出</div>
+                  background:"#d8d8d4",border:"1px solid #ffffff12",color:"#909090"}}>登出</div>
             </div>
           ):(
             <div onClick={()=>setLoginOpen(true)}
               style={{width:"100%",padding:"8px",marginBottom:8,borderRadius:6,cursor:"pointer",textAlign:"center",
-                background:"#ffa72618",border:"1px solid #ffa72640",fontSize:13,color:"#ffa726",fontWeight:600}}>
+                background:"#ffeacc",border:"1px solid #ffa72640",fontSize:13,color:"#d4840a",fontWeight:600}}>
               🔐 登入取得 UW 數據
             </div>
           )}
           <div style={{display:"flex",gap:8,marginTop:8}}>
             <div>
-              <div style={{fontSize:10,color:"#ffffff30",letterSpacing:1}}>策略</div>
-              <div style={{fontSize:20,fontWeight:700,color:"#ffa726"}}>{strats.filter(s=>s.on).length}<span style={{fontSize:12,color:"#ffffff30"}}>/{strats.length}</span></div>
+              <div style={{fontSize:10,color:"#aaaaaa",letterSpacing:1}}>策略</div>
+              <div style={{fontSize:20,fontWeight:700,color:"#d4840a"}}>{strats.filter(s=>s.on).length}<span style={{fontSize:12,color:"#aaaaaa"}}>/{strats.length}</span></div>
             </div>
             <div style={{marginLeft:"auto"}}>
-              <div style={{fontSize:10,color:"#ffffff30",letterSpacing:1}}>持倉</div>
-              <div style={{fontSize:20,fontWeight:700,color:"#fff"}}>{positions.length}</div>
+              <div style={{fontSize:10,color:"#aaaaaa",letterSpacing:1}}>持倉</div>
+              <div style={{fontSize:20,fontWeight:700,color:"#111"}}>{positions.length}</div>
             </div>
           </div>
         </div>
@@ -1184,31 +1179,31 @@ function App(){
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
         {/* 頂部列 */}
-        <div style={{height:52,borderBottom:"1px solid #ffffff08",display:"flex",alignItems:"center",
+        <div style={{height:52,borderBottom:"1px solid #e0e0e0",display:"flex",alignItems:"center",
           justifyContent:"space-between",padding:"0 22px",background:"#080810",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:14,color:"#ffffff50",letterSpacing:.5}}>{NAV_ITEMS.find(n=>n.id===tab)?.label}</span>
-            <span style={{color:"#ffffff15"}}>·</span>
+            <span style={{fontSize:14,color:"#808080",letterSpacing:.5}}>{NAV_ITEMS.find(n=>n.id===tab)?.label}</span>
+            <span style={{color:"#cccccc"}}>·</span>
             <div style={{width:6,height:6,borderRadius:"50%",background:"#00e5a0",animation:"pulse 2s infinite"}}/>
             <span style={{fontSize:12,color:"#ffffff22"}}>#{tick.toString().padStart(4,"0")}</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:18}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontSize:12,color:"#00e5a0",minWidth:52}}>買 {sentBull.toFixed(0)}%</span>
+              <span style={{fontSize:12,color:"#00926a",minWidth:52}}>買 {sentBull.toFixed(0)}%</span>
               <div style={{width:90,height:5,background:"#ff4d6d35",borderRadius:3}}>
                 <div style={{width:`${sentBull}%`,height:"100%",background:"#00e5a0",borderRadius:3,transition:"width .6s"}}/>
               </div>
-              <span style={{fontSize:12,color:"#ff4d6d",minWidth:52,textAlign:"right"}}>賣 {(100-sentBull).toFixed(0)}%</span>
+              <span style={{fontSize:12,color:"#cc2244",minWidth:52,textAlign:"right"}}>賣 {(100-sentBull).toFixed(0)}%</span>
             </div>
-            <div style={{width:1,height:26,background:"#ffffff10"}}/>
+            <div style={{width:1,height:26,background:"#d4d4d0"}}/>
             <div style={{textAlign:"right"}}>
-              <div style={{fontSize:11,color:"#ffffff35"}}>當日損益</div>
+              <div style={{fontSize:11,color:"#999999"}}>當日損益</div>
               <div style={{fontSize:15,fontWeight:700,color:pnl.day>=0?"#00e5a0":"#ff4d6d",fontFamily:"'IBM Plex Mono'"}}>{pnl.day>=0?"+":""}{fmt$(pnl.day)}</div>
             </div>
-            <div style={{width:1,height:26,background:"#ffffff10"}}/>
+            <div style={{width:1,height:26,background:"#d4d4d0"}}/>
             <div style={{textAlign:"right"}}>
-              <div style={{fontSize:11,color:"#ffffff35"}}>淨資產</div>
-              <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>{fmtK(nav)}</div>
+              <div style={{fontSize:11,color:"#999999"}}>淨資產</div>
+              <div style={{fontSize:15,fontWeight:700,color:"#111"}}>{fmtK(nav)}</div>
             </div>
           </div>
         </div>
@@ -1228,11 +1223,11 @@ function App(){
 
               {/* 曲線 + 情緒 */}
               <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:14}}>
-                <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,padding:18}}>
+                <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,padding:18}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                     <div>
-                      <div style={{fontSize:12,color:"#ffffff35",letterSpacing:1}}>權益曲線 — 90 日</div>
-                      <div style={{fontSize:20,fontWeight:700,color:"#ffa726",marginTop:3}}>{fmtK(nav)}</div>
+                      <div style={{fontSize:12,color:"#999999",letterSpacing:1}}>權益曲線 — 90 日</div>
+                      <div style={{fontSize:20,fontWeight:700,color:"#d4840a",marginTop:3}}>{fmtK(nav)}</div>
                     </div>
                     <div style={{display:"flex",gap:5}}>
                       {["1D","1W","1M","3M"].map((p,i)=>(
@@ -1245,8 +1240,8 @@ function App(){
                   </div>
                   <EqChart data={equity}/>
                 </div>
-                <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,padding:18,display:"flex",flexDirection:"column",gap:10}}>
-                  <div style={{fontSize:12,color:"#ffffff35",letterSpacing:1}}>
+                <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,padding:18,display:"flex",flexDirection:"column",gap:10}}>
+                  <div style={{fontSize:12,color:"#999999",letterSpacing:1}}>
                     期權情緒 {!uwKey&&<span style={{color:"#ffa72660",fontSize:11}}>（模擬）</span>}
                   </div>
                   {[{l:"買權溢價",v:fmtM(totalCall),c:"#00e5a0"},{l:"賣權溢價",v:fmtM(totalPut),c:"#ff4d6d"},
@@ -1255,7 +1250,7 @@ function App(){
                     {l:"掃單數",v:flow.filter(f=>f.sweep).length+" 筆",c:"#29b6f6"},
                   ].map(r=>(
                     <div key={r.l} style={{display:"flex",justifyContent:"space-between",borderBottom:"1px solid #ffffff06",paddingBottom:8}}>
-                      <span style={{fontSize:14,color:"#ffffff50"}}>{r.l}</span>
+                      <span style={{fontSize:14,color:"#808080"}}>{r.l}</span>
                       <span style={{fontSize:14,fontWeight:600,color:r.c}}>{r.v}</span>
                     </div>
                   ))}
@@ -1264,22 +1259,22 @@ function App(){
               </div>
 
               {/* 即時報價列 */}
-              <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,padding:"14px 16px"}}>
+              <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,padding:"14px 16px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <span style={{fontSize:12,color:"#ffffff35",letterSpacing:1}}>
+                  <span style={{fontSize:12,color:"#999999",letterSpacing:1}}>
                     即時報價 · Yahoo Finance {yfOk===true?"✓":yfOk===false?"✗":""}
                     {yfLoading&&<span style={{color:"#ffa72660",marginLeft:8}}>⟳ 更新中</span>}
                   </span>
                   <div onClick={loadPrices} className="chip" style={{fontSize:12,padding:"3px 10px",borderRadius:4,
-                    border:"1px solid #ffffff15",color:"#ffffff40",background:"#ffffff06"}}>↻ 刷新</div>
+                    border:"1px solid #cccccc",color:"#909090",background:"#ffffff06"}}>↻ 刷新</div>
                 </div>
                 <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                   {SYMS.slice(0,8).map(sym=>{
                     const q=priceOf(sym);
                     return(
                       <div key={sym} style={{padding:"8px 14px",background:"#0d0d12",border:"1px solid #ffffff0a",borderRadius:8,minWidth:96}}>
-                        <div style={{fontSize:14,fontWeight:700,color:"#fff"}}>{sym}</div>
-                        <div style={{fontSize:18,fontWeight:700,color:"#fff",fontFamily:"'IBM Plex Mono'"}}>{q.price}</div>
+                        <div style={{fontSize:14,fontWeight:700,color:"#111"}}>{sym}</div>
+                        <div style={{fontSize:18,fontWeight:700,color:"#111",fontFamily:"'IBM Plex Mono'"}}>{q.price}</div>
                         <div style={{fontSize:13,color:q.color}}>{q.pct}</div>
                       </div>
                     );
@@ -1289,18 +1284,18 @@ function App(){
 
               {/* 底部三欄 */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
-                <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,padding:16}}>
-                  <div style={{fontSize:12,color:"#ffffff35",letterSpacing:1,marginBottom:12}}>今日損益明細</div>
+                <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,padding:16}}>
+                  <div style={{fontSize:12,color:"#999999",letterSpacing:1,marginBottom:12}}>今日損益明細</div>
                   {[{l:"已實現",v:fmt$(pnl.day+1100),c:"#00e5a0"},{l:"未實現",v:fmt$(pnl.total-pnl.day-1100),c:"#ffa726"},
                     {l:"手續費",v:"-$318",c:"#ff4d6d"},{l:"淨損益",v:fmt$(pnl.day),c:"#00e5a0"}].map(r=>(
                     <div key={r.l} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #ffffff06"}}>
-                      <span style={{fontSize:14,color:"#ffffff50"}}>{r.l}</span>
+                      <span style={{fontSize:14,color:"#808080"}}>{r.l}</span>
                       <span style={{fontSize:14,fontWeight:600,color:r.c}}>{r.v}</span>
                     </div>
                   ))}
                 </div>
-                <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,padding:16}}>
-                  <div style={{fontSize:12,color:"#ffffff35",letterSpacing:1,marginBottom:12}}>持倉曝險</div>
+                <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,padding:16}}>
+                  <div style={{fontSize:12,color:"#999999",letterSpacing:1,marginBottom:12}}>持倉曝險</div>
                   {[{l:"總曝險",v:`${metrics.exp.toFixed(1)}%`,b:metrics.exp,c:"#ffa726"},
                     {l:"淨曝險",v:`${(metrics.exp*.62).toFixed(1)}%`,b:metrics.exp*.62,c:"#29b6f6"},
                     {l:"Beta曝險",v:`${(metrics.beta*100).toFixed(1)}%`,b:metrics.beta*100,c:"#ab47bc"},
@@ -1308,23 +1303,23 @@ function App(){
                   ].map(r=>(
                     <div key={r.l} style={{marginBottom:10}}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                        <span style={{fontSize:13,color:"#ffffff50"}}>{r.l}</span>
+                        <span style={{fontSize:13,color:"#808080"}}>{r.l}</span>
                         <span style={{fontSize:13,fontWeight:600,color:r.c}}>{r.v}</span>
                       </div>
-                      <div style={{height:4,background:"#ffffff08",borderRadius:2}}>
+                      <div style={{height:4,background:"#d8d8d4",borderRadius:2}}>
                         <div style={{width:`${r.b}%`,height:"100%",background:r.c,borderRadius:2,transition:"width .5s"}}/>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,padding:16}}>
-                  <div style={{fontSize:12,color:"#ffffff35",letterSpacing:1,marginBottom:12}}>
-                    前五大持倉 {yfOk===true&&<span style={{color:"#00e5a060",fontSize:11}}>· 真實報價</span>}
+                <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,padding:16}}>
+                  <div style={{fontSize:12,color:"#999999",letterSpacing:1,marginBottom:12}}>
+                    前五大持倉 {yfOk===true&&<span style={{color:"#00926a80",fontSize:11}}>· 真實報價</span>}
                   </div>
                   {positions.slice(0,5).map(p=>(
                     <div key={p.sym} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid #ffffff06"}}>
                       <div style={{display:"flex",alignItems:"center",gap:7}}>
-                        <span style={{fontSize:14,fontWeight:700,color:"#fff",width:48}}>{p.sym}</span>
+                        <span style={{fontSize:14,fontWeight:700,color:"#111",width:48}}>{p.sym}</span>
                         <Pill color={p.side==="多頭"?"#00e5a0":"#ff4d6d"}>{p.side}</Pill>
                         {p.live&&<div style={{width:5,height:5,borderRadius:"50%",background:"#00e5a0"}}/>}
                       </div>
@@ -1350,12 +1345,12 @@ function App(){
                 <KCard label="掃單訂單" value={flow.filter(f=>f.sweep).length}   sub="跨所掃單" color="#29b6f6"/>
               </div>
 
-              <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:14}}>
-                <span style={{fontSize:14,color:"#00e5a0",minWidth:90}}>買權 {sentBull.toFixed(1)}%</span>
+              <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:14}}>
+                <span style={{fontSize:14,color:"#00926a",minWidth:90}}>買權 {sentBull.toFixed(1)}%</span>
                 <div style={{flex:1,height:8,background:"#ff4d6d30",borderRadius:4,overflow:"hidden"}}>
                   <div style={{width:`${sentBull}%`,height:"100%",background:"linear-gradient(90deg,#00e5a0,#00e5a060)",borderRadius:4,transition:"width .6s"}}/>
                 </div>
-                <span style={{fontSize:14,color:"#ff4d6d",minWidth:90,textAlign:"right"}}>賣權 {(100-sentBull).toFixed(1)}%</span>
+                <span style={{fontSize:14,color:"#cc2244",minWidth:90,textAlign:"right"}}>賣權 {(100-sentBull).toFixed(1)}%</span>
                 {uwLoading&&<span style={{fontSize:12,color:"#ffa72670"}}>⟳ 更新中</span>}
               </div>
 
@@ -1366,22 +1361,22 @@ function App(){
                     border:`1px solid ${fFilter===f?f==="CALL"?"#00e5a050":f==="PUT"?"#ff4d6d50":"#ffa72650":"#ffffff12"}`,
                     color:fFilter===f?f==="CALL"?"#00e5a0":f==="PUT"?"#ff4d6d":"#ffa726":"#ffffff40"}}>{f}</div>
                 ))}
-                <div style={{width:1,height:22,background:"#ffffff10"}}/>
+                <div style={{width:1,height:22,background:"#d4d4d0"}}/>
                 <div onClick={()=>setFUnusual(v=>!v)} className="chip" style={{padding:"5px 14px",borderRadius:5,fontSize:13,
                   background:fUnusual?"#ba68c818":"#ffffff08",border:`1px solid ${fUnusual?"#ba68c850":"#ffffff12"}`,
                   color:fUnusual?"#ba68c8":"#ffffff40"}}>⚡ 僅異常</div>
                 <div style={{marginLeft:"auto",display:"flex",gap:5}}>
                   {["時間","溢價"].map(s=>(
                     <div key={s} onClick={()=>setFSort(s)} className="chip" style={{padding:"4px 10px",borderRadius:4,fontSize:12,
-                      background:fSort===s?"#ffffff12":"#ffffff06",border:"1px solid #ffffff10",
+                      background:fSort===s?"#ffffff12":"#ffffff06",border:"1px solid #d4d4d4",
                       color:fSort===s?"#fff":"#ffffff40"}}>{s}{s==="溢價"?" ↓":""}</div>
                   ))}
                 </div>
               </div>
 
-              <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,overflow:"hidden"}}>
                 <div style={{display:"grid",gridTemplateColumns:"90px 80px 60px 70px 65px 140px 100px 70px 70px 65px 1fr",
-                  padding:"10px 16px",borderBottom:"1px solid #ffffff08",fontSize:12,color:"#ffffff30",letterSpacing:1}}>
+                  padding:"10px 16px",borderBottom:"1px solid #e0e0e0",fontSize:12,color:"#aaaaaa",letterSpacing:1}}>
                   <span>時間</span><span>標的</span><span>類型</span><span>行使價</span><span>到期</span>
                   <span>溢價</span><span>量/未平倉</span><span>隱波</span><span>情緒</span><span>交易所</span><span>標記</span>
                 </div>
@@ -1391,22 +1386,22 @@ function App(){
                       gridTemplateColumns:"90px 80px 60px 70px 65px 140px 100px 70px 70px 65px 1fr",
                       padding:"11px 16px",borderBottom:"1px solid #ffffff05",alignItems:"center",
                       background:f.unusual?"#ba68c806":"transparent",transition:"background .12s"}}>
-                      <span style={{fontSize:12,color:"#ffffff35"}}>{String(f.time).slice(-8)}</span>
+                      <span style={{fontSize:12,color:"#999999"}}>{String(f.time).slice(-8)}</span>
                       <div style={{display:"flex",flexDirection:"column",gap:1}}>
-                        <span style={{fontSize:15,fontWeight:700,color:"#fff",lineHeight:1.2}}>{f.sym}</span>
+                        <span style={{fontSize:15,fontWeight:700,color:"#111",lineHeight:1.2}}>{f.sym}</span>
                         <span style={{fontSize:11,color:priceOf(f.sym).color,fontFamily:"monospace"}}>{priceOf(f.sym).price}</span>
                       </div>
                       <Pill color={typeColor(f.type)}>{f.type}</Pill>
-                      <span style={{fontSize:14,color:"#ffffff70"}}>${f.strike}</span>
-                      <span style={{fontSize:12,color:"#ffffff50"}}>{String(f.exp).slice(0,7)}</span>
+                      <span style={{fontSize:14,color:"#606060"}}>${f.strike}</span>
+                      <span style={{fontSize:12,color:"#808080"}}>{String(f.exp).slice(0,7)}</span>
                       <div style={{display:"flex",flexDirection:"column",gap:3}}>
                         <span style={{fontSize:13,fontWeight:600,color:f.prem>500000?"#ffa726":"#ffffff80"}}>{fmtM(f.prem)}</span>
-                        <div style={{height:3,borderRadius:2,background:"#ffffff10",overflow:"hidden"}}>
+                        <div style={{height:3,borderRadius:2,background:"#d4d4d0",overflow:"hidden"}}>
                           <div style={{height:"100%",borderRadius:2,width:`${Math.min(100,f.prem/Math.max(1,...filteredFlow.map(x=>x.prem))*100)}%`,background:f.type==="CALL"?"#00e5a060":"#ff4d6d60",transition:"width .3s"}}/>
                         </div>
                       </div>
-                      <span style={{fontSize:12,color:"#ffffff50"}}>{Number(f.size).toLocaleString()}/{Number(f.oi)>999?(Number(f.oi)/1000).toFixed(0)+"K":f.oi}</span>
-                      <span style={{fontSize:13,color:"#ffffff60"}}>{(Number(f.iv)*100).toFixed(0)}%</span>
+                      <span style={{fontSize:12,color:"#808080"}}>{Number(f.size).toLocaleString()}/{Number(f.oi)>999?(Number(f.oi)/1000).toFixed(0)+"K":f.oi}</span>
+                      <span style={{fontSize:13,color:"#707070"}}>{(Number(f.iv)*100).toFixed(0)}%</span>
                       <Pill color={sentColor(f.sent)}>{sentZh(f.sent)}</Pill>
                       <Tag>{f.exchange}</Tag>
                       <div style={{display:"flex",gap:4}}>
@@ -1429,9 +1424,9 @@ function App(){
                 <KCard label="最大單筆"     value={fmtM(Math.max(0,...dark.map(d=>d.notional)))} sub="單筆最高" color="#ff4d6d"/>
                 <KCard label="買方比例"     value={`${(dark.filter(d=>d.side==="BUY").length/Math.max(1,dark.length)*100).toFixed(0)}%`} sub="暗池成交量" color="#00e5a0"/>
               </div>
-              <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,overflow:"hidden"}}>
                 <div style={{display:"grid",gridTemplateColumns:"90px 80px 70px 90px 140px 80px 70px 80px",
-                  padding:"10px 16px",borderBottom:"1px solid #ffffff08",fontSize:12,color:"#ffffff30",letterSpacing:1}}>
+                  padding:"10px 16px",borderBottom:"1px solid #e0e0e0",fontSize:12,color:"#aaaaaa",letterSpacing:1}}>
                   <span>時間</span><span>標的</span><span>類型</span><span>成交價</span><span>成交額</span><span>股數</span><span>方向</span><span>場所</span>
                 </div>
                 <div style={{maxHeight:"calc(100vh - 220px)",overflow:"auto"}}>
@@ -1440,20 +1435,20 @@ function App(){
                       gridTemplateColumns:"90px 80px 70px 90px 140px 80px 70px 80px",
                       padding:"11px 16px",borderBottom:"1px solid #ffffff05",alignItems:"center",
                       background:d.notional>1e6?"#ab47bc06":"transparent",transition:"background .12s"}}>
-                      <span style={{fontSize:12,color:"#ffffff35"}}>{String(d.time).slice(-8)}</span>
+                      <span style={{fontSize:12,color:"#999999"}}>{String(d.time).slice(-8)}</span>
                       <div style={{display:"flex",flexDirection:"column",gap:1}}>
-                        <span style={{fontSize:15,fontWeight:700,color:"#fff",lineHeight:1.2}}>{d.sym}</span>
+                        <span style={{fontSize:15,fontWeight:700,color:"#111",lineHeight:1.2}}>{d.sym}</span>
                         <span style={{fontSize:11,color:priceOf(d.sym).color,fontFamily:"monospace"}}>{priceOf(d.sym).price}</span>
                       </div>
                       <Pill color={d.type==="BLOCK"?"#ffa726":"#ab47bc"}>{d.type==="BLOCK"?"大宗":"暗池"}</Pill>
-                      <span style={{fontSize:14,color:"#ffffff70"}}>${d.price}</span>
+                      <span style={{fontSize:14,color:"#606060"}}>${d.price}</span>
                       <div style={{display:"flex",flexDirection:"column",gap:3}}>
                         <span style={{fontSize:13,fontWeight:600,color:d.notional>1e6?"#ab47bc":"#ffffff80"}}>{fmtM(d.notional)}</span>
-                        <div style={{height:3,borderRadius:2,background:"#ffffff10",overflow:"hidden"}}>
+                        <div style={{height:3,borderRadius:2,background:"#d4d4d0",overflow:"hidden"}}>
                           <div style={{height:"100%",borderRadius:2,width:`${Math.min(100,d.notional/Math.max(1,...dark.map(x=>x.notional))*100)}%`,background:d.side==="BUY"?"#00e5a060":"#ff4d6d60",transition:"width .3s"}}/>
                         </div>
                       </div>
-                      <span style={{fontSize:13,color:"#ffffff50"}}>{Number(d.shares).toLocaleString()}</span>
+                      <span style={{fontSize:13,color:"#808080"}}>{Number(d.shares).toLocaleString()}</span>
                       <Pill color={d.side==="BUY"?"#00e5a0":"#ff4d6d"}>{d.side==="BUY"?"買":"賣"}</Pill>
                       <Tag>{d.venue}</Tag>
                     </div>
@@ -1467,7 +1462,7 @@ function App(){
           {tab==="chart"&&(
             <div style={{height:"100%",display:"flex",flexDirection:"column"}}>
               <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",
-                borderBottom:"1px solid #ffffff08",background:"#080810",flexShrink:0,flexWrap:"wrap"}}>
+                borderBottom:"1px solid #e0e0e0",background:"#080810",flexShrink:0,flexWrap:"wrap"}}>
                 {["NASDAQ:NVDA","NASDAQ:TSLA","NASDAQ:AAPL","NASDAQ:QQQ","NYSE:SPY","NASDAQ:AMZN","NASDAQ:META"].map(s=>(
                   <div key={s} onClick={()=>{setTvSym(s);setTvInput(s);}} className="chip" style={{
                     padding:"5px 12px",borderRadius:5,fontSize:14,
@@ -1480,7 +1475,7 @@ function App(){
                     placeholder="EXCHANGE:TICKER" style={{width:175}}
                     onKeyDown={e=>e.key==="Enter"&&setTvSym(tvInput)}/>
                   <div onClick={()=>setTvSym(tvInput)} style={{padding:"7px 14px",background:"#ffa72620",
-                    border:"1px solid #ffa72640",borderRadius:6,cursor:"pointer",fontSize:14,color:"#ffa726"}}>確認</div>
+                    border:"1px solid #ffa72640",borderRadius:6,cursor:"pointer",fontSize:14,color:"#d4840a"}}>確認</div>
                 </div>
               </div>
               <div style={{flex:1}}><TVChart symbol={tvSym}/></div>
@@ -1491,8 +1486,8 @@ function App(){
             <div className="anim" style={{maxHeight:"calc(100vh - 100px)",overflowY:"auto",paddingRight:8}}>
               <div style={{padding:"28px 32px 20px",background:"linear-gradient(135deg,#ffa72608,#0a0a0d)",border:"1px solid #ffa72620",borderRadius:14,marginBottom:32,position:"relative",overflow:"hidden"}}>
                 <div style={{position:"absolute",right:20,top:"50%",transform:"translateY(-50%)",fontFamily:"'Syne',sans-serif",fontSize:110,fontWeight:900,color:"#ffa72806",lineHeight:1,pointerEvents:"none"}}>期</div>
-                <div style={{fontSize:10,letterSpacing:2,color:"#ffa726",marginBottom:8}}>COMPLETE GUIDE</div>
-                <div style={{fontFamily:"'Syne',sans-serif",fontSize:26,fontWeight:900,marginBottom:6,color:"#fff"}}>期權完全手冊</div>
+                <div style={{fontSize:10,letterSpacing:2,color:"#d4840a",marginBottom:8}}>COMPLETE GUIDE</div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontSize:26,fontWeight:900,marginBottom:6,color:"#111"}}>期權完全手冊</div>
                 <div style={{fontSize:13,color:"#ffffff45",lineHeight:1.8}}>從零開始理解期權的本質、策略邏輯與實戰應用</div>
               </div>
               {GUIDE_DATA.map(ch=>(
@@ -1501,7 +1496,7 @@ function App(){
                   <div style={{fontFamily:"'Syne',sans-serif",fontSize:18,fontWeight:900,marginBottom:10,paddingBottom:8,borderBottom:"1px solid #ffffff0c"}}>{ch.t}</div>
                   <div style={{display:"flex",flexDirection:"column",gap:7}}>
                     {ch.items.map((item,i)=>(
-                      <div key={i} style={{background:"#131317",borderRadius:9,padding:"12px 14px",border:"1px solid #ffffff08",borderLeft:"3px solid "+ch.c+"40"}}>
+                      <div key={i} style={{background:"#eaeae6",borderRadius:9,padding:"12px 14px",border:"1px solid #e0e0e0",borderLeft:"3px solid "+ch.c+"40"}}>
                         <div style={{fontSize:13,fontWeight:700,color:ch.c,marginBottom:5}}>{item[0]}</div>
                         <div style={{fontSize:13,color:"#aaaaaa",lineHeight:1.8,whiteSpace:"pre-line"}}>{item[1]}</div>
                       </div>
@@ -1520,9 +1515,9 @@ function App(){
                 <KCard label="累計成交" value={strats.reduce((a,s)=>a+s.trades,0).toLocaleString()} sub="全部時間" color="#29b6f6"/>
                 <KCard label="最佳夏普" value={Math.max(...strats.map(s=>s.sharpe)).toFixed(2)} sub={strats.find(s=>s.sharpe===Math.max(...strats.map(s=>s.sharpe)))?.name} color="#00e5a0"/>
               </div>
-              <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,overflow:"hidden"}}>
                 <div style={{display:"grid",gridTemplateColumns:"1.5fr 80px 90px 55px 75px 90px 90px 55px",
-                  padding:"10px 18px",borderBottom:"1px solid #ffffff08",fontSize:12,color:"#ffffff30",letterSpacing:1}}>
+                  padding:"10px 18px",borderBottom:"1px solid #e0e0e0",fontSize:12,color:"#aaaaaa",letterSpacing:1}}>
                   <span>策略名稱</span><span>類型</span><span>股票池</span><span>週期</span><span>夏普</span><span>最大回撤</span><span>成交次數</span><span>開關</span>
                 </div>
                 {strats.map(s=>(
@@ -1532,11 +1527,11 @@ function App(){
                     opacity:s.on?1:.45,transition:"all .12s"}}>
                     <div style={{fontSize:15,fontWeight:600,color:s.on?"#fff":"#ffffff55"}}>{s.name}</div>
                     <Tag color="#ffa72680">{s.type}</Tag>
-                    <span style={{fontSize:14,color:"#ffffff50"}}>{s.uni}</span>
-                    <span style={{fontSize:14,fontFamily:"monospace",color:"#ffffff50"}}>{s.tf}</span>
-                    <span style={{fontSize:15,fontWeight:600,color:"#00e5a0"}}>{s.sharpe}</span>
-                    <span style={{fontSize:15,color:"#ff4d6d"}}>{s.dd}%</span>
-                    <span style={{fontSize:14,color:"#ffffff60"}}>{s.trades.toLocaleString()}</span>
+                    <span style={{fontSize:14,color:"#808080"}}>{s.uni}</span>
+                    <span style={{fontSize:14,fontFamily:"monospace",color:"#808080"}}>{s.tf}</span>
+                    <span style={{fontSize:15,fontWeight:600,color:"#00926a"}}>{s.sharpe}</span>
+                    <span style={{fontSize:15,color:"#cc2244"}}>{s.dd}%</span>
+                    <span style={{fontSize:14,color:"#707070"}}>{s.trades.toLocaleString()}</span>
                     <Toggle on={s.on} onChange={()=>setStrats(st=>st.map(x=>x.id===s.id?{...x,on:!x.on}:x))}/>
                   </div>
                 ))}
@@ -1548,15 +1543,15 @@ function App(){
           {tab==="signals"&&(
             <div className="anim" style={{display:"flex",flexDirection:"column",gap:14}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{fontSize:13,color:"#ffffff35",letterSpacing:1}}>即時訊號串流（量化策略輸出）</div>
+                <div style={{fontSize:13,color:"#999999",letterSpacing:1}}>即時訊號串流（量化策略輸出）</div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <div style={{width:6,height:6,borderRadius:"50%",background:"#00e5a0",animation:"pulse 1.5s infinite"}}/>
-                  <span style={{fontSize:13,color:"#00e5a0"}}>串流中 · {sigs.filter(s=>!s.filled).length} 筆待成交</span>
+                  <span style={{fontSize:13,color:"#00926a"}}>串流中 · {sigs.filter(s=>!s.filled).length} 筆待成交</span>
                 </div>
               </div>
-              <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,overflow:"hidden"}}>
                 <div style={{display:"grid",gridTemplateColumns:"110px 75px 65px 100px 160px 1fr 100px",
-                  padding:"10px 16px",borderBottom:"1px solid #ffffff08",fontSize:12,color:"#ffffff30",letterSpacing:1}}>
+                  padding:"10px 16px",borderBottom:"1px solid #e0e0e0",fontSize:12,color:"#aaaaaa",letterSpacing:1}}>
                   <span>時間</span><span>標的</span><span>訊號</span><span>價格</span><span>策略</span><span></span><span>狀態</span>
                 </div>
                 <div style={{maxHeight:"calc(100vh - 220px)",overflow:"auto"}}>
@@ -1565,10 +1560,10 @@ function App(){
                       gridTemplateColumns:"110px 75px 65px 100px 160px 1fr 100px",
                       padding:"13px 16px",borderBottom:"1px solid #ffffff05",alignItems:"center",
                       opacity:i>10?.3:1,transition:"background .12s"}}>
-                      <span style={{fontSize:13,fontFamily:"monospace",color:"#ffffff30"}}>{s.time}</span>
-                      <span style={{fontSize:16,fontWeight:700,color:"#fff"}}>{s.sym}</span>
+                      <span style={{fontSize:13,fontFamily:"monospace",color:"#aaaaaa"}}>{s.time}</span>
+                      <span style={{fontSize:16,fontWeight:700,color:"#111"}}>{s.sym}</span>
                       <span style={{fontSize:14,fontWeight:700,color:s.color}}>{s.type}</span>
-                      <span style={{fontSize:15,fontFamily:"monospace",color:"#ffffff60"}}>${s.price}</span>
+                      <span style={{fontSize:15,fontFamily:"monospace",color:"#707070"}}>${s.price}</span>
                       <Tag color="#ffa72660">{s.strat}</Tag>
                       <span/>
                       <span style={{fontSize:13,color:s.filled?"#00e5a0":"#ffa726"}}>{s.filled?"✓ 已成交":"⟳ 待成交"}</span>
@@ -1584,16 +1579,16 @@ function App(){
             <div className="anim" style={{display:"flex",flexDirection:"column",gap:14}}>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
                 {[
-                  {label:"VaR (95%)",    value:"-$12,400",sub:"1日歷史模擬",  color:"#ff4d6d"},
-                  {label:"組合 Beta",    value:metrics.beta.toFixed(2),sub:"對比 SPY",color:"#ffa726"},
+                  {label:"VaR (95%)",    value:"-$12,400",sub:"1日歷史模擬",  color:"#cc2244"},
+                  {label:"組合 Beta",    value:metrics.beta.toFixed(2),sub:"對比 SPY",color:"#d4840a"},
                   {label:"SPY 相關係數", value:"0.28",    sub:"30日滾動",     color:"#29b6f6"},
                   {label:"板塊集中度",   value:"34%",     sub:"科技類",       color:"#ab47bc"},
-                  {label:"槓桿倍數",     value:"1.2×",   sub:"總曝險/NAV",   color:"#ffa726"},
-                  {label:"流動性評級",   value:"A+",      sub:"清倉天數 <1",  color:"#00e5a0"},
+                  {label:"槓桿倍數",     value:"1.2×",   sub:"總曝險/NAV",   color:"#d4840a"},
+                  {label:"流動性評級",   value:"A+",      sub:"清倉天數 <1",  color:"#00926a"},
                 ].map(c=><KCard key={c.label} {...c}/>)}
               </div>
-              <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:10,padding:20}}>
-                <div style={{fontSize:13,color:"#ffffff35",letterSpacing:1,marginBottom:16}}>風控限額監控</div>
+              <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:10,padding:20}}>
+                <div style={{fontSize:13,color:"#999999",letterSpacing:1,marginBottom:16}}>風控限額監控</div>
                 {[
                   {l:"單一持倉上限",   used:4.2,        limit:10,  u:"% NAV"},
                   {l:"總曝險上限",     used:metrics.exp, limit:120, u:"% NAV"},
@@ -1607,13 +1602,13 @@ function App(){
                   return(
                     <div key={r.l} style={{marginBottom:16}}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <span style={{fontSize:15,color:"#ffffff70"}}>{r.l}</span>
+                        <span style={{fontSize:15,color:"#606060"}}>{r.l}</span>
                         <span style={{fontSize:14,fontFamily:"monospace"}}>
                           <span style={{color:c}}>{r.used}{r.u}</span>
-                          <span style={{color:"#ffffff25"}}> / {r.limit}{r.u}</span>
+                          <span style={{color:"#b0b0b0"}}> / {r.limit}{r.u}</span>
                         </span>
                       </div>
-                      <div style={{height:5,background:"#ffffff08",borderRadius:3}}>
+                      <div style={{height:5,background:"#d8d8d4",borderRadius:3}}>
                         <div style={{width:`${p}%`,height:"100%",background:c,borderRadius:3,
                           transition:"width .5s",boxShadow:`0 0 8px ${c}45`}}/>
                       </div>
@@ -1629,7 +1624,7 @@ function App(){
             <div className="anim" style={{display:"flex",flexDirection:"column",gap:16,height:"calc(100vh - 60px)",overflow:"auto",paddingBottom:32}}>
 
               {/* ── 研究頁 Tab 切換 ── */}
-              <div style={{display:"flex",gap:0,borderBottom:"1px solid #ffffff10",marginBottom:4}}>
+              <div style={{display:"flex",gap:0,borderBottom:"1px solid #d4d4d4",marginBottom:4}}>
                 {["新分析","報告庫"].map(function(t){
                   var isActive = researchTab===t;
                   var count = t==="報告庫" ? reports.length : 0;
@@ -1640,7 +1635,7 @@ function App(){
                         borderBottom:isActive?"2px solid #ffa726":"2px solid transparent",
                         marginBottom:-1,transition:"all 0.15s",display:"flex",alignItems:"center",gap:6}}>
                       {t==="新分析"?"✏️ 新分析":"📚 報告庫"}
-                      {count>0&&<span style={{fontSize:11,background:"#ffa72620",color:"#ffa726",
+                      {count>0&&<span style={{fontSize:11,background:"#ffa72620",color:"#d4840a",
                         padding:"1px 6px",borderRadius:10,fontWeight:700}}>{count}</span>}
                     </div>
                   );
@@ -1654,33 +1649,33 @@ function App(){
               {reminders.filter(r=>!r.fired).length>0&&(
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   {reminders.filter(r=>!r.fired).map(r=>(
-                    <div key={r.id} style={{background:"#ffa72610",border:"1px solid #ffa72630",borderRadius:10,
+                    <div key={r.id} style={{background:"#fff5e0",border:"1px solid #ffa72630",borderRadius:10,
                       padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
                       <span style={{fontSize:18}}>🔔</span>
                       <div style={{flex:1}}>
-                        <div style={{fontSize:14,color:"#ffa726",fontWeight:600,marginBottom:2}}>操作提醒</div>
-                        <div style={{fontSize:13,color:"#ffffff80"}}>{r.msg}</div>
-                        <div style={{fontSize:11,color:"#ffffff35",marginTop:3}}>
+                        <div style={{fontSize:14,color:"#d4840a",fontWeight:600,marginBottom:2}}>操作提醒</div>
+                        <div style={{fontSize:13,color:"#555555"}}>{r.msg}</div>
+                        <div style={{fontSize:11,color:"#999999",marginTop:3}}>
                           提醒時間：{new Date(r.at).toLocaleString("zh-TW")}
                         </div>
                       </div>
-                      <div onClick={()=>dismissReminder(r.id)} style={{cursor:"pointer",color:"#ffffff30",fontSize:18,padding:"0 4px"}}>×</div>
+                      <div onClick={()=>dismissReminder(r.id)} style={{cursor:"pointer",color:"#aaaaaa",fontSize:18,padding:"0 4px"}}>×</div>
                     </div>
                   ))}
                 </div>
               )}
 
               {/* 輸入區 */}
-              <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:12,padding:20}}>
-                <div style={{fontSize:13,color:"#ffffff35",letterSpacing:1,marginBottom:12}}>貼上研究報告</div>
+              <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:12,padding:20}}>
+                <div style={{fontSize:13,color:"#999999",letterSpacing:1,marginBottom:12}}>貼上研究報告</div>
                 <input value={reportTitle} onChange={e=>setReportTitle(e.target.value)}
                   placeholder="報告標題（選填）"
-                  style={{width:"100%",background:"#0b0b0e",border:"1px solid #ffffff12",borderRadius:7,
-                    padding:"8px 12px",fontSize:14,color:"#fff",marginBottom:10,boxSizing:"border-box"}}/>
+                  style={{width:"100%",background:"#f0f0ec",border:"1px solid #ffffff12",borderRadius:7,
+                    padding:"8px 12px",fontSize:14,color:"#111",marginBottom:10,boxSizing:"border-box"}}/>
                 <textarea value={reportInput} onChange={e=>setReportInput(e.target.value)}
                   placeholder="貼上你的研究報告內容、市場分析、個股觀點..."
-                  style={{width:"100%",height:160,background:"#0b0b0e",border:"1px solid #ffffff12",
-                    borderRadius:7,padding:"10px 12px",fontSize:17,color:"#f5f5f5",resize:"vertical",
+                  style={{width:"100%",height:160,background:"#f0f0ec",border:"1px solid #ffffff12",
+                    borderRadius:7,padding:"10px 12px",fontSize:17,color:"#1e1e1e",resize:"vertical",
                     lineHeight:1.7,boxSizing:"border-box"}}/>
                 <div style={{display:"flex",gap:10,marginTop:12}}>
                   <div onClick={()=>reportInput.trim()&&analyzeReport(reportInput,null)}
@@ -1692,14 +1687,14 @@ function App(){
                   {aiResult&&(
                     <div onClick={saveReport}
                       style={{padding:"9px 20px",background:"#00e5a015",border:"1px solid #00e5a040",
-                        borderRadius:7,cursor:"pointer",fontSize:14,color:"#00e5a0",fontWeight:600}}>
+                        borderRadius:7,cursor:"pointer",fontSize:14,color:"#00926a",fontWeight:600}}>
                       ✓ 儲存報告
                     </div>
                   )}
                   {reportInput.trim()&&!aiResult&&(
                     <div onClick={saveReport}
-                      style={{padding:"9px 20px",background:"#ffffff08",border:"1px solid #ffffff15",
-                        borderRadius:7,cursor:"pointer",fontSize:14,color:"#ffffff50"}}>
+                      style={{padding:"9px 20px",background:"#d8d8d4",border:"1px solid #cccccc",
+                        borderRadius:7,cursor:"pointer",fontSize:14,color:"#808080"}}>
                       直接儲存（不分析）
                     </div>
                   )}
@@ -1708,22 +1703,22 @@ function App(){
 
               {/* AI 分析結果 */}
               {aiResult&&(
-                <div style={{background:"#131317",border:"1px solid #00e5a020",borderRadius:12,padding:20}}>
+                <div style={{background:"#eaeae6",border:"1px solid #00e5a020",borderRadius:12,padding:20}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-                    <div style={{fontSize:13,color:"#00e5a0",letterSpacing:1,fontWeight:600}}>⚡ AI 分析結果</div>
-                    <div style={{fontSize:11,color:"#ffffff25"}}>基於最新期權流 + 暗池數據</div>
+                    <div style={{fontSize:13,color:"#00926a",letterSpacing:1,fontWeight:600}}>⚡ AI 分析結果</div>
+                    <div style={{fontSize:11,color:"#b0b0b0"}}>基於最新期權流 + 暗池數據</div>
                   </div>
                   <div>{renderAiCards(aiResult)}</div>
                   {/* 快速新增提醒按鈕 */}
-                  <div style={{marginTop:16,paddingTop:14,borderTop:"1px solid #ffffff08"}}>
-                    <div style={{fontSize:12,color:"#ffffff35",marginBottom:8}}>快速新增提醒：</div>
+                  <div style={{marginTop:16,paddingTop:14,borderTop:"1px solid #e0e0e0"}}>
+                    <div style={{fontSize:12,color:"#999999",marginBottom:8}}>快速新增提醒：</div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                       {["1天後複查","3天後操作","1週後檢視","財報前提醒（7天）"].map((label,i)=>{
                         const days=[1,3,7,7][i];
                         return(
                           <div key={label} onClick={()=>addReminder(`${reportTitle||"研究報告"}：${label}`,days)}
-                            style={{padding:"5px 12px",background:"#ffa72610",border:"1px solid #ffa72625",
-                              borderRadius:5,cursor:"pointer",fontSize:12,color:"#ffa726"}}>
+                            style={{padding:"5px 12px",background:"#fff5e0",border:"1px solid #ffa72625",
+                              borderRadius:5,cursor:"pointer",fontSize:12,color:"#d4840a"}}>
                             🔔 {label}
                           </div>
                         );
@@ -1741,15 +1736,15 @@ function App(){
               <React.Fragment>
               {/* 已儲存報告列表 */}
               {reports.length===0?(
-                <div style={{textAlign:"center",padding:60,color:"#ffffff25",fontSize:16}}>
+                <div style={{textAlign:"center",padding:60,color:"#b0b0b0",fontSize:16}}>
                   <div style={{fontSize:48,marginBottom:16}}>📭</div>
                   <div>尚無儲存的報告</div>
-                  <div style={{fontSize:13,marginTop:8,color:"#ffffff15"}}>分析完成後會自動儲存</div>
+                  <div style={{fontSize:13,marginTop:8,color:"#cccccc"}}>分析完成後會自動儲存</div>
                 </div>
               ):(
-                <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:12,padding:20}}>
+                <div style={{background:"#eaeae6",border:"1px solid #dadada",borderRadius:12,padding:20}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:8}}>
-                    <div style={{fontSize:13,color:"#ffffff35"}}>已儲存報告（{reports.length}份）</div>
+                    <div style={{fontSize:13,color:"#999999"}}>已儲存報告（{reports.length}份）</div>
                     <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                       {["全部","財報","總經","技術","產業","期權","其他"].map(function(c){
                         return(
@@ -1759,7 +1754,7 @@ function App(){
                               border:"1px solid "+(reportCat===c?"#ffa72650":"#ffffff10"),
                               color:reportCat===c?"#ffa726":"#ffffff40",fontWeight:reportCat===c?700:400}}>
                             {c}
-                            {c!=="全部"&&<span style={{marginLeft:3,fontSize:10,color:"#ffffff30"}}>({reports.filter(function(x){return (x.category||"其他")===c;}).length})</span>}
+                            {c!=="全部"&&<span style={{marginLeft:3,fontSize:10,color:"#aaaaaa"}}>({reports.filter(function(x){return (x.category||"其他")===c;}).length})</span>}
                           </div>
                         );
                       })}
@@ -1774,7 +1769,7 @@ function App(){
                         onClick={()=>setSelectedReport(selectedReport?.id===r.id?null:r)}>
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
                           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                            <div style={{fontSize:15,fontWeight:600,color:"#fff"}}>{r.title}</div>
+                            <div style={{fontSize:15,fontWeight:600,color:"#111"}}>{r.title}</div>
                             {r.category&&r.category!=="其他"&&(
                               <span style={{fontSize:10,padding:"2px 7px",borderRadius:3,
                                 background:({財報:"#29b6f620",總經:"#ab47bc20",技術:"#ffa72620",產業:"#00e5a020",期權:"#ff4d6d20"})[r.category]||"#ffffff10",
@@ -1784,27 +1779,27 @@ function App(){
                             )}
                           </div>
                           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                            {r.aiAnalysis&&<span style={{fontSize:11,color:"#00e5a060",background:"#00e5a010",padding:"2px 8px",borderRadius:3}}>已分析</span>}
-                            <span style={{fontSize:12,color:"#ffa726",background:"#ffa72615",padding:"2px 8px",borderRadius:3,fontWeight:600}}>
+                            {r.aiAnalysis&&<span style={{fontSize:11,color:"#00926a80",background:"#e0faf3",padding:"2px 8px",borderRadius:3}}>已分析</span>}
+                            <span style={{fontSize:12,color:"#d4840a",background:"#fff0d4",padding:"2px 8px",borderRadius:3,fontWeight:600}}>
                               📅 {r.timeStr||new Date(r.ts).toLocaleString("zh-TW")}
                             </span>
-                            <span style={{fontSize:11,color:"#ffffff35"}}>
+                            <span style={{fontSize:11,color:"#999999"}}>
                               （{Math.floor((Date.now()-r.ts)/86400000)}天前）
                             </span>
                             <span onClick={e=>{e.stopPropagation();setReports(prev=>prev.filter(x=>x.id!==r.id));}}
-                              style={{color:"#ffffff25",cursor:"pointer",fontSize:16,padding:"0 4px"}}>×</span>
+                              style={{color:"#b0b0b0",cursor:"pointer",fontSize:16,padding:"0 4px"}}>×</span>
                           </div>
                         </div>
                         {selectedReport?.id===r.id&&(
-                          <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid #ffffff08"}}>
-                            <div style={{fontSize:16,color:"#ffffff70",lineHeight:1.9,marginBottom:r.aiAnalysis?14:0,
+                          <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid #e0e0e0"}}>
+                            <div style={{fontSize:16,color:"#606060",lineHeight:1.9,marginBottom:r.aiAnalysis?14:0,
                               maxHeight:150,overflow:"auto",whiteSpace:"pre-wrap"}}>{r.content}</div>
                             {r.aiAnalysis&&(
                               <>
                                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                                <div style={{fontSize:12,color:"#00e5a0"}}>⚡ AI 分析</div>
+                                <div style={{fontSize:12,color:"#00926a"}}>⚡ AI 分析</div>
                                 <div onClick={e=>{e.stopPropagation();setSelectedReport(null);setReportInput(r.content);setReportTitle(r.title+" [驗證]");analyzeReport(r.content,r);}}
-                                  style={{fontSize:11,color:"#ffa726",background:"#ffa72615",border:"1px solid #ffa72630",
+                                  style={{fontSize:11,color:"#d4840a",background:"#fff0d4",border:"1px solid #ffa72630",
                                     padding:"3px 10px",borderRadius:4,cursor:"pointer"}}>
                                   🔄 重新驗證
                                 </div>
@@ -1815,8 +1810,8 @@ function App(){
                                     const days=[1,3,7][i];
                                     return(
                                       <div key={label} onClick={e=>{e.stopPropagation();addReminder(`${r.title}：${label}`,days);}}
-                                        style={{padding:"4px 10px",background:"#ffa72610",border:"1px solid #ffa72625",
-                                          borderRadius:5,cursor:"pointer",fontSize:12,color:"#ffa726"}}>
+                                        style={{padding:"4px 10px",background:"#fff5e0",border:"1px solid #ffa72625",
+                                          borderRadius:5,cursor:"pointer",fontSize:12,color:"#d4840a"}}>
                                         🔔 {label}
                                       </div>
                                     );
@@ -1842,16 +1837,16 @@ function App(){
       {loginOpen&&(
         <div style={{position:"fixed",inset:0,background:"#000000cc",zIndex:9999,
           display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <div style={{background:"#0f0f14",border:"1px solid #ffffff15",borderRadius:14,
-            padding:"36px 32px",width:360,boxShadow:"0 20px 60px #000"}}>
+          <div style={{background:"#e4e4e0",border:"1px solid #cccccc",borderRadius:14,
+            padding:"36px 32px",width:360,boxShadow:"0 8px 32px #00000020"}}>
             {/* Logo */}
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24}}>
               <div style={{width:36,height:36,borderRadius:9,
                 background:"linear-gradient(135deg,#ffa726,#ff6d00)",
                 display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,fontWeight:900,color:"#000"}}>D</div>
               <div>
-                <div style={{fontFamily:"'Syne',sans-serif",fontSize:14,fontWeight:900,color:"#fff"}}>DONDONHAPPY</div>
-                <div style={{fontSize:10,color:"#ffffff35",letterSpacing:1.5}}>期權 · 量化 · 暗池</div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontSize:14,fontWeight:900,color:"#111"}}>DONDONHAPPY</div>
+                <div style={{fontSize:10,color:"#999999",letterSpacing:1.5}}>期權 · 量化 · 暗池</div>
               </div>
             </div>
 
@@ -1870,41 +1865,41 @@ function App(){
 
             {loginMode==="login"?(
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                <div style={{fontSize:12,color:"#ffffff40"}}>輸入你設定的密碼解鎖 UW API 金鑰</div>
+                <div style={{fontSize:12,color:"#909090"}}>輸入你設定的密碼解鎖 UW API 金鑰</div>
                 <input
                   type="password" value={loginPwd}
                   onChange={e=>setLoginPwd(e.target.value)}
                   onKeyDown={e=>e.key==="Enter"&&handleLogin()}
                   placeholder="密碼" autoFocus
                   style={{padding:"10px 12px",fontSize:14,borderRadius:7,
-                    background:"#0a0a0d",border:"1px solid #ffffff20",color:"#fff"}}/>
+                    background:"#0a0a0d",border:"1px solid #ffffff20",color:"#111"}}/>
                 <div onClick={handleLogin}
                   style={{padding:"11px",borderRadius:7,cursor:"pointer",textAlign:"center",
                     background:loginLoading?"#ffffff10":"#ffa72625",
-                    border:"1px solid #ffa72650",fontSize:14,color:"#ffa726",fontWeight:700}}>
+                    border:"1px solid #ffa72650",fontSize:14,color:"#d4840a",fontWeight:700}}>
                   {loginLoading?"解密中…":"登入"}
                 </div>
               </div>
             ):(
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                <div style={{fontSize:12,color:"#ffffff40"}}>設定一組密碼保護你的 UW API 金鑰，儲存於雲端</div>
+                <div style={{fontSize:12,color:"#909090"}}>設定一組密碼保護你的 UW API 金鑰，儲存於雲端</div>
                 <input
                   type="text" value={setupKey}
                   onChange={e=>setSetupKey(e.target.value)}
                   placeholder="UW API 金鑰 (UUID 格式)"
                   style={{padding:"10px 12px",fontSize:13,borderRadius:7,
-                    background:"#0a0a0d",border:"1px solid #ffffff20",color:"#fff"}}/>
+                    background:"#0a0a0d",border:"1px solid #ffffff20",color:"#111"}}/>
                 <input
                   type="password" value={setupPwd}
                   onChange={e=>setSetupPwd(e.target.value)}
                   onKeyDown={e=>e.key==="Enter"&&handleSetup()}
                   placeholder="設定密碼（至少 6 字元）"
                   style={{padding:"10px 12px",fontSize:14,borderRadius:7,
-                    background:"#0a0a0d",border:"1px solid #ffffff20",color:"#fff"}}/>
+                    background:"#0a0a0d",border:"1px solid #ffffff20",color:"#111"}}/>
                 <div onClick={handleSetup}
                   style={{padding:"11px",borderRadius:7,cursor:"pointer",textAlign:"center",
                     background:loginLoading?"#ffffff10":"#ffa72625",
-                    border:"1px solid #ffa72650",fontSize:14,color:"#ffa726",fontWeight:700}}>
+                    border:"1px solid #ffa72650",fontSize:14,color:"#d4840a",fontWeight:700}}>
                   {loginLoading?"儲存中…":"加密儲存金鑰"}
                 </div>
               </div>
@@ -1921,7 +1916,7 @@ function App(){
 
             {/* 跳過 */}
             <div onClick={()=>setLoginOpen(false)}
-              style={{marginTop:16,textAlign:"center",fontSize:12,color:"#ffffff25",cursor:"pointer"}}>
+              style={{marginTop:16,textAlign:"center",fontSize:12,color:"#b0b0b0",cursor:"pointer"}}>
               略過，使用模擬數據
             </div>
           </div>
