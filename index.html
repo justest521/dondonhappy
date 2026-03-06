@@ -545,6 +545,7 @@ const NAV_ITEMS=[
   {id:"strategies",icon:"⬡",label:"策略"},
   {id:"signals",   icon:"⊛",label:"訊號"},
   {id:"risk",      icon:"◬",label:"風控"},
+  {id:"research",  icon:"📋",label:"研究"},
 ];
 const sentColor=s=>s==="BULLISH"?"#00e5a0":s==="BEARISH"?"#ff4d6d":"#888";
 const sentZh   =s=>s==="BULLISH"?"看漲":s==="BEARISH"?"看跌":"中性";
@@ -590,6 +591,34 @@ function App(){
 
   // flow filters
   const [fFilter,setFFilter]  = useState("全部");
+
+  // ── 研究報告 ──
+  const [reports,setReports]       = useState(()=>{
+    try{
+      const raw=localStorage.getItem("ddh_reports");
+      if(!raw)return[];
+      const arr=JSON.parse(raw);
+      const cutoff=Date.now()-180*24*3600*1000; // 6個月
+      return arr.filter(r=>r.ts>cutoff);
+    }catch{return[];}
+  });
+  const [flowSnaps,setFlowSnaps]   = useState(()=>{
+    try{
+      const raw=localStorage.getItem("ddh_flowsnaps");
+      if(!raw)return[];
+      const arr=JSON.parse(raw);
+      const cutoff=Date.now()-30*24*3600*1000; // 1個月
+      return arr.filter(s=>s.ts>cutoff);
+    }catch{return[];}
+  });
+  const [reportInput,setReportInput] = useState("");
+  const [reportTitle,setReportTitle] = useState("");
+  const [aiLoading,setAiLoading]     = useState(false);
+  const [aiResult,setAiResult]       = useState(null);
+  const [selectedReport,setSelectedReport] = useState(null);
+  const [reminders,setReminders]     = useState(()=>{
+    try{return JSON.parse(localStorage.getItem("ddh_reminders")||"[]");}catch{return[];}
+  });
   const [fSort,setFSort]      = useState("時間");
   const [fUnusual,setFUnusual]= useState(false);
 
@@ -721,6 +750,112 @@ function App(){
     const chg=p.price-p.prev,cp=chg/(p.prev||1)*100;
     return{price:"$"+p.price.toFixed(2),pct:(chg>=0?"+":"")+cp.toFixed(2)+"%",color:chg>=0?"#00e5a0":"#ff4d6d"};
   };
+
+  // 儲存報告
+  useEffect(()=>{
+    try{localStorage.setItem("ddh_reports",JSON.stringify(reports));}catch{}
+  },[reports]);
+  // 儲存提醒
+  useEffect(()=>{
+    try{localStorage.setItem("ddh_reminders",JSON.stringify(reminders));}catch{}
+  },[reminders]);
+  // 每次 flow/dark 更新時快照（限頻：每10分鐘最多一次）
+  useEffect(()=>{
+    if(!flow.length&&!dark.length)return;
+    setFlowSnaps(prev=>{
+      const cutoff=Date.now()-30*24*3600*1000;
+      const recent=prev.filter(s=>s.ts>cutoff);
+      const last=recent[recent.length-1];
+      if(last&&Date.now()-last.ts<600000)return recent; // 10分鐘節流
+      const snap={ts:Date.now(),flow:flow.slice(0,20),dark:dark.slice(0,20)};
+      const next=[...recent,snap].slice(-200);
+      try{localStorage.setItem("ddh_flowsnaps",JSON.stringify(next));}catch{}
+      return next;
+    });
+  },[flow,dark]);
+  // 瀏覽器推播提醒
+  useEffect(()=>{
+    if(!reminders.length)return;
+    const id=setInterval(()=>{
+      const now=Date.now();
+      reminders.forEach(r=>{
+        if(!r.fired&&r.at<=now){
+          if(Notification.permission==="granted"){
+            new Notification("📋 研究報告提醒",{body:r.msg,icon:"/favicon.ico"});
+          }
+          setReminders(prev=>prev.map(x=>x.id===r.id?{...x,fired:true}:x));
+        }
+      });
+    },30000);
+    return()=>clearInterval(id);
+  },[reminders]);
+
+  /* ── AI 分析研究報告 ── */
+  const analyzeReport = async(reportText)=>{
+    setAiLoading(true); setAiResult(null);
+    try{
+      const recentFlow = flow.slice(0,15).map(f=>`${f.time} ${f.sym} ${f.type} $${f.strike} ${f.exp} ${fmtM(f.prem)} ${f.unusual?"[異常]":""} ${f.sweep?"[掃單]":""}`).join("
+");
+      const recentDark = dark.slice(0,10).map(d=>`${d.time} ${d.sym} ${d.type} $${d.price} ${fmtM(d.notional)} ${d.side}`).join("
+");
+      const prompt = `你是專業美股期權分析師。根據以下研究報告，結合期權流和暗池數據，給出具體的期權操作建議。
+
+【研究報告】
+${reportText}
+
+【最新期權流（前15筆）】
+${recentFlow||"暫無數據"}
+
+【最新暗池數據（前10筆）】
+${recentDark||"暫無數據"}
+
+請分析：
+1. 報告中提到的股票，目前期權流/暗池有無相關信號
+2. 根據報告觀點，推薦2-3個最適合的期權策略（含具體執行方式、行使價選擇建議、到期日建議）
+3. 風險提示
+4. 建議的操作時間點（給出具體條件，例如：當股價突破XX時、財報前N天等）
+5. 給出1-2個提醒設定建議（格式：[提醒] 條件 | 建議操作）
+
+用繁體中文回答，結構清晰，重點突出。`;
+
+      const resp = await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:1500,
+          messages:[{role:"user",content:prompt}]
+        })
+      });
+      const data = await resp.json();
+      const text = data?.content?.[0]?.text||"分析失敗，請重試";
+      setAiResult(text);
+    }catch(e){
+      setAiResult("AI 分析失敗："+e.message);
+    }
+    setAiLoading(false);
+  };
+
+  const saveReport = ()=>{
+    if(!reportInput.trim())return;
+    const r={
+      id:Date.now(),
+      ts:Date.now(),
+      title:reportTitle.trim()||"研究報告 "+new Date().toLocaleDateString("zh-TW"),
+      content:reportInput.trim(),
+      aiAnalysis:aiResult,
+    };
+    setReports(prev=>[r,...prev]);
+    setReportInput(""); setReportTitle(""); setAiResult(null);
+  };
+
+  const addReminder = (msg, daysFromNow=1)=>{
+    if(Notification.permission==="default") Notification.requestPermission();
+    const r={id:Date.now(),msg,at:Date.now()+daysFromNow*86400000,fired:false,created:Date.now()};
+    setReminders(prev=>[r,...prev]);
+  };
+
+  const dismissReminder = id=>setReminders(prev=>prev.filter(r=>r.id!==id));
 
   /* ── 渲染 ───────────────────────────────────────────────────────────────── */
   return(
@@ -1294,6 +1429,148 @@ function App(){
                   );
                 })}
               </div>
+            </div>
+          )}
+
+
+          {tab==="research"&&(
+            <div className="anim" style={{display:"flex",flexDirection:"column",gap:16,height:"calc(100vh - 60px)",overflow:"auto",paddingBottom:32}}>
+
+              {/* 提醒卡片 */}
+              {reminders.filter(r=>!r.fired).length>0&&(
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {reminders.filter(r=>!r.fired).map(r=>(
+                    <div key={r.id} style={{background:"#ffa72610",border:"1px solid #ffa72630",borderRadius:10,
+                      padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
+                      <span style={{fontSize:18}}>🔔</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:14,color:"#ffa726",fontWeight:600,marginBottom:2}}>操作提醒</div>
+                        <div style={{fontSize:13,color:"#ffffff80"}}>{r.msg}</div>
+                        <div style={{fontSize:11,color:"#ffffff35",marginTop:3}}>
+                          提醒時間：{new Date(r.at).toLocaleString("zh-TW")}
+                        </div>
+                      </div>
+                      <div onClick={()=>dismissReminder(r.id)} style={{cursor:"pointer",color:"#ffffff30",fontSize:18,padding:"0 4px"}}>×</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 輸入區 */}
+              <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:12,padding:20}}>
+                <div style={{fontSize:13,color:"#ffffff35",letterSpacing:1,marginBottom:12}}>貼上研究報告</div>
+                <input value={reportTitle} onChange={e=>setReportTitle(e.target.value)}
+                  placeholder="報告標題（選填）"
+                  style={{width:"100%",background:"#0b0b0e",border:"1px solid #ffffff12",borderRadius:7,
+                    padding:"8px 12px",fontSize:14,color:"#fff",marginBottom:10,boxSizing:"border-box"}}/>
+                <textarea value={reportInput} onChange={e=>setReportInput(e.target.value)}
+                  placeholder="貼上你的研究報告內容、市場分析、個股觀點..."
+                  style={{width:"100%",height:160,background:"#0b0b0e",border:"1px solid #ffffff12",
+                    borderRadius:7,padding:"10px 12px",fontSize:14,color:"#fff",resize:"vertical",
+                    lineHeight:1.7,boxSizing:"border-box"}}/>
+                <div style={{display:"flex",gap:10,marginTop:12}}>
+                  <div onClick={()=>reportInput.trim()&&analyzeReport(reportInput)}
+                    style={{padding:"9px 20px",background:aiLoading?"#ffffff10":"#ffa72620",
+                      border:"1px solid #ffa72640",borderRadius:7,cursor:"pointer",
+                      fontSize:14,color:aiLoading?"#ffffff40":"#ffa726",fontWeight:600,transition:"all .15s"}}>
+                    {aiLoading?"⟳ AI 分析中...":"⚡ AI 分析"}
+                  </div>
+                  {aiResult&&(
+                    <div onClick={saveReport}
+                      style={{padding:"9px 20px",background:"#00e5a015",border:"1px solid #00e5a040",
+                        borderRadius:7,cursor:"pointer",fontSize:14,color:"#00e5a0",fontWeight:600}}>
+                      ✓ 儲存報告
+                    </div>
+                  )}
+                  {reportInput.trim()&&!aiResult&&(
+                    <div onClick={saveReport}
+                      style={{padding:"9px 20px",background:"#ffffff08",border:"1px solid #ffffff15",
+                        borderRadius:7,cursor:"pointer",fontSize:14,color:"#ffffff50"}}>
+                      直接儲存（不分析）
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* AI 分析結果 */}
+              {aiResult&&(
+                <div style={{background:"#131317",border:"1px solid #00e5a020",borderRadius:12,padding:20}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+                    <div style={{fontSize:13,color:"#00e5a0",letterSpacing:1,fontWeight:600}}>⚡ AI 分析結果</div>
+                    <div style={{fontSize:11,color:"#ffffff25"}}>基於最新期權流 + 暗池數據</div>
+                  </div>
+                  <div style={{fontSize:14,color:"#ffffffcc",lineHeight:2,whiteSpace:"pre-wrap"}}>{aiResult}</div>
+                  {/* 快速新增提醒按鈕 */}
+                  <div style={{marginTop:16,paddingTop:14,borderTop:"1px solid #ffffff08"}}>
+                    <div style={{fontSize:12,color:"#ffffff35",marginBottom:8}}>快速新增提醒：</div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      {["1天後複查","3天後操作","1週後檢視","財報前提醒（7天）"].map((label,i)=>{
+                        const days=[1,3,7,7][i];
+                        return(
+                          <div key={label} onClick={()=>addReminder(`${reportTitle||"研究報告"}：${label}`,days)}
+                            style={{padding:"5px 12px",background:"#ffa72610",border:"1px solid #ffa72625",
+                              borderRadius:5,cursor:"pointer",fontSize:12,color:"#ffa726"}}>
+                            🔔 {label}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 已儲存報告列表 */}
+              {reports.length>0&&(
+                <div style={{background:"#131317",border:"1px solid #ffffff0c",borderRadius:12,padding:20}}>
+                  <div style={{fontSize:13,color:"#ffffff35",letterSpacing:1,marginBottom:14}}>
+                    已儲存報告（{reports.length}份，保留6個月）
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    {reports.map(r=>(
+                      <div key={r.id}
+                        style={{background:selectedReport?.id===r.id?"#0b0b0e":"#0f0f14",
+                          border:`1px solid ${selectedReport?.id===r.id?"#ffa72630":"#ffffff08"}`,
+                          borderRadius:9,padding:"14px 16px",cursor:"pointer",transition:"all .15s"}}
+                        onClick={()=>setSelectedReport(selectedReport?.id===r.id?null:r)}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                          <div style={{fontSize:15,fontWeight:600,color:"#fff"}}>{r.title}</div>
+                          <div style={{display:"flex",alignItems:"center",gap:10}}>
+                            {r.aiAnalysis&&<span style={{fontSize:11,color:"#00e5a060",background:"#00e5a010",
+                              padding:"2px 8px",borderRadius:3}}>已分析</span>}
+                            <span style={{fontSize:12,color:"#ffffff30"}}>{new Date(r.ts).toLocaleDateString("zh-TW")}</span>
+                            <span onClick={e=>{e.stopPropagation();setReports(prev=>prev.filter(x=>x.id!==r.id));}}
+                              style={{color:"#ffffff25",cursor:"pointer",fontSize:16,padding:"0 4px"}}>×</span>
+                          </div>
+                        </div>
+                        {selectedReport?.id===r.id&&(
+                          <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid #ffffff08"}}>
+                            <div style={{fontSize:13,color:"#ffffff50",lineHeight:1.8,marginBottom:r.aiAnalysis?14:0,
+                              maxHeight:120,overflow:"auto",whiteSpace:"pre-wrap"}}>{r.content}</div>
+                            {r.aiAnalysis&&(
+                              <>
+                                <div style={{fontSize:12,color:"#00e5a0",marginBottom:8}}>⚡ AI 分析</div>
+                                <div style={{fontSize:13,color:"#ffffffcc",lineHeight:1.9,whiteSpace:"pre-wrap"}}>{r.aiAnalysis}</div>
+                                <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>
+                                  {["1天後複查","3天後操作","1週後檢視"].map((label,i)=>{
+                                    const days=[1,3,7][i];
+                                    return(
+                                      <div key={label} onClick={e=>{e.stopPropagation();addReminder(`${r.title}：${label}`,days);}}
+                                        style={{padding:"4px 10px",background:"#ffa72610",border:"1px solid #ffa72625",
+                                          borderRadius:5,cursor:"pointer",fontSize:12,color:"#ffa726"}}>
+                                        🔔 {label}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
