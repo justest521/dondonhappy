@@ -1477,7 +1477,7 @@ function App(){
                   {["時間","溢價"].map(s=>(
                     <div key={s} onClick={()=>setFSort(s)} className="chip" style={{padding:"4px 10px",borderRadius:4,fontSize:12,
                       background:fSort===s?"#ffffff12":"#ffffff06",border:"1px solid #282a40",
-                      color:fSort===s?"#fff":"#ffffff40"}}>{s}{fSort===s?"溢價"?" ↓":""}</div>
+                      color:fSort===s?"#fff":"#ffffff40"}}>{s}{fSort===s?" ↓":""}</div>
                   ))}
                 </div>
                 <div style={{fontSize:12,color:"#6a7090"}}>共{filteredFlow.length}筆</div>
