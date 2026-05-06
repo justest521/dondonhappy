@@ -3711,6 +3711,93 @@ async function fetchEarnings(ticker) {
   } catch (_) { return null; }
 }
 
+// ── UW: Options Flow (異常期權流) ──
+async function fetchUWFlow(limit = 100) {
+  try {
+    const r = await fetch(WORKER_URL + '/api/uw/flow?limit=' + limit);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return (d.data || d || []).slice(0, limit);
+  } catch(e) { return null; }
+}
+
+// ── UW: Dark Pool (暗池大單) ──
+async function fetchUWDark(limit = 50) {
+  try {
+    const r = await fetch(WORKER_URL + '/api/uw/darkpool/recent?limit=' + limit);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return (d.data || d || []).slice(0, limit);
+  } catch(e) { return null; }
+}
+
+// ── Cross Signal Engine: 暗池 × 期權流交叉比對 ──
+function computeCrossSignals(flowData, darkData, positionTickers) {
+  if (!flowData || !darkData) return [];
+  const now = Date.now();
+  const h72 = 72 * 3600 * 1000;
+  const signals = [];
+
+  // 建立暗池索引 by ticker
+  const darkByTicker = {};
+  darkData.forEach(d => {
+    const sym = (d.symbol || d.ticker || '').toUpperCase();
+    if (!sym) return;
+    const ts = d.date ? new Date(d.date).getTime() : now;
+    if (now - ts > h72) return; // 只看72小時內
+    if (!darkByTicker[sym]) darkByTicker[sym] = [];
+    darkByTicker[sym].push(d);
+  });
+
+  // 建立期權流索引 by ticker（異常或掃單）
+  const flowByTicker = {};
+  flowData.forEach(f => {
+    const sym = (f.ticker || f.symbol || '').toUpperCase();
+    if (!sym) return;
+    if (!f.unusual && !f.sweep) return; // 只看異常+掃單
+    if (!flowByTicker[sym]) flowByTicker[sym] = [];
+    flowByTicker[sym].push(f);
+  });
+
+  // 找交叉：同標的同時有暗池大單 + 異常期權
+  const allSyms = new Set([...Object.keys(darkByTicker), ...Object.keys(flowByTicker)]);
+  allSyms.forEach(sym => {
+    const dark = darkByTicker[sym] || [];
+    const flow = flowByTicker[sym] || [];
+    if (!dark.length || !flow.length) return;
+
+    // 計算暗池總金額
+    const darkTotal = dark.reduce((s, d) => s + (Number(d.size) * Number(d.price) || Number(d.premium) || 0), 0);
+    if (darkTotal < 500000) return; // 門檻 $500K
+
+    // 計算期權溢價
+    const flowTotal = flow.reduce((s, f) => s + (Number(f.premium) || Number(f.prem) || 0), 0);
+    const calls = flow.filter(f => (f.put_call || f.type || '').toUpperCase() === 'CALL');
+    const puts  = flow.filter(f => (f.put_call || f.type || '').toUpperCase() === 'PUT');
+    const bias  = calls.length > puts.length ? 'BULLISH' : puts.length > calls.length ? 'BEARISH' : 'NEUTRAL';
+
+    // 強度評分
+    let score = 0;
+    if (darkTotal > 5000000) score += 3;
+    else if (darkTotal > 2000000) score += 2;
+    else score += 1;
+    if (flow.some(f => f.unusual)) score += 2;
+    if (flow.some(f => f.sweep)) score += 1;
+    if (positionTickers && positionTickers.includes(sym)) score += 2; // 持倉加權
+
+    signals.push({
+      sym, darkTotal, flowTotal, bias,
+      darkCount: dark.length, flowCount: flow.length,
+      hasSweep: flow.some(f => f.sweep),
+      hasUnusual: flow.some(f => f.unusual),
+      inPortfolio: positionTickers ? positionTickers.includes(sym) : false,
+      score,
+    });
+  });
+
+  return signals.sort((a, b) => b.score - a.score).slice(0, 10);
+}
+
 async function fetchGEX(ticker) {
   const t = (ticker || '').toUpperCase().trim();
   if (!t) return null;
@@ -3744,6 +3831,9 @@ if (typeof window !== 'undefined') {
   if (!window.__IVR_CACHE) window.__IVR_CACHE = {};
   if (!window.__EARNINGS_CACHE) window.__EARNINGS_CACHE = {};
   if (!window.__GEX_CACHE) window.__GEX_CACHE = {};
+  if (!window.__UW_FLOW_CACHE) window.__UW_FLOW_CACHE = [];
+  if (!window.__UW_DARK_CACHE) window.__UW_DARK_CACHE = [];
+  if (!window.__CROSS_SIGNALS) window.__CROSS_SIGNALS = [];
 
   setTimeout(() => {
     const seedTickers = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'META', 'TSLA', 'AMZN', 'AVGO', 'QQQ', 'SPY'];
@@ -3781,7 +3871,17 @@ if (typeof window !== 'undefined') {
         if (d) window.__GEX_CACHE[t] = d;
       }).catch((e) => { try { console.warn('[GEX seed ' + t + '] failed:', e.message); } catch (_) {} });
     });
+
+    // UW Flow + Dark Pool 初始載入
+    fetchUWFlow(100).then(d => { if (d) window.__UW_FLOW_CACHE = d; }).catch(() => {});
+    fetchUWDark(50).then(d => { if (d) window.__UW_DARK_CACHE = d; }).catch(() => {});
   }, 2000);
+
+  // UW 每5分鐘刷新
+  setInterval(() => {
+    fetchUWFlow(100).then(d => { if (d) window.__UW_FLOW_CACHE = d; }).catch(() => {});
+    fetchUWDark(50).then(d => { if (d) window.__UW_DARK_CACHE = d; }).catch(() => {});
+  }, 5 * 60 * 1000);
 }
 
 // Both consult window caches first (populated by setTimeout below from Polygon)
@@ -5947,6 +6047,17 @@ function App() {
       const gexText = (spyGex && isFinite(spyGex.netGamma))
         ? '\nSPY 經銷商 Net Gamma: ' + (spyGex.netGamma / 1e9).toFixed(2) + 'B (' + (spyGex.netGamma > 0 ? '正 → 區間震盪' : '負 → 趨勢加速') + ')'
         : '';
+
+      // Cross signals context for AI
+      const crossSignals = computeCrossSignals(
+        (typeof window !== 'undefined' && window.__UW_FLOW_CACHE) || [],
+        (typeof window !== 'undefined' && window.__UW_DARK_CACHE) || [],
+        Array.from(heldTickers)
+      );
+      const crossText = crossSignals.length === 0 ? '' :
+        '\n\n暗池×期權交叉訊號（機構同步佈局）:\n' + crossSignals.slice(0, 5).map(s =>
+          '- ' + s.sym + ' [' + s.bias + '] 暗池:' + (s.darkTotal/1e6).toFixed(1) + 'M 期權:' + (s.flowTotal/1e6).toFixed(1) + 'M 評分:' + s.score + '/8' + (s.inPortfolio ? ' ⭐持倉中' : '')
+        ).join('\n');
       // Filter reports relevant to this portfolio: ticker matches a held ticker, OR ticker is null (general macro)
       const heldTickers = new Set(positionsArr.map(p => (p.ticker || '').toUpperCase()));
       const relevantReports = (reportsArr || [])
@@ -5959,7 +6070,7 @@ function App() {
           const body = (r.content || '').slice(0, 600);
           return head + '\n' + body;
         }).join('\n\n');
-      const prompt = '以下是我目前的美股期權持倉與當前 macro 狀態：\n\n持倉:\n' + positionsText + '\n\n' + macroText + gexText + reportsText
+      const prompt = '以下是我目前的美股期權持倉與當前 macro 狀態：\n\n持倉:\n' + positionsText + '\n\n' + macroText + gexText + crossText + reportsText
         + '\n\n持倉中標記 IVR (0-100) 越高 = 期權權利金越貴；Earnings D-N 表示 N 天內財報，±X% 為預期波動。'
         + '\n\n請用 4-6 行繁體中文評估：'
         + '\n(1) 整體曝險方向 — 多頭/空頭/中性，beta-weighted 大致 size'
@@ -6271,6 +6382,9 @@ function App() {
             )}
           </div>
         )}
+
+        {/* ── 暗池 × 期權流 交叉訊號 ── */}
+        <CrossSignalSection positions={positions} />
 
         {/* Cross-Layer Bridge */}
         <CrossLayerBridge
@@ -6599,6 +6713,334 @@ function SetupGuide({ onClose }) {
 }
 
 // ────────────────────────────── Cross-Layer Bridge
+// ══════════════════════════════════════════════════════════════
+// 暗池 × 期權流 交叉訊號面板
+// ══════════════════════════════════════════════════════════════
+function CrossSignalSection({ positions }) {
+  const [signals, setSignals] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [lastUpdate, setLastUpdate] = React.useState(null);
+  const [collapsed, setCollapsed] = React.useState(false);
+  const [aiRec, setAiRec] = React.useState(null);
+  const [aiLoading, setAiLoading] = React.useState(false);
+  const [aiRecTime, setAiRecTime] = React.useState(null);
+
+  const runAIRecommend = React.useCallback(async () => {
+    if (!signals.length) return;
+    setAiLoading(true);
+    setAiRec(null);
+    try {
+      // Top 5 signals as context
+      const sigText = signals.slice(0, 5).map(function(s) {
+        return s.sym + ' [' + s.bias + '] 暗池:$' + (s.darkTotal/1e6).toFixed(1) + 'M 期權溢價:$' + (s.flowTotal/1e6).toFixed(1) + 'M' +
+          (s.hasUnusual ? ' ⚡異常' : '') + (s.hasSweep ? ' 掃單' : '') +
+          ' 評分:' + s.score + '/8' + (s.inPortfolio ? ' (持倉中)' : '');
+      }).join('\n');
+
+      const today = new Date().toLocaleDateString('zh-TW');
+      const prompt = '今天是' + today + '。以下是今日市場偵測到的機構暗池×期權流交叉訊號：\n\n' + sigText +
+        '\n\n請針對評分最高的3個標的，各自給出：' +
+        '\n1. 【機構意圖判讀】這筆資金在做什麼？看多/看空/對沖？' +
+        '\n2. 【期權策略推薦】具體操作（買CALL/PUT/價差），行使價方向，到期日建議（YYYY-MM-DD格式）' +
+        '\n3. 【進場時機】何時進場最佳？需要等待什麼確認信號？' +
+        '\n4. 【風險提示】這個操作最大的風險是什麼？' +
+        '\n\n請用繁體中文回答，每個標的控制在150字內，格式清晰。';
+
+      const res = await fetch(WORKER_URL + '/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt }),
+      });
+      if (!res.ok) throw new Error('AI API ' + res.status);
+      const d = await res.json();
+      setAiRec(d.result || d.content || '無回應');
+      setAiRecTime(new Date());
+    } catch(e) {
+      setAiRec('AI 分析失敗：' + e.message);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [signals]);
+
+  const positionTickers = React.useMemo(
+    () => positions.map(p => (p.ticker || '').toUpperCase()).filter(Boolean),
+    [positions]
+  );
+
+  const refresh = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      // 優先用 window cache，沒有才重新 fetch
+      let flow = (typeof window !== 'undefined' && window.__UW_FLOW_CACHE?.length) ? window.__UW_FLOW_CACHE : await fetchUWFlow(100);
+      let dark = (typeof window !== 'undefined' && window.__UW_DARK_CACHE?.length) ? window.__UW_DARK_CACHE : await fetchUWDark(50);
+      if (flow) window.__UW_FLOW_CACHE = flow;
+      if (dark) window.__UW_DARK_CACHE = dark;
+      const sigs = computeCrossSignals(flow, dark, positionTickers);
+      setSignals(sigs);
+      setLastUpdate(new Date());
+    } catch(e) {
+      console.warn('[CrossSignal] refresh error:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [positionTickers]);
+
+  React.useEffect(() => {
+    // 延遲2秒等 window cache 載入
+    const t = setTimeout(() => refresh(), 2500);
+    return () => clearTimeout(t);
+  }, [refresh]);
+
+  // 自動刷新5分鐘
+  React.useEffect(() => {
+    const i = setInterval(refresh, 5 * 60 * 1000);
+    return () => clearInterval(i);
+  }, [refresh]);
+
+  const fmtM = v => {
+    if (!v || !isFinite(v)) return '—';
+    if (v >= 1e9) return '$' + (v/1e9).toFixed(1) + 'B';
+    if (v >= 1e6) return '$' + (v/1e6).toFixed(1) + 'M';
+    if (v >= 1e3) return '$' + (v/1e3).toFixed(0) + 'K';
+    return '$' + v.toFixed(0);
+  };
+
+  const biasColor = b => b === 'BULLISH' ? '#10b981' : b === 'BEARISH' ? '#ef4444' : '#EAB308';
+  const biasLabel = b => b === 'BULLISH' ? '🟢 看多' : b === 'BEARISH' ? '🔴 看空' : '🟡 中性';
+  const scoreBar = s => Math.min(100, (s / 8) * 100);
+
+  return (
+    <div style={{ margin: '12px 24px 0', border: '1px solid #2a2a2a', borderRadius: '6px', overflow: 'hidden' }}>
+      {/* Header */}
+      <div
+        onClick={() => setCollapsed(v => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 16px', background: '#111', cursor: 'pointer',
+          borderBottom: collapsed ? 'none' : '1px solid #2a2a2a',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '14px' }}>🎯</span>
+          <div>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#f4f4f4', fontFamily: 'DM Mono', letterSpacing: '0.08em' }}>
+              暗池 × 期權流 交叉訊號
+            </span>
+            <span style={{ fontSize: '10px', color: '#555', marginLeft: '10px', fontFamily: 'DM Mono' }}>
+              機構同步佈局偵測
+            </span>
+          </div>
+          {signals.length > 0 && (
+            <span style={{
+              fontSize: '10px', padding: '1px 7px', borderRadius: '10px',
+              background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440',
+              fontFamily: 'DM Mono', fontWeight: 600,
+            }}>
+              {signals.length} 訊號
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {lastUpdate && (
+            <span style={{ fontSize: '10px', color: '#444', fontFamily: 'DM Mono' }}>
+              {lastUpdate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          <button
+            onClick={e => { e.stopPropagation(); refresh(); }}
+            disabled={loading}
+            style={{
+              background: 'transparent', border: '1px solid #333', color: '#666',
+              padding: '3px 8px', borderRadius: '3px', fontSize: '10px',
+              cursor: loading ? 'wait' : 'pointer', fontFamily: 'DM Mono',
+            }}
+          >{loading ? '⋯' : '↻'}</button>
+          <button
+            onClick={e => { e.stopPropagation(); runAIRecommend(); }}
+            disabled={aiLoading || signals.length === 0}
+            style={{
+              background: aiLoading ? 'transparent' : 'rgba(234,179,8,0.1)',
+              border: '1px solid ' + (aiLoading ? '#333' : '#EAB30850'),
+              color: aiLoading ? '#555' : '#EAB308',
+              padding: '3px 10px', borderRadius: '3px', fontSize: '10px',
+              cursor: (aiLoading || signals.length === 0) ? 'wait' : 'pointer',
+              fontFamily: 'DM Mono',
+            }}
+          >{aiLoading ? '分析中⋯' : '✨ AI 推薦'}</button>
+          <span style={{ color: '#555', fontSize: '12px' }}>{collapsed ? '▸' : '▾'}</span>
+        </div>
+      </div>
+
+      {!collapsed && (
+        <div style={{ background: '#0a0a0a', padding: '0' }}>
+          {/* 說明列 */}
+          <div style={{
+            padding: '10px 16px', borderBottom: '1px solid #1a1a1a',
+            display: 'flex', gap: '20px', flexWrap: 'wrap',
+          }}>
+            {[
+              { icon: '🏦', label: '暗池大單', desc: '機構場外交易，$500K+ 門檻' },
+              { icon: '⚡', label: '異常期權', desc: '72hr內同標的異常/掃單' },
+              { icon: '🔴', label: '持倉加權', desc: '你持有的標的額外+2分' },
+            ].map(item => (
+              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '12px' }}>{item.icon}</span>
+                <span style={{ fontSize: '11px', color: '#EAB308', fontFamily: 'DM Mono' }}>{item.label}</span>
+                <span style={{ fontSize: '10px', color: '#555', fontFamily: 'DM Mono' }}>{item.desc}</span>
+              </div>
+            ))}
+          </div>
+
+          {loading && signals.length === 0 ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: '#444', fontSize: '12px', fontFamily: 'DM Mono' }}>
+              載入中⋯ 連接 UW API
+            </div>
+          ) : signals.length === 0 ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: '#444', fontSize: '12px', fontFamily: 'DM Mono' }}>
+              📭 目前無交叉訊號（暗池大單＋異常期權同時出現才觸發）
+            </div>
+          ) : (
+            <div>
+              {/* 表頭 */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '80px 90px 130px 130px 80px 60px 1fr',
+                padding: '8px 16px', fontSize: '10px', color: '#444',
+                fontFamily: 'DM Mono', letterSpacing: '0.05em',
+                borderBottom: '1px solid #1a1a1a', background: '#111',
+              }}>
+                <span>標的</span>
+                <span>方向</span>
+                <span>暗池金額</span>
+                <span>期權溢價</span>
+                <span>標記</span>
+                <span>評分</span>
+                <span>訊號強度</span>
+              </div>
+
+              {signals.map((sig, i) => (
+                <div key={sig.sym} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '80px 90px 130px 130px 80px 60px 1fr',
+                  padding: '10px 16px',
+                  borderBottom: '1px solid #111',
+                  alignItems: 'center',
+                  background: sig.inPortfolio ? 'rgba(234,179,8,0.04)' : i % 2 === 0 ? '#0a0a0a' : '#080808',
+                  borderLeft: sig.inPortfolio ? '3px solid #EAB308' : '3px solid transparent',
+                }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#f4f4f4', fontFamily: 'DM Mono' }}>{sig.sym}</div>
+                    {sig.inPortfolio && (
+                      <div style={{ fontSize: '9px', color: '#EAB308', fontFamily: 'DM Mono' }}>持倉中</div>
+                    )}
+                  </div>
+                  <div style={{
+                    fontSize: '12px', fontWeight: 600, color: biasColor(sig.bias),
+                    fontFamily: 'DM Mono',
+                  }}>
+                    {biasLabel(sig.bias)}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', color: '#f4f4f4', fontFamily: 'DM Mono' }}>{fmtM(sig.darkTotal)}</div>
+                    <div style={{ fontSize: '10px', color: '#555' }}>{sig.darkCount} 筆暗池單</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', color: '#f4f4f4', fontFamily: 'DM Mono' }}>{fmtM(sig.flowTotal)}</div>
+                    <div style={{ fontSize: '10px', color: '#555' }}>{sig.flowCount} 筆期權</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {sig.hasUnusual && (
+                      <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '2px', background: '#8b5cf620', color: '#8b5cf6', border: '1px solid #8b5cf640' }}>⚡ 異常</span>
+                    )}
+                    {sig.hasSweep && (
+                      <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '2px', background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640' }}>掃單</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: sig.score >= 6 ? '#ef4444' : sig.score >= 4 ? '#EAB308' : '#10b981', fontFamily: 'DM Mono' }}>
+                    {sig.score}/8
+                  </div>
+                  <div style={{ paddingRight: '16px' }}>
+                    <div style={{ height: '4px', background: '#1a1a1a', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: '2px',
+                        width: scoreBar(sig.score) + '%',
+                        background: sig.score >= 6 ? '#ef4444' : sig.score >= 4 ? '#EAB308' : '#10b981',
+                        transition: 'width .5s ease',
+                      }} />
+                    </div>
+                    <div style={{ fontSize: '9px', color: '#444', marginTop: '3px', fontFamily: 'DM Mono' }}>
+                      {sig.score >= 6 ? '🚨 高確信訊號' : sig.score >= 4 ? '⚠️ 中等訊號' : '📍 低強度訊號'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 說明 footer */}
+          <div style={{
+            padding: '10px 16px', borderTop: '1px solid #1a1a1a',
+            fontSize: '10px', color: '#444', fontFamily: 'DM Mono',
+            display: 'flex', gap: '16px',
+          }}>
+            <span>🚨 6-8分 = 機構同步佈局，高確信</span>
+            <span>⚠️ 4-5分 = 值得關注</span>
+            <span>📍 1-3分 = 低強度，觀察中</span>
+            <span style={{ marginLeft: 'auto' }}>每5分鐘自動刷新 · 72小時窗口</span>
+          </div>
+
+          {/* AI 推薦區塊 */}
+          {(aiLoading || aiRec) && (
+            <div style={{
+              margin: '0', padding: '16px',
+              borderTop: '1px solid #EAB30830',
+              background: 'rgba(234,179,8,0.03)',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'
+              }}>
+                <span style={{ fontSize: '13px' }}>✨</span>
+                <span style={{
+                  fontSize: '11px', fontWeight: 600, color: '#EAB308',
+                  fontFamily: 'DM Mono', letterSpacing: '0.08em',
+                }}>AI 主動推薦</span>
+                {aiRecTime && (
+                  <span style={{ fontSize: '10px', color: '#444', fontFamily: 'DM Mono' }}>
+                    · {aiRecTime.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+                <button
+                  onClick={runAIRecommend}
+                  disabled={aiLoading}
+                  style={{
+                    marginLeft: 'auto', background: 'transparent',
+                    border: '1px solid #EAB30840', color: '#EAB30880',
+                    padding: '2px 8px', borderRadius: '3px', fontSize: '10px',
+                    cursor: aiLoading ? 'wait' : 'pointer', fontFamily: 'DM Mono',
+                  }}
+                >{aiLoading ? '⋯' : '↻ 重新分析'}</button>
+              </div>
+              {aiLoading ? (
+                <div style={{ fontSize: '12px', color: '#555', fontFamily: 'DM Mono' }}>
+                  正在分析機構意圖⋯
+                </div>
+              ) : (
+                <div style={{
+                  fontSize: '13px', color: '#d4d4d4', lineHeight: '1.8',
+                  fontFamily: 'Noto Sans TC', whiteSpace: 'pre-wrap',
+                  borderLeft: '2px solid #EAB30840', paddingLeft: '12px',
+                }}>
+                  {aiRec}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CrossLayerBridge({ macroState, positions, portfolioTotal }) {
   if (!macroState) {
     return (
