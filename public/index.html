@@ -6048,18 +6048,26 @@ function App() {
         ? '\nSPY 經銷商 Net Gamma: ' + (spyGex.netGamma / 1e9).toFixed(2) + 'B (' + (spyGex.netGamma > 0 ? '正 → 區間震盪' : '負 → 趨勢加速') + ')'
         : '';
 
-      // Cross signals context for AI
-      const crossSignals = computeCrossSignals(
-        (typeof window !== 'undefined' && window.__UW_FLOW_CACHE) || [],
-        (typeof window !== 'undefined' && window.__UW_DARK_CACHE) || [],
-        Array.from(heldTickers)
-      );
-      const crossText = crossSignals.length === 0 ? '' :
-        '\n\n暗池×期權交叉訊號（機構同步佈局）:\n' + crossSignals.slice(0, 5).map(s =>
-          '- ' + s.sym + ' [' + s.bias + '] 暗池:' + (s.darkTotal/1e6).toFixed(1) + 'M 期權:' + (s.flowTotal/1e6).toFixed(1) + 'M 評分:' + s.score + '/8' + (s.inPortfolio ? ' ⭐持倉中' : '')
-        ).join('\n');
       // Filter reports relevant to this portfolio: ticker matches a held ticker, OR ticker is null (general macro)
       const heldTickers = new Set(positionsArr.map(p => (p.ticker || '').toUpperCase()));
+      // Cross signals context for AI (guarded — function is defined at module scope but be defensive)
+      let crossText = '';
+      try {
+        if (typeof computeCrossSignals === 'function') {
+          const crossSignals = computeCrossSignals(
+            (typeof window !== 'undefined' && window.__UW_FLOW_CACHE) || [],
+            (typeof window !== 'undefined' && window.__UW_DARK_CACHE) || [],
+            Array.from(heldTickers)
+          );
+          if (crossSignals && crossSignals.length) {
+            crossText = '\n\n暗池×期權交叉訊號（機構同步佈局）:\n' + crossSignals.slice(0, 5).map(s =>
+              '- ' + s.sym + ' [' + s.bias + '] 暗池:' + (s.darkTotal/1e6).toFixed(1) + 'M 期權:' + (s.flowTotal/1e6).toFixed(1) + 'M 評分:' + s.score + '/8' + (s.inPortfolio ? ' ⭐持倉中' : '')
+            ).join('\n');
+          }
+        }
+      } catch (err) {
+        console.warn('[App] cross signals context skipped:', err);
+      }
       const relevantReports = (reportsArr || [])
         .filter(r => !r.ticker || heldTickers.has(r.ticker.toUpperCase()))
         .slice(0, 8);  // cap to avoid prompt bloat
@@ -6726,25 +6734,63 @@ function CrossSignalSection({ positions }) {
   const [aiRecTime, setAiRecTime] = React.useState(null);
 
   const runAIRecommend = React.useCallback(async () => {
-    if (!signals.length) return;
     setAiLoading(true);
     setAiRec(null);
     try {
-      // Top 5 signals as context
-      const sigText = signals.slice(0, 5).map(function(s) {
-        return s.sym + ' [' + s.bias + '] 暗池:$' + (s.darkTotal/1e6).toFixed(1) + 'M 期權溢價:$' + (s.flowTotal/1e6).toFixed(1) + 'M' +
-          (s.hasUnusual ? ' ⚡異常' : '') + (s.hasSweep ? ' 掃單' : '') +
-          ' 評分:' + s.score + '/8' + (s.inPortfolio ? ' (持倉中)' : '');
-      }).join('\n');
-
       const today = new Date().toLocaleDateString('zh-TW');
-      const prompt = '今天是' + today + '。以下是今日市場偵測到的機構暗池×期權流交叉訊號：\n\n' + sigText +
-        '\n\n請針對評分最高的3個標的，各自給出：' +
-        '\n1. 【機構意圖判讀】這筆資金在做什麼？看多/看空/對沖？' +
-        '\n2. 【期權策略推薦】具體操作（買CALL/PUT/價差），行使價方向，到期日建議（YYYY-MM-DD格式）' +
-        '\n3. 【進場時機】何時進場最佳？需要等待什麼確認信號？' +
-        '\n4. 【風險提示】這個操作最大的風險是什麼？' +
-        '\n\n請用繁體中文回答，每個標的控制在150字內，格式清晰。';
+      let prompt;
+
+      if (signals.length) {
+        // 主路徑：有暗池×期權交叉訊號
+        const sigText = signals.slice(0, 5).map(function(s) {
+          return s.sym + ' [' + s.bias + '] 暗池:$' + (s.darkTotal/1e6).toFixed(1) + 'M 期權溢價:$' + (s.flowTotal/1e6).toFixed(1) + 'M' +
+            (s.hasUnusual ? ' ⚡異常' : '') + (s.hasSweep ? ' 掃單' : '') +
+            ' 評分:' + s.score + '/8' + (s.inPortfolio ? ' (持倉中)' : '');
+        }).join('\n');
+
+        prompt = '今天是' + today + '。以下是今日市場偵測到的機構暗池×期權流交叉訊號：\n\n' + sigText +
+          '\n\n請針對評分最高的3個標的，各自給出：' +
+          '\n1. 【機構意圖判讀】這筆資金在做什麼？看多/看空/對沖？' +
+          '\n2. 【期權策略推薦】具體操作（買CALL/PUT/價差），行使價方向，到期日建議（YYYY-MM-DD格式）' +
+          '\n3. 【進場時機】何時進場最佳？需要等待什麼確認信號？' +
+          '\n4. 【風險提示】這個操作最大的風險是什麼？' +
+          '\n\n請用繁體中文回答，每個標的控制在150字內，格式清晰。';
+      } else {
+        // Fallback：無交叉訊號 → 用純異常期權流分析
+        const rawFlow = (typeof window !== 'undefined' && window.__UW_FLOW_CACHE) || [];
+        const unusual = rawFlow
+          .filter(f => f.unusual || f.sweep)
+          .map(f => ({
+            sym: ((f.ticker || f.symbol || '').toUpperCase()),
+            type: ((f.put_call || f.type || '') + '').toUpperCase(),
+            prem: Number(f.premium) || Number(f.prem) || 0,
+            unusual: !!f.unusual,
+            sweep: !!f.sweep,
+          }))
+          .filter(f => f.sym && f.prem > 0)
+          .sort((a, b) => b.prem - a.prem)
+          .slice(0, 5);
+
+        if (!unusual.length) {
+          setAiRec('目前 UW 資料中無異常/掃單期權流可分析。建議按 ↻ 重新載入或稍後再試。');
+          setAiRecTime(new Date());
+          setAiLoading(false);
+          return;
+        }
+
+        const flowText = unusual.map(f =>
+          f.sym + ' ' + f.type + ' 溢價:$' + (f.prem/1e6).toFixed(2) + 'M' +
+          (f.unusual ? ' ⚡異常' : '') + (f.sweep ? ' 掃單' : '')
+        ).join('\n');
+
+        prompt = '今天是' + today + '。目前未偵測到「暗池×期權」交叉訊號，但以下是今日溢價最高的5筆異常/掃單期權流：\n\n' + flowText +
+          '\n\n請挑出其中最值得關注的3個標的，各自給出：' +
+          '\n1. 【資金意圖判讀】這筆期權單偏向投機、避險、還是方向性押注？' +
+          '\n2. 【期權策略推薦】跟單建議（買CALL/PUT/價差），行使價方向，到期日建議（YYYY-MM-DD格式）' +
+          '\n3. 【進場時機】何時進場最佳？需要等待什麼確認信號？' +
+          '\n4. 【風險提示】這個操作最大的風險是什麼？' +
+          '\n\n請用繁體中文回答，每個標的控制在150字內，格式清晰。最後加一句說明：「※ 無暗池佐證，確信度低於交叉訊號」。';
+      }
 
       const res = await fetch(WORKER_URL + '/api/ai', {
         method: 'POST',
@@ -6857,13 +6903,14 @@ function CrossSignalSection({ positions }) {
           >{loading ? '⋯' : '↻'}</button>
           <button
             onClick={e => { e.stopPropagation(); runAIRecommend(); }}
-            disabled={aiLoading || signals.length === 0}
+            disabled={aiLoading}
+            title={signals.length === 0 ? '目前無暗池×期權交叉訊號，將改用純異常期權流分析' : '分析機構意圖並推薦操作'}
             style={{
               background: aiLoading ? 'transparent' : 'rgba(234,179,8,0.1)',
               border: '1px solid ' + (aiLoading ? '#333' : '#EAB30850'),
               color: aiLoading ? '#555' : '#EAB308',
               padding: '3px 10px', borderRadius: '3px', fontSize: '10px',
-              cursor: (aiLoading || signals.length === 0) ? 'wait' : 'pointer',
+              cursor: aiLoading ? 'wait' : 'pointer',
               fontFamily: 'DM Mono',
             }}
           >{aiLoading ? '分析中⋯' : '✨ AI 推薦'}</button>
