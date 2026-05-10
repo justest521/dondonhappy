@@ -69,6 +69,31 @@
     </div>
   </div>
 
+  <!-- Defensive cleanup: unregister any leftover Service Worker that may
+       intercept fetches to the Cloudflare Worker. We never registered one
+       in this app, so any SW we find is stale from a prior deploy or
+       browser extension and should be killed before app boot. -->
+  <script>
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      try {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          if (!regs || regs.length === 0) return;
+          regs.forEach(function (r) {
+            try { r.unregister(); console.warn('[boot] unregistered stale SW:', r.scope); } catch (e) {}
+          });
+        }).catch(function (e) { try { console.warn('[boot] SW cleanup failed:', e.message); } catch (_) {} });
+        // Also clear caches API entries (PWA cache) if any
+        if ('caches' in window) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (k) { caches.delete(k).catch(function () {}); });
+            if (keys.length > 0) console.warn('[boot] cleared', keys.length, 'cache entries');
+          }).catch(function () {});
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- Configuration: Supabase anon key
        Hardcoded JWT lives in <head>. localStorage is opt-in override only — must look like a JWT
        (starts with "eyJ" and >100 chars), otherwise it's ignored to prevent stale/invalid values
@@ -3729,6 +3754,36 @@ async function fetchEarnings(ticker) {
       streetEst: parseFloat(next.street_mean_est) || null,
     };
   } catch (e) { recordSourceHealth('earnings', false, e.message); return null; }
+}
+
+// Browser-side fetch diagnostic — run window.__diagnoseFetch() in DevTools
+// Console to see exactly what's blocking calls to the Worker.
+if (typeof window !== 'undefined') {
+  window.__diagnoseFetch = async function () {
+    const tests = [
+      { name: 'Health aggregator', url: WORKER_URL + '/api/health/integrations' },
+      { name: 'FRED batch direct', url: WORKER_URL + '/api/fred/batch?series=WALCL&limit=1' },
+      { name: 'Polygon SPY quote', url: WORKER_URL + '/api/polygon/quote?ticker=SPY' },
+      { name: 'Yahoo MOVE', url: WORKER_URL + '/api/yahoo?symbol=%5EMOVE' },
+    ];
+    console.group('🩺 Fetch Diagnostic — Worker URL: ' + WORKER_URL);
+    for (const t of tests) {
+      const start = Date.now();
+      try {
+        const r = await fetch(t.url);
+        const ms = Date.now() - start;
+        const txt = await r.text();
+        const sample = txt.slice(0, 80);
+        console.log('✅ ' + t.name + ' [HTTP ' + r.status + ' · ' + ms + 'ms]', sample);
+      } catch (e) {
+        const ms = Date.now() - start;
+        console.error('❌ ' + t.name + ' [' + ms + 'ms] FAILED:', e.message, e);
+      }
+    }
+    console.log('Done. If any failed, the URL/error reveals the blocker (CORS, extension, SW, etc).');
+    console.groupEnd();
+    return 'check console output above';
+  };
 }
 
 // ── Scanner batch (worker server-side aggregator) ──
