@@ -3712,9 +3712,10 @@ async function fetchEarnings(ticker) {
 }
 
 // ── UW: Options Flow (異常期權流) ──
+// UW real path: /api/option-trades/flow-alerts (worker strips /api/uw, then prefixes api.unusualwhales.com)
 async function fetchUWFlow(limit = 100) {
   try {
-    const r = await fetch(WORKER_URL + '/api/uw/flow?limit=' + limit);
+    const r = await fetch(WORKER_URL + '/api/uw/api/option-trades/flow-alerts?limit=' + limit);
     if (!r.ok) return null;
     const d = await r.json();
     return (d.data || d || []).slice(0, limit);
@@ -3722,9 +3723,10 @@ async function fetchUWFlow(limit = 100) {
 }
 
 // ── UW: Dark Pool (暗池大單) ──
+// UW real path: /api/darkpool/recent
 async function fetchUWDark(limit = 50) {
   try {
-    const r = await fetch(WORKER_URL + '/api/uw/darkpool/recent?limit=' + limit);
+    const r = await fetch(WORKER_URL + '/api/uw/api/darkpool/recent?limit=' + limit);
     if (!r.ok) return null;
     const d = await r.json();
     return (d.data || d || []).slice(0, limit);
@@ -7169,15 +7171,21 @@ function TextbookLiveMatches({ onJumpToScanner }) {
       .filter(s => s && s.hasData);
   }, [watchlist, refreshTick]);
 
+  // Show top 5 by score regardless of threshold — let grade label communicate quality
+  // (at low-IVR market regimes, hard ≥70 filter would hide everything; user needs to see ranking)
   const buyers = useMemo(() => scored
-    .filter(s => s.buyer && s.buyer.score != null && s.buyer.score >= 70)
+    .filter(s => s.buyer && s.buyer.score != null)
     .sort((a, b) => b.buyer.score - a.buyer.score)
     .slice(0, 5), [scored]);
 
   const sellers = useMemo(() => scored
-    .filter(s => s.seller && s.seller.score != null && s.seller.score >= 70)
+    .filter(s => s.seller && s.seller.score != null)
     .sort((a, b) => b.seller.score - a.seller.score)
     .slice(0, 5), [scored]);
+
+  // Count how many actually hit STRONG+ for header badge
+  const buyerStrongCount = buyers.filter(s => s.buyer.score >= 70).length;
+  const sellerStrongCount = sellers.filter(s => s.seller.score >= 70).length;
 
   // UW unusual flow detection per ticker
   const unusualFlowSet = useMemo(() => {
@@ -7251,11 +7259,11 @@ function TextbookLiveMatches({ onJumpToScanner }) {
         {/* BUYER COLUMN */}
         <div>
           <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', fontWeight: 700, color: '#EAB308', marginBottom: '8px', borderLeft: '3px solid #EAB308', paddingLeft: '8px' }}>
-            🚀 爆噴買方 · STRONG+ ({buyers.length})
+            🚀 爆噴買方 · 排行榜 (top {buyers.length}{buyerStrongCount > 0 ? ` · ${buyerStrongCount} 檔達 STRONG+` : ' · 無 STRONG+ 命中'})
           </div>
           {buyers.length === 0 ? (
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#7a7a7a', padding: '12px', border: '1px dashed #2a2a2a', borderRadius: '4px', textAlign: 'center' }}>
-              {loading ? '掃描中⋯' : '目前沒有 STRONG+ 標的（IVR/earnings 數據可能還沒到位）'}
+              {loading ? '掃描中⋯' : 'IVR/earnings 數據還沒到位，等 5-10 秒'}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -7281,11 +7289,11 @@ function TextbookLiveMatches({ onJumpToScanner }) {
         {/* SELLER COLUMN */}
         <div>
           <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', fontWeight: 700, color: '#14b8a6', marginBottom: '8px', borderLeft: '3px solid #14b8a6', paddingLeft: '8px' }}>
-            💰 IV Crush 賣方 · STRONG+ ({sellers.length})
+            💰 IV Crush 賣方 · 排行榜 (top {sellers.length}{sellerStrongCount > 0 ? ` · ${sellerStrongCount} 檔達 STRONG+` : ' · 無 STRONG+ 命中'})
           </div>
           {sellers.length === 0 ? (
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#7a7a7a', padding: '12px', border: '1px dashed #2a2a2a', borderRadius: '4px', textAlign: 'center' }}>
-              {loading ? '掃描中⋯' : '目前沒有 STRONG+ 標的'}
+              {loading ? '掃描中⋯' : 'IVR/earnings 數據還沒到位，等 5-10 秒'}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
