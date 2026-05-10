@@ -6528,6 +6528,32 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
     return () => clearInterval(id);
   }, []);
 
+  // Warm caches (spot + IVR + earnings) for held tickers via worker batch.
+  // Vol Desk is the default tab — without this, Risk Dashboard's warmer
+  // (which sits in 主頁 tab) never runs and Greeks / Payoff stay at $0.
+  useEffect(() => {
+    const uniqueTickers = [...new Set((positions || []).map(p => (p.ticker || '').toUpperCase()).filter(Boolean))];
+    if (uniqueTickers.length === 0) return;
+    const spotCache = window.__SPOT_CACHE || {};
+    const ivrCache = window.__IVR_CACHE || {};
+    const missing = uniqueTickers.filter(t => spotCache[t] == null || ivrCache[t] == null);
+    if (missing.length === 0) return;
+    fetchScannerBatchAndCache(uniqueTickers).finally(() => setRefreshTick(x => x + 1));
+    // Also fetch ticker profiles for sector-related logic (matches Risk Dashboard pattern)
+    const profiles = window.__TICKER_PROFILES || {};
+    const missingProfiles = uniqueTickers.filter(t => profiles[t] == null && t !== 'CASH' && t !== 'VIX');
+    if (missingProfiles.length > 0) {
+      Promise.all(missingProfiles.map(t =>
+        fetchTickerDetails(t).then(d => {
+          if (d) {
+            window.__TICKER_PROFILES = window.__TICKER_PROFILES || {};
+            window.__TICKER_PROFILES[t] = classifyTickerProfile(d);
+          }
+        }).catch(() => {})
+      )).finally(() => setRefreshTick(x => x + 1));
+    }
+  }, [positions]);
+
   // Compute aggregated GEX from UW data per held ticker (sum to portfolio level)
   const [gexData, setGexData] = useState(null);
   useEffect(() => {
