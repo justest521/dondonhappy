@@ -6,7 +6,7 @@
   <title>MEP Trading System · L2+L1+Supabase</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- React 18 UMD -->
   <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
@@ -28,8 +28,91 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
   <style>
+    /* ============================================================
+       V2 THEME OVERRIDE — Linear-style sidebar palette w/ lavender accent
+       Cool graphite base + #a78bfa accent. Signal colors (red/green) preserved.
+       ============================================================ */
+    :root {
+      --v2-bg: #0a0d12;
+      --v2-panel: #0f131a;
+      --v2-panel-2: #141923;
+      --v2-line: #1c2230;
+      --v2-line-2: #28304a;
+      --v2-fg: #e8ecf2;
+      --v2-fg-mute: #7a8499;
+      --v2-fg-dim: #4d5468;
+      --v2-accent: #a78bfa;
+      --v2-accent-2: #c4b5fd;
+    }
+    /* Base + font swap */
+    html, body {
+      background: var(--v2-bg) !important;
+      color: var(--v2-fg) !important;
+      font-family: 'Geist', 'Noto Sans TC', -apple-system, sans-serif !important;
+    }
+    /* Backgrounds — original yellow-accent dark → cool graphite */
+    .bg-app      { background: var(--v2-bg) !important; }
+    .bg-card     { background: var(--v2-panel) !important; }
+    .bg-subcard  { background: var(--v2-panel-2) !important; }
+    .bg-deepcard { background: var(--v2-bg) !important; }
+    /* Text — yellow accent → lavender; muted greys → cooler greys */
+    .text-accent   { color: var(--v2-accent) !important; }
+    .text-primary  { color: var(--v2-fg) !important; }
+    .text-muted    { color: var(--v2-fg-mute) !important; }
+    .text-muted-2  { color: var(--v2-fg-dim) !important; }
+    /* Hairline borders → cooler */
+    .hair-border { border-color: var(--v2-line) !important; }
+    [class*="border"] { border-color: var(--v2-line); }
+    /* Form & toggle accents */
+    .toggle-pill { border-color: var(--v2-line) !important; }
+    .toggle-pill button { color: var(--v2-fg-mute) !important; }
+    .toggle-pill button.active {
+      background: var(--v2-accent) !important;
+      color: #0a0d12 !important;
+    }
+    .num-input, .text-input, select.num-input {
+      border-color: var(--v2-line) !important;
+      color: var(--v2-fg) !important;
+    }
+    .num-input:focus, .text-input:focus { border-color: var(--v2-accent) !important; }
+    .icon-btn { border-color: var(--v2-line) !important; color: var(--v2-fg-mute) !important; }
+    .icon-btn:hover { border-color: var(--v2-accent) !important; color: var(--v2-accent) !important; }
+    /* Slider thumb */
+    input[type="range"]::-webkit-slider-thumb { background: var(--v2-accent) !important; }
+    input[type="range"]::-moz-range-thumb { background: var(--v2-accent) !important; }
+    input[type="range"] { background: var(--v2-line) !important; }
+    /* Pulse dot — keep red/green/amber semantics for signals; amber → accent for non-signal use */
+    .pulse-dot.amber { background: var(--v2-accent) !important; }
+    /* Quadrant active state */
+    .quadrant-cell:hover { background: color-mix(in oklab, var(--v2-accent) 6%, transparent) !important; }
+    .quadrant-cell.active {
+      background: color-mix(in oklab, var(--v2-accent) 12%, transparent) !important;
+      border-color: var(--v2-accent) !important;
+    }
+    /* Signal-light: keep semantic colors but make amber → accent */
+    .signal-light.amber { background: color-mix(in oklab, var(--v2-accent) 22%, transparent) !important; border-color: var(--v2-accent) !important; }
+    /* Gauge bar background */
+    .gauge-bar { background: var(--v2-line) !important; }
+    /* Help-circle tooltip box */
+    [style*="background: rgb(26, 26, 26)"], [style*="background:#1a1a1a"] { background: var(--v2-panel) !important; }
+    /* Sector chip — improving (was blue) → accent for visual unity */
+    .sector-chip.improving {
+      background: color-mix(in oklab, var(--v2-accent) 16%, transparent) !important;
+      color: var(--v2-accent) !important;
+      border-color: color-mix(in oklab, var(--v2-accent) 40%, transparent) !important;
+    }
+    /* Mono numerics — use JetBrains Mono everywhere DM Mono was used */
+    [style*="DM Mono"] { font-family: 'JetBrains Mono', ui-monospace, monospace !important; }
+    /* Subtle card border */
+    .bg-card, .bg-subcard, .bg-deepcard {
+      border: 1px solid var(--v2-line);
+    }
+    /* Splash dot */
+    .splash-dot { background: var(--v2-accent) !important; }
+    /* ============================================================ */
+
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: #0a0a0a; color: #f4f4f4; font-family: 'Noto Sans TC', -apple-system, sans-serif; }
+    html, body { margin: 0; padding: 0; background: #0a0d12; color: #e8ecf2; font-family: 'Geist', 'Noto Sans TC', -apple-system, sans-serif; }
     #root { min-height: 100vh; }
 
     /* Loading splash before Babel finishes transpiling */
@@ -6021,6 +6104,7 @@ function MacroContextBanner({ score, band, alerts, hedgeBudgetBps }) {
     fetchIVR, fetchEarnings, fetchUWFlow, fetchUWDark,
     fetchScannerBatchAndCache,
     fetchTickerDetails,
+    classifyTickerProfile,
     recordSourceHealth,
     bsGreeks: typeof bsGreeks !== 'undefined' ? bsGreeks : null,
     fetchSpotPrice: typeof fetchSpotPrice !== 'undefined' ? fetchSpotPrice : null,
@@ -6032,6 +6116,7 @@ const {
   fetchIVR, fetchEarnings, fetchUWFlow, fetchUWDark,
   fetchScannerBatchAndCache,
   fetchTickerDetails,
+  classifyTickerProfile,
   recordSourceHealth,
 } = VIXModule;
 // Expose WORKER_URL globally so anywhere can use it without scope drama
@@ -6421,11 +6506,29 @@ function RiskDashboard({ positions, portfolioTotal }) {
       .map(p => (p.ticker || '').toUpperCase())
       .filter(Boolean))];
     if (uniqueTickers.length === 0) return;
+
+    // 1. Scanner batch (IVR + earnings + spot price)
     const spotCache = window.__SPOT_CACHE || {};
     const ivrCache = window.__IVR_CACHE || {};
-    const missing = uniqueTickers.filter(t => spotCache[t] == null || ivrCache[t] == null);
-    if (missing.length === 0) return;
-    fetchScannerBatchAndCache(uniqueTickers).finally(() => setTick(x => x + 1));
+    const missingScan = uniqueTickers.filter(t => spotCache[t] == null || ivrCache[t] == null);
+    if (missingScan.length > 0) {
+      fetchScannerBatchAndCache(uniqueTickers).finally(() => setTick(x => x + 1));
+    }
+
+    // 2. Ticker profiles (sector classification) — L2 only seeds 10 tickers,
+    //    users may hold others (KO, JNJ, FLEX, XOM, VIX). Fetch missing ones.
+    const profiles = window.__TICKER_PROFILES || {};
+    const missingProfiles = uniqueTickers.filter(t => profiles[t] == null && t !== 'CASH' && t !== 'VIX');
+    if (missingProfiles.length > 0) {
+      Promise.all(missingProfiles.map(t =>
+        fetchTickerDetails(t).then(d => {
+          if (d) {
+            window.__TICKER_PROFILES = window.__TICKER_PROFILES || {};
+            window.__TICKER_PROFILES[t] = classifyTickerProfile(d);
+          }
+        }).catch(() => {})
+      )).finally(() => setTick(x => x + 1));
+    }
   }, [positions]);
 
   // Auto-refresh every 5 min
@@ -6457,7 +6560,22 @@ function RiskDashboard({ positions, portfolioTotal }) {
 
       // Option position
       const strike = parseFloat(p.strike) || 0;
-      const expiryDate = p.expiry ? new Date(typeof p.expiry === 'string' && p.expiry.includes('/') ? p.expiry.split('/').reverse().join('-') : p.expiry) : null;
+      // Expiry parsing: support "MM/DD/YYYY" (US, what Supabase stores) or ISO "YYYY-MM-DD"
+      let expiryDate = null;
+      if (p.expiry) {
+        if (typeof p.expiry === 'string' && p.expiry.includes('/')) {
+          const parts = p.expiry.split('/');  // [MM, DD, YYYY]
+          if (parts.length === 3) {
+            const yyyy = parts[2].length === 2 ? '20' + parts[2] : parts[2];  // handle "06/18/26" too
+            const mm = parts[0].padStart(2, '0');
+            const dd = parts[1].padStart(2, '0');
+            expiryDate = new Date(yyyy + '-' + mm + '-' + dd);
+          }
+        } else {
+          expiryDate = new Date(p.expiry);
+        }
+        if (expiryDate && isNaN(expiryDate.getTime())) expiryDate = null;
+      }
       const dte = expiryDate ? Math.max(1, Math.round((expiryDate.getTime() - Date.now()) / 86400000)) : 30;
       const spot = spotCache[t] || 0;
       const ivData = ivrCache[t];
@@ -6500,13 +6618,22 @@ function RiskDashboard({ positions, portfolioTotal }) {
     return { netDelta, netDeltaShares, netGammaPer1Pct, netVega, netTheta };
   }, [enriched]);
 
-  // Sector concentration (uses __TICKER_PROFILES if seeded)
+  // Sector concentration (uses __TICKER_PROFILES — bucket label set by classifyTickerProfile)
+  // The cache stores a string label like 'AI_LEADER' / 'MEGA_CAP' / 'STANDALONE' (not an object).
+  // Map those to display labels here.
+  const PROFILE_LABEL = {
+    AI_LEADER: '🤖 AI 領先股 (NVDA/AVGO/AMD)',
+    AI_BENEFICIARY: 'AI 半導體/軟體',
+    MEGA_CAP: '超大型科技股',
+    RIPPLE: '跟漲股',
+    STANDALONE: '個股',
+  };
   const sectorBreakdown = useMemo(() => {
     const profiles = window.__TICKER_PROFILES || {};
     const bucket = {};
     enriched.forEach(p => {
-      const profile = profiles[p.t];
-      const sec = (profile && profile.sector) ? profile.sector : '未分類';
+      const profileLabel = profiles[p.t];
+      const sec = profileLabel ? (PROFILE_LABEL[profileLabel] || profileLabel) : '未分類 (尚未取得 profile)';
       if (!bucket[sec]) bucket[sec] = { delta: 0, mv: 0, tickers: new Set() };
       bucket[sec].delta += p.deltaDollars || 0;
       bucket[sec].mv += p.marketValue || 0;
@@ -7252,7 +7379,8 @@ function PreTradeChecklist({ positions, portfolioTotal }) {
   const ivrData = (typeof window !== 'undefined' && window.__IVR_CACHE && window.__IVR_CACHE[t]) || null;
   const earnData = (typeof window !== 'undefined' && window.__EARNINGS_CACHE && window.__EARNINGS_CACHE[t]) || null;
   const tickerProfile = (typeof window !== 'undefined' && window.__TICKER_PROFILES && window.__TICKER_PROFILES[t]) || null;
-  const sector = tickerProfile && tickerProfile.sector ? tickerProfile.sector : null;
+  // tickerProfile is a string label ('AI_LEADER' / 'MEGA_CAP' / etc.), not an object
+  const sector = typeof tickerProfile === 'string' ? tickerProfile : (tickerProfile && tickerProfile.sector ? tickerProfile.sector : null);
 
   // Compute derived values
   const ivr = ivrData ? ivrData.ivr : null;
