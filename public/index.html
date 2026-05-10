@@ -5982,6 +5982,1336 @@ const formatMoney = (n) => {
 };
 
 // ============================================================
+// OPTIONS SCANNER — Earnings Buy/Sell Scoring (v1.0)
+// ============================================================
+// 雙邊評分系統：
+//   BUYER mode (爆噴): 找 IV 便宜 + 強動能 + catalyst 的買 OTM call 機會
+//   SELLER mode (IV Crush): 找 IV 過熱 + 低動能 + 均值回歸的賣方機會
+// 兩個模式互為陰陽 — 同一支股票通常一邊評分高、另一邊低。
+// 資料來源: window.__IVR_CACHE / __EARNINGS_CACHE / __BETA_CACHE / __UW_FLOW_CACHE
+// ============================================================
+
+// SCANNER scoring helpers
+function scoreBuyerSignal_iv(ivr) {
+  // 爆噴 buyer wants IV in the 50-70 sweet spot (cheap-ish, room to expand)
+  if (ivr == null) return null;
+  if (ivr < 30) return 50;          // too cheap (no catalyst expected)
+  if (ivr <= 65) return 85 + (65 - ivr) * 0.3;
+  if (ivr <= 80) return 65;
+  if (ivr <= 92) return 35;          // already crowded
+  return 15;                          // crush risk severe
+}
+
+function scoreSellerSignal_iv(ivr) {
+  // IV Crush seller wants IV pctl >= 85 — sweet spot 85-95
+  if (ivr == null) return null;
+  if (ivr < 60) return 25;
+  if (ivr < 75) return 55;
+  if (ivr < 85) return 70;
+  if (ivr <= 95) return 90;
+  return 80;                          // 太極端可能有 binary 隱憂
+}
+
+function scoreStability(beta) {
+  // 賣方喜歡低 beta、買方喜歡高 beta — 同一資料反向解讀
+  if (beta == null || !isFinite(beta)) return null;
+  return Math.max(0, Math.min(100, beta));
+}
+
+function scoreSellerStability(beta) {
+  if (beta == null || !isFinite(beta)) return null;
+  if (beta < 0.8) return 95;
+  if (beta < 1.1) return 85;
+  if (beta < 1.4) return 60;
+  if (beta < 1.8) return 35;
+  return 15;
+}
+
+function scoreBuyerStability(beta) {
+  if (beta == null || !isFinite(beta)) return null;
+  if (beta < 0.8) return 30;
+  if (beta < 1.1) return 55;
+  if (beta < 1.4) return 75;
+  if (beta < 2.0) return 90;
+  return 85;
+}
+
+function scoreEarningsProximity(daysToEarnings) {
+  if (daysToEarnings == null) return null;
+  if (daysToEarnings < 0) return 0;     // 已過
+  if (daysToEarnings <= 7) return 95;
+  if (daysToEarnings <= 14) return 80;
+  if (daysToEarnings <= 21) return 60;
+  if (daysToEarnings <= 30) return 40;
+  return 20;
+}
+
+function scoreImpliedMove(expectedMovePct, beta) {
+  // 賣方視角：implied move 過高 = good (overpriced)
+  // 買方視角：implied move 過低 = good (room to outperform)
+  if (expectedMovePct == null) return null;
+  return expectedMovePct;  // 原始值，模式各自解讀
+}
+
+function scoreFlowSignal(ticker, flowCache) {
+  if (!Array.isArray(flowCache) || flowCache.length === 0) return null;
+  const t = (ticker || '').toUpperCase();
+  const matched = flowCache.filter(f => (f.ticker || f.sym || '').toUpperCase() === t);
+  if (matched.length === 0) return 50;
+  const callPrem = matched.filter(f => (f.option_type || f.type || '').toLowerCase() === 'call')
+    .reduce((s, f) => s + (parseFloat(f.premium) || parseFloat(f.total_premium) || 0), 0);
+  const putPrem = matched.filter(f => (f.option_type || f.type || '').toLowerCase() === 'put')
+    .reduce((s, f) => s + (parseFloat(f.premium) || parseFloat(f.total_premium) || 0), 0);
+  const total = callPrem + putPrem;
+  if (total === 0) return 50;
+  const cpRatio = callPrem / Math.max(putPrem, 1);
+  // 買方喜歡高 C/P ratio
+  return Math.max(0, Math.min(100, 30 + cpRatio * 15));
+}
+
+function gradeOfBuyer(score) {
+  if (score >= 85) return { label: 'PREMIUM', color: '#a78bfa' };
+  if (score >= 70) return { label: 'STRONG', color: '#10b981' };
+  if (score >= 55) return { label: 'WATCH', color: '#EAB308' };
+  return { label: 'SKIP', color: '#ef4444' };
+}
+
+function gradeOfSeller(score) {
+  if (score >= 85) return { label: 'PRIME', color: '#14b8a6' };
+  if (score >= 70) return { label: 'STRONG', color: '#10b981' };
+  if (score >= 55) return { label: 'WATCH', color: '#EAB308' };
+  return { label: 'AVOID', color: '#ef4444' };
+}
+
+function computeScannerScores(ticker, opts) {
+  const ivrCache = (typeof window !== 'undefined' && window.__IVR_CACHE) ? window.__IVR_CACHE : {};
+  const earningsCache = (typeof window !== 'undefined' && window.__EARNINGS_CACHE) ? window.__EARNINGS_CACHE : {};
+  const betaCache = (typeof window !== 'undefined' && window.__BETA_CACHE) ? window.__BETA_CACHE : {};
+  const flowCache = (typeof window !== 'undefined' && window.__UW_FLOW_CACHE) ? window.__UW_FLOW_CACHE : [];
+
+  const t = (ticker || '').toUpperCase();
+  const ivrData = ivrCache[t];
+  const earnData = earningsCache[t];
+  const beta = betaCache[t];
+
+  const ivr = ivrData ? ivrData.ivr : null;
+  const iv = ivrData ? ivrData.iv : null;
+  const earnDate = earnData ? earnData.date : null;
+  const expectedMove = earnData ? earnData.expectedMovePct : null;
+  const daysToEarnings = earnDate
+    ? Math.round((new Date(earnDate).getTime() - Date.now()) / 86400000)
+    : null;
+
+  // Buyer signals
+  const buyerSignals = {
+    ivSetup:        { score: scoreBuyerSignal_iv(ivr), label: 'IV Setup', detail: ivr != null ? 'IVR ' + ivr.toFixed(0) : '無資料', weight: 25 },
+    earningsProx:   { score: scoreEarningsProximity(daysToEarnings), label: '財報接近度', detail: daysToEarnings != null ? 'T−' + daysToEarnings + ' 日' : '無資料', weight: 20 },
+    momentum:       { score: scoreBuyerStability(beta), label: '動能 (Beta)', detail: beta != null ? 'β ' + beta.toFixed(2) : '無資料', weight: 18 },
+    impliedMove:    { score: expectedMove != null ? Math.min(100, expectedMove * 12) : null, label: '隱含波動空間', detail: expectedMove != null ? '±' + expectedMove.toFixed(1) + '%' : '無資料', weight: 15 },
+    flow:           { score: scoreFlowSignal(t, flowCache), label: '異常選擇權流向', detail: '即時 flow', weight: 12 },
+    ivAbsolute:     { score: iv != null ? (iv < 50 ? 75 : iv < 80 ? 60 : 40) : null, label: 'IV 絕對水位', detail: iv != null ? iv.toFixed(0) + '%' : '無資料', weight: 10 },
+  };
+
+  // Seller signals
+  const sellerSignals = {
+    ivOverpriced:   { score: scoreSellerSignal_iv(ivr), label: 'IV 過熱度', detail: ivr != null ? 'IVR ' + ivr.toFixed(0) : '無資料', weight: 28 },
+    impliedOver:    { score: expectedMove != null ? Math.min(100, expectedMove * 10) : null, label: '隱含 move 過度定價', detail: expectedMove != null ? '±' + expectedMove.toFixed(1) + '%' : '無資料', weight: 20 },
+    stability:      { score: scoreSellerStability(beta), label: '股性穩定度', detail: beta != null ? 'β ' + beta.toFixed(2) : '無資料', weight: 18 },
+    earningsProx2:  { score: scoreEarningsProximity(daysToEarnings), label: '財報接近度', detail: daysToEarnings != null ? 'T−' + daysToEarnings + ' 日' : '無資料', weight: 15 },
+    ivAbsolute2:    { score: iv != null ? (iv > 60 ? 85 : iv > 40 ? 60 : 30) : null, label: 'IV 絕對水位', detail: iv != null ? iv.toFixed(0) + '%' : '無資料', weight: 10 },
+    sectorRev:      { score: 60, label: '產業反向（暫定）', detail: '需要產業 peer 資料', weight: 9 },
+  };
+
+  // 加權合計，跳過缺資料的訊號（重新標準化）
+  function weightedTotal(signals) {
+    let total = 0, weightSum = 0;
+    for (const k of Object.keys(signals)) {
+      const s = signals[k];
+      if (s.score != null) {
+        total += s.score * s.weight;
+        weightSum += s.weight;
+      }
+    }
+    return weightSum > 0 ? Math.round(total / weightSum) : null;
+  }
+
+  const buyerScore = weightedTotal(buyerSignals);
+  const sellerScore = weightedTotal(sellerSignals);
+
+  return {
+    ticker: t,
+    ivr, iv, earnDate, expectedMove, daysToEarnings, beta,
+    buyer: { score: buyerScore, signals: buyerSignals, grade: buyerScore != null ? gradeOfBuyer(buyerScore) : null },
+    seller: { score: sellerScore, signals: sellerSignals, grade: sellerScore != null ? gradeOfSeller(sellerScore) : null },
+    hasData: ivr != null || earnDate != null || beta != null,
+  };
+}
+
+function OptionsScanner({ positions }) {
+  const [mode, setMode] = useState('both');  // 'buyer' | 'seller' | 'both'
+  const [watchlist, setWatchlist] = useState(() => {
+    try {
+      const raw = localStorage.getItem('ddh_scanner_watchlist');
+      if (raw) return JSON.parse(raw);
+    } catch (_) {}
+    return ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'META', 'TSLA', 'AMZN', 'AVGO', 'KO', 'JNJ'];
+  });
+  const [newTicker, setNewTicker] = useState('');
+  const [expandedTicker, setExpandedTicker] = useState(null);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  // Persist watchlist
+  useEffect(() => {
+    try { localStorage.setItem('ddh_scanner_watchlist', JSON.stringify(watchlist)); } catch (_) {}
+  }, [watchlist]);
+
+  // Combine positions + watchlist into unique ticker list
+  const allTickers = useMemo(() => {
+    const set = new Set();
+    (positions || []).forEach(p => { if (p.ticker) set.add(p.ticker.toUpperCase()); });
+    watchlist.forEach(t => set.add(t.toUpperCase()));
+    return Array.from(set);
+  }, [positions, watchlist]);
+
+  // Score every ticker (recomputes when refreshTick changes)
+  const scoredList = useMemo(() => {
+    return allTickers.map(t => {
+      const s = computeScannerScores(t);
+      const inPosition = (positions || []).some(p => (p.ticker || '').toUpperCase() === t);
+      return { ...s, inPosition };
+    });
+  }, [allTickers, positions, refreshTick]);
+
+  // Sort by relevant score based on mode
+  const sortedList = useMemo(() => {
+    const list = scoredList.slice();
+    if (mode === 'seller') {
+      list.sort((a, b) => (b.seller.score || 0) - (a.seller.score || 0));
+    } else if (mode === 'buyer') {
+      list.sort((a, b) => (b.buyer.score || 0) - (a.buyer.score || 0));
+    } else {
+      // both: sort by max of either score
+      list.sort((a, b) => Math.max(b.buyer.score || 0, b.seller.score || 0) - Math.max(a.buyer.score || 0, a.seller.score || 0));
+    }
+    return list;
+  }, [scoredList, mode]);
+
+  const handleAddTicker = () => {
+    const t = newTicker.toUpperCase().trim();
+    if (!t || !/^[A-Z]{1,5}$/.test(t)) return;
+    if (watchlist.includes(t)) { setNewTicker(''); return; }
+    setWatchlist([...watchlist, t]);
+    setNewTicker('');
+    // Trigger fetch for new ticker
+    fetchIVR(t).then(d => { if (d && d.ivr != null) { window.__IVR_CACHE = window.__IVR_CACHE || {}; window.__IVR_CACHE[t] = d; setRefreshTick(x => x + 1); } });
+    fetchEarnings(t).then(d => { if (d && d.date) { window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {}; window.__EARNINGS_CACHE[t] = d; setRefreshTick(x => x + 1); } });
+  };
+
+  const handleRemoveTicker = (t) => {
+    setWatchlist(watchlist.filter(x => x !== t));
+  };
+
+  const handleRefreshAll = async () => {
+    setLoading(true);
+    try {
+      await Promise.all(allTickers.map(async t => {
+        const [ivr, earn] = await Promise.all([fetchIVR(t), fetchEarnings(t)]);
+        if (ivr && ivr.ivr != null) { window.__IVR_CACHE = window.__IVR_CACHE || {}; window.__IVR_CACHE[t] = ivr; }
+        if (earn && earn.date) { window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {}; window.__EARNINGS_CACHE[t] = earn; }
+      }));
+      setRefreshTick(x => x + 1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Stats
+  const stats = useMemo(() => {
+    const counts = { buyerPremium: 0, buyerStrong: 0, sellerPrime: 0, sellerStrong: 0 };
+    scoredList.forEach(s => {
+      if (s.buyer.score >= 85) counts.buyerPremium++;
+      else if (s.buyer.score >= 70) counts.buyerStrong++;
+      if (s.seller.score >= 85) counts.sellerPrime++;
+      else if (s.seller.score >= 70) counts.sellerStrong++;
+    });
+    return counts;
+  }, [scoredList]);
+
+  return (
+    <div style={{ padding: '16px 24px', background: '#0a0a0a' }}>
+      {/* Top controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666', letterSpacing: '0.1em', textTransform: 'uppercase' }}>MODE</span>
+          {[
+            { id: 'both', label: '雙邊', color: '#EAB308' },
+            { id: 'buyer', label: '爆噴買方', color: '#a78bfa' },
+            { id: 'seller', label: 'IV Crush 賣方', color: '#14b8a6' },
+          ].map(m => (
+            <button
+              key={m.id}
+              onClick={() => setMode(m.id)}
+              style={{
+                background: mode === m.id ? m.color + '14' : 'transparent',
+                border: '1px solid ' + (mode === m.id ? m.color : '#2a2a2a'),
+                color: mode === m.id ? m.color : '#888',
+                padding: '4px 10px',
+                fontFamily: 'DM Mono',
+                fontSize: '11px',
+                cursor: 'pointer',
+                borderRadius: '3px',
+                letterSpacing: '0.05em',
+              }}
+            >{m.label}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input
+            type="text"
+            value={newTicker}
+            onChange={e => setNewTicker(e.target.value.toUpperCase())}
+            onKeyDown={e => { if (e.key === 'Enter') handleAddTicker(); }}
+            placeholder="加入 ticker"
+            style={{
+              background: '#0a0a0a', border: '1px solid #2a2a2a', color: '#f4f4f4',
+              padding: '4px 8px', fontFamily: 'DM Mono', fontSize: '11px',
+              borderRadius: '3px', width: '110px',
+            }}
+          />
+          <button
+            onClick={handleAddTicker}
+            style={{
+              background: 'transparent', border: '1px solid #EAB308', color: '#EAB308',
+              padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '11px',
+              cursor: 'pointer', borderRadius: '3px',
+            }}
+          >＋ 加入</button>
+          <button
+            onClick={handleRefreshAll}
+            disabled={loading}
+            style={{
+              background: 'transparent', border: '1px solid #2a2a2a', color: loading ? '#444' : '#888',
+              padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '11px',
+              cursor: loading ? 'wait' : 'pointer', borderRadius: '3px',
+            }}
+          >{loading ? '⋯' : '↻ 全部'}</button>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
+        <ScannerStat label="買方 PREMIUM" value={stats.buyerPremium} color="#a78bfa" />
+        <ScannerStat label="買方 STRONG" value={stats.buyerStrong} color="#10b981" />
+        <ScannerStat label="賣方 PRIME" value={stats.sellerPrime} color="#14b8a6" />
+        <ScannerStat label="賣方 STRONG" value={stats.sellerStrong} color="#10b981" />
+      </div>
+
+      {/* Results */}
+      <div style={{ border: '1px solid #2a2a2a', background: '#0f0f0f' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '60px 1fr 70px 70px 70px 90px 90px 30px',
+          gap: '8px',
+          padding: '8px 12px',
+          background: '#1a1a1a',
+          borderBottom: '1px solid #2a2a2a',
+          fontFamily: 'DM Mono',
+          fontSize: '9px',
+          color: '#666',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+        }}>
+          <div>TICKER</div>
+          <div>STATUS</div>
+          <div>IVR</div>
+          <div>β</div>
+          <div>EPS</div>
+          <div style={{ textAlign: 'right', color: mode === 'seller' ? '#444' : '#a78bfa' }}>BUYER</div>
+          <div style={{ textAlign: 'right', color: mode === 'buyer' ? '#444' : '#14b8a6' }}>SELLER</div>
+          <div></div>
+        </div>
+        {sortedList.map(s => (
+          <ScannerRow
+            key={s.ticker}
+            data={s}
+            mode={mode}
+            isExpanded={expandedTicker === s.ticker}
+            onToggle={() => setExpandedTicker(expandedTicker === s.ticker ? null : s.ticker)}
+            onRemove={() => handleRemoveTicker(s.ticker)}
+            isInWatchlist={watchlist.includes(s.ticker)}
+          />
+        ))}
+        {sortedList.length === 0 && (
+          <div style={{ padding: '24px', textAlign: 'center', color: '#666', fontFamily: 'DM Mono', fontSize: '11px' }}>
+            無 ticker。加入 watchlist 或新增 positions。
+          </div>
+        )}
+      </div>
+
+      {/* Footnote */}
+      <div style={{ marginTop: '12px', fontSize: '10px', color: '#555', fontFamily: 'DM Mono', lineHeight: 1.6 }}>
+        資料來源: window.__IVR_CACHE / __EARNINGS_CACHE / __BETA_CACHE (UW + Polygon · 15min cache)。
+        缺資料的訊號自動跳過，分數依可用訊號重新標準化。
+        BUYER mode 找「IV 便宜 + 高 beta + 接近財報」；SELLER mode 找「IV 過熱 + 低 beta + 高 implied move」。
+      </div>
+    </div>
+  );
+}
+
+function ScannerStat({ label, value, color }) {
+  return (
+    <div style={{ border: '1px solid ' + color + '40', background: color + '08', padding: '8px 10px' }}>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#888', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '20px', color: color, fontWeight: 600, marginTop: '2px' }}>{value}</div>
+    </div>
+  );
+}
+
+function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist }) {
+  const s = data;
+  const buyerColor = s.buyer.grade ? s.buyer.grade.color : '#444';
+  const sellerColor = s.seller.grade ? s.seller.grade.color : '#444';
+  const showBuyer = mode === 'both' || mode === 'buyer';
+  const showSeller = mode === 'both' || mode === 'seller';
+
+  return (
+    <div style={{ borderBottom: '1px solid #1a1a1a' }}>
+      <div
+        onClick={onToggle}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '60px 1fr 70px 70px 70px 90px 90px 30px',
+          gap: '8px',
+          padding: '10px 12px',
+          cursor: 'pointer',
+          alignItems: 'center',
+          transition: 'background 0.1s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = '#161616'}
+        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+      >
+        <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#f4f4f4', fontWeight: 600 }}>{s.ticker}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', color: '#888', fontFamily: 'DM Mono' }}>
+          {s.inPosition && <span style={{ color: '#EAB308', fontSize: '9px' }}>★ 持倉中</span>}
+          {!s.hasData && <span style={{ color: '#666' }}>無資料</span>}
+          {s.earnDate && (
+            <span style={{ color: s.daysToEarnings <= 7 ? '#a78bfa' : '#666' }}>
+              EPS {s.earnDate} ({s.daysToEarnings >= 0 ? 'T−' + s.daysToEarnings : '已過'})
+            </span>
+          )}
+        </div>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: s.ivr != null ? (s.ivr > 70 ? '#ef4444' : s.ivr > 40 ? '#EAB308' : '#10b981') : '#444' }}>
+          {s.ivr != null ? s.ivr.toFixed(0) : '—'}
+        </div>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#888' }}>
+          {s.beta != null ? s.beta.toFixed(2) : '—'}
+        </div>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#888' }}>
+          {s.expectedMove != null ? '±' + s.expectedMove.toFixed(1) + '%' : '—'}
+        </div>
+        <div style={{ textAlign: 'right', opacity: showBuyer ? 1 : 0.3 }}>
+          {s.buyer.score != null ? (
+            <div>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: buyerColor, fontWeight: 600 }}>{s.buyer.score}</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '8px', color: buyerColor, marginLeft: '4px', letterSpacing: '0.05em' }}>{s.buyer.grade.label}</span>
+            </div>
+          ) : <span style={{ color: '#444', fontFamily: 'DM Mono', fontSize: '11px' }}>—</span>}
+        </div>
+        <div style={{ textAlign: 'right', opacity: showSeller ? 1 : 0.3 }}>
+          {s.seller.score != null ? (
+            <div>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: sellerColor, fontWeight: 600 }}>{s.seller.score}</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '8px', color: sellerColor, marginLeft: '4px', letterSpacing: '0.05em' }}>{s.seller.grade.label}</span>
+            </div>
+          ) : <span style={{ color: '#444', fontFamily: 'DM Mono', fontSize: '11px' }}>—</span>}
+        </div>
+        <div style={{ color: '#666', fontFamily: 'DM Mono', fontSize: '12px', textAlign: 'center' }}>{isExpanded ? '−' : '+'}</div>
+      </div>
+
+      {isExpanded && (
+        <div style={{ padding: '12px 16px 16px 16px', background: '#080808', borderTop: '1px solid #1a1a1a' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            {showBuyer && (
+              <ScannerSignalPanel title="爆噴買方訊號" signals={s.buyer.signals} score={s.buyer.score} grade={s.buyer.grade} accent="#a78bfa" />
+            )}
+            {showSeller && (
+              <ScannerSignalPanel title="IV Crush 賣方訊號" signals={s.seller.signals} score={s.seller.score} grade={s.seller.grade} accent="#14b8a6" />
+            )}
+          </div>
+          {/* Action row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #1a1a1a' }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666' }}>
+              {s.buyer.score != null && s.seller.score != null ? (
+                s.buyer.score > s.seller.score
+                  ? '建議偏向：買方（' + (s.buyer.score - s.seller.score) + ' 分優勢）'
+                  : s.seller.score > s.buyer.score
+                    ? '建議偏向：賣方（' + (s.seller.score - s.buyer.score) + ' 分優勢）'
+                    : '雙邊持平'
+              ) : '資料不足'}
+            </div>
+            {isInWatchlist && !s.inPosition && (
+              <button
+                onClick={onRemove}
+                style={{
+                  background: 'transparent', border: '1px solid #ef444440', color: '#ef4444',
+                  padding: '3px 10px', fontFamily: 'DM Mono', fontSize: '10px',
+                  cursor: 'pointer', borderRadius: '3px',
+                }}
+              >移出 watchlist</button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ScannerSignalPanel({ title, signals, score, grade, accent }) {
+  return (
+    <div style={{ border: '1px solid ' + accent + '30', background: accent + '06', padding: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
+        <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: accent, fontWeight: 600 }}>{title}</span>
+        {score != null && grade && (
+          <div>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '20px', color: grade.color, fontWeight: 600 }}>{score}</span>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '9px', color: grade.color, marginLeft: '6px', letterSpacing: '0.1em' }}>{grade.label}</span>
+          </div>
+        )}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {Object.entries(signals).map(([key, sig]) => (
+          <div key={key}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888' }}>
+                {sig.label}
+                <span style={{ color: '#444', marginLeft: '6px' }}>w{sig.weight}</span>
+              </span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: sig.score != null ? accent : '#444' }}>
+                {sig.score != null ? sig.score.toFixed(0) : '—'}
+              </span>
+            </div>
+            <div style={{ height: '3px', background: '#1a1a1a', overflow: 'hidden' }}>
+              <div style={{
+                height: '100%',
+                width: (sig.score != null ? sig.score : 0) + '%',
+                background: accent,
+                opacity: sig.score != null ? 0.8 : 0,
+                transition: 'width 0.4s',
+              }}></div>
+            </div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#555', marginTop: '2px' }}>{sig.detail}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// BACKTEST CALIBRATION PANEL (Bt_*)
+// ============================================================
+const BT_STORAGE_KEY = 'ddh_backtest_trades';
+
+const BT_PRESET_WEIGHTS = {
+  preEps: {
+    sectorMomentum: 22, flow: 22, ivSetup: 18,
+    epsTrack: 12, shortInterest: 10, gex: 8, structure: 8,
+  },
+  postEps: {
+    beatMagnitude: 22, sectorConfirm: 20, realizedGap: 18,
+    premarket: 12, volume: 10, shortSqueeze: 10, pinStructure: 8,
+  },
+};
+
+const BT_SIGNAL_LABELS = {
+  sectorMomentum: '產業領先股動能',
+  flow: '財報前選擇權累積',
+  ivSetup: 'IV vs 歷史壓縮',
+  epsTrack: '連續 beat 紀錄',
+  shortInterest: '軋空潛力',
+  gex: 'Gamma 結構',
+  structure: '技術 setup',
+  beatMagnitude: '財報超預期幅度',
+  sectorConfirm: '產業共振確認',
+  realizedGap: 'IV crush vs realized 缺口',
+  premarket: '盤前強度',
+  volume: '機構量能',
+  shortSqueeze: '軋空觸發潛力',
+  pinStructure: 'Pin / Gamma 結構',
+};
+
+const BT_SEED_TRADES = [
+  {
+    id: 'sndk-2026-05-08',
+    ticker: 'SNDK',
+    mode: 'postEps',
+    earningsDate: '2026-05-07',
+    tradeDate: '2026-05-08',
+    predictedScore: 98,
+    predictedGrade: 'PREMIUM',
+    signals: { beatMagnitude: 100, sectorConfirm: 95, realizedGap: 95, premarket: 80, volume: 90, shortSqueeze: 70, pinStructure: 100 },
+    actualReturn: 162,
+    actualMovePct: 16.6,
+    ivCrushPct: 47,
+    outcome: 'WIN',
+    notes: '教科書 case — pin break + gamma squeeze',
+  },
+];
+
+const BT_GRADE_COLORS = {
+  PREMIUM: '#a78bfa', STRONG: '#10b981', EARLY: '#EAB308', TRAP: '#94a3b8',
+};
+
+function bt_loadTrades() {
+  try {
+    const raw = localStorage.getItem(BT_STORAGE_KEY);
+    if (!raw) return BT_SEED_TRADES;
+    const p = JSON.parse(raw);
+    return Array.isArray(p) ? p : BT_SEED_TRADES;
+  } catch (e) { return BT_SEED_TRADES; }
+}
+
+function bt_saveTrades(trades) {
+  try { localStorage.setItem(BT_STORAGE_KEY, JSON.stringify(trades)); } catch (e) {}
+}
+
+function bt_gradeOf(score) {
+  if (score >= 90) return 'PREMIUM';
+  if (score >= 75) return 'STRONG';
+  if (score >= 60) return 'EARLY';
+  return 'TRAP';
+}
+
+function bt_rescore(trade, customWeights) {
+  if (!trade.signals) return trade.predictedScore;
+  const w = customWeights || BT_PRESET_WEIGHTS[trade.mode];
+  let total = 0, weightSum = 0;
+  for (const k of Object.keys(w)) {
+    if (isFinite(trade.signals[k])) {
+      total += trade.signals[k] * w[k];
+      weightSum += w[k];
+    }
+  }
+  return weightSum > 0 ? Math.round(total / weightSum) : 0;
+}
+
+function bt_computeStatsByGrade(trades, mode) {
+  const filtered = trades.filter(t => !mode || t.mode === mode);
+  const grades = ['PREMIUM', 'STRONG', 'EARLY', 'TRAP'];
+  return grades.map(g => {
+    const subset = filtered.filter(t => t.predictedGrade === g);
+    if (subset.length === 0) return { grade: g, count: 0, hitRate: null, avgReturn: null, medianReturn: null, bestReturn: null, worstReturn: null };
+    const wins = subset.filter(t => t.outcome === 'WIN').length;
+    const returns = subset.map(t => t.actualReturn || 0).sort((a, b) => a - b);
+    return {
+      grade: g, count: subset.length,
+      hitRate: (wins / subset.length) * 100,
+      avgReturn: returns.reduce((s, r) => s + r, 0) / returns.length,
+      medianReturn: returns[Math.floor(returns.length / 2)],
+      bestReturn: Math.max.apply(null, returns),
+      worstReturn: Math.min.apply(null, returns),
+    };
+  });
+}
+
+function bt_pearson(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return 0;
+  const meanX = xs.reduce((s, x) => s + x, 0) / n;
+  const meanY = ys.reduce((s, y) => s + y, 0) / n;
+  let num = 0, denX = 0, denY = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = xs[i] - meanX, dy = ys[i] - meanY;
+    num += dx * dy; denX += dx * dx; denY += dy * dy;
+  }
+  const den = Math.sqrt(denX * denY);
+  return den === 0 ? 0 : num / den;
+}
+
+function bt_signalCorr(trades, mode) {
+  const filtered = trades.filter(t => (!mode || t.mode === mode) && t.signals && isFinite(t.actualReturn));
+  if (filtered.length < 2) return [];
+  const keys = Object.keys(filtered[0].signals);
+  return keys.map(key => {
+    const xs = filtered.map(t => t.signals[key] || 50);
+    const ys = filtered.map(t => t.actualReturn);
+    return { signal: key, label: BT_SIGNAL_LABELS[key] || key, correlation: bt_pearson(xs, ys) };
+  }).sort((a, b) => b.correlation - a.correlation);
+}
+
+function BacktestPanel() {
+  const [trades, setTrades] = useState(() => bt_loadTrades());
+  const [mode, setMode] = useState('postEps');
+  const [customWeights, setCustomWeights] = useState(BT_PRESET_WEIGHTS.postEps);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  useEffect(() => { bt_saveTrades(trades); }, [trades]);
+  useEffect(() => { setCustomWeights(BT_PRESET_WEIGHTS[mode]); }, [mode]);
+
+  const stats = useMemo(() => bt_computeStatsByGrade(trades, mode), [trades, mode]);
+  const corrs = useMemo(() => bt_signalCorr(trades, mode), [trades, mode]);
+
+  const rescored = useMemo(() => {
+    return trades.filter(t => t.mode === mode).map(t => {
+      const newScore = bt_rescore(t, customWeights);
+      return { ...t, predictedScore: newScore, predictedGrade: bt_gradeOf(newScore) };
+    });
+  }, [trades, mode, customWeights]);
+
+  const newStats = useMemo(() => bt_computeStatsByGrade(rescored, mode), [rescored, mode]);
+
+  function bt_handleAdd(trade) { setTrades([...trades, trade]); }
+  function bt_handleDelete(id) { setTrades(trades.filter(t => t.id !== id)); }
+  function bt_handleUpdate(id, newTrade) { setTrades(trades.map(t => t.id === id ? newTrade : t)); }
+  function bt_handleExport() {
+    const blob = new Blob([JSON.stringify(trades, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ddh-backtest-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  function bt_handleImport() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (Array.isArray(parsed)) {
+            if (window.confirm('匯入 ' + parsed.length + ' 筆？會合併到現有資料 (按 id 去重)。')) {
+              const existing = new Set(trades.map(t => t.id));
+              const merged = trades.concat(parsed.filter(t => !existing.has(t.id)));
+              setTrades(merged);
+            }
+          }
+        } catch (err) { window.alert('匯入失敗: ' + err.message); }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  const sliderKeys = Object.keys(BT_PRESET_WEIGHTS[mode]);
+  const totalWeight = sliderKeys.reduce((s, k) => s + (customWeights[k] || 0), 0);
+
+  return (
+    <div style={{ padding: '16px 24px', background: '#0a0a0a' }}>
+      {/* Mode + actions */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666', letterSpacing: '0.1em' }}>MODE</span>
+          {['preEps', 'postEps'].map(m => (
+            <button key={m} onClick={() => setMode(m)} style={{
+              background: mode === m ? '#a78bfa14' : 'transparent',
+              border: '1px solid ' + (mode === m ? '#a78bfa' : '#2a2a2a'),
+              color: mode === m ? '#a78bfa' : '#888',
+              padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '11px',
+              cursor: 'pointer', borderRadius: '3px',
+            }}>{m}</button>
+          ))}
+          <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666', marginLeft: '12px' }}>
+            {trades.length} 筆樣本
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <button onClick={() => { setShowForm(!showForm); setEditingId(null); }} style={{
+            background: 'transparent', border: '1px solid #EAB308', color: '#EAB308',
+            padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer', borderRadius: '3px',
+          }}>{showForm ? '× 取消' : '＋ 新增'}</button>
+          <button onClick={bt_handleExport} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#888', padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer', borderRadius: '3px' }}>匯出 JSON</button>
+          <button onClick={bt_handleImport} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#888', padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer', borderRadius: '3px' }}>匯入 JSON</button>
+        </div>
+      </div>
+
+      {/* Form */}
+      {showForm && (
+        <Bt_TradeForm
+          existing={editingId ? trades.find(t => t.id === editingId) : null}
+          onSubmit={(t) => {
+            if (editingId) bt_handleUpdate(editingId, t);
+            else bt_handleAdd(t);
+            setShowForm(false); setEditingId(null);
+          }}
+          onCancel={() => { setShowForm(false); setEditingId(null); }}
+        />
+      )}
+
+      {/* 01 — Hit rate by grade */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px' }}>
+          01 · 各等級命中率
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+          {stats.map(s => (
+            <div key={s.grade} style={{ border: '1px solid ' + BT_GRADE_COLORS[s.grade] + '40', background: BT_GRADE_COLORS[s.grade] + '08', padding: '8px 10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+                <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: BT_GRADE_COLORS[s.grade], fontWeight: 600 }}>{s.grade}</span>
+                <span style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#666' }}>n={s.count}</span>
+              </div>
+              {s.count === 0 ? (
+                <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#444' }}>無樣本</div>
+              ) : (
+                <div>
+                  <div style={{ fontFamily: 'DM Mono', fontSize: '20px', color: BT_GRADE_COLORS[s.grade], fontWeight: 600 }}>
+                    {s.hitRate.toFixed(0)}%
+                  </div>
+                  <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', marginTop: '4px' }}>
+                    avg {s.avgReturn != null ? (s.avgReturn >= 0 ? '+' : '') + s.avgReturn.toFixed(0) + '%' : '—'}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 02 — Signal correlation */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px' }}>
+          02 · 信號預測力 (Pearson r)
+        </div>
+        {corrs.length === 0 ? (
+          <div style={{ padding: '12px', border: '1px solid #2a2a2a', color: '#666', fontFamily: 'DM Mono', fontSize: '11px' }}>
+            樣本不足（需要至少 2 筆有 signals + actualReturn）
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {corrs.map(c => {
+              const absCorr = Math.abs(c.correlation);
+              const isPos = c.correlation >= 0;
+              return (
+                <div key={c.signal} style={{ border: '1px solid #2a2a2a', padding: '6px 10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+                    <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#f4f4f4' }}>{c.label}</span>
+                    <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: isPos ? '#10b981' : '#ef4444', fontWeight: 600 }}>
+                      r = {c.correlation.toFixed(3)}
+                    </span>
+                  </div>
+                  <div style={{ height: '3px', background: '#1a1a1a', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: (absCorr * 100) + '%', background: isPos ? '#10b981' : '#ef4444' }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 03 — Weight tuning */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+          <span>03 · 權重實驗室</span>
+          <button onClick={() => setCustomWeights(BT_PRESET_WEIGHTS[mode])} style={{
+            background: 'transparent', border: '1px solid #2a2a2a', color: '#666',
+            padding: '2px 8px', fontFamily: 'DM Mono', fontSize: '9px', cursor: 'pointer',
+          }}>↺ 重設</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          {/* Sliders */}
+          <div style={{ border: '1px solid #2a2a2a', padding: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontFamily: 'DM Mono', fontSize: '10px' }}>
+              <span style={{ color: '#666' }}>{mode} 權重</span>
+              <span style={{ color: Math.abs(totalWeight - 100) < 1 ? '#10b981' : '#EAB308' }}>合計: {totalWeight.toFixed(0)}%</span>
+            </div>
+            {sliderKeys.map(k => (
+              <div key={k} style={{ marginBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px', fontFamily: 'DM Mono', fontSize: '10px' }}>
+                  <span style={{ color: '#888' }}>{BT_SIGNAL_LABELS[k] || k}</span>
+                  <span style={{ color: '#a78bfa' }}>{customWeights[k]}%</span>
+                </div>
+                <input
+                  type="range" min="0" max="40" step="1" value={customWeights[k]}
+                  onChange={e => setCustomWeights(Object.assign({}, customWeights, { [k]: parseFloat(e.target.value) || 0 }))}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            ))}
+          </div>
+          {/* Comparison */}
+          <div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666', marginBottom: '4px' }}>新權重 vs 預設權重</div>
+            {['PREMIUM', 'STRONG', 'EARLY', 'TRAP'].map(g => {
+              const oldS = stats.find(s => s.grade === g);
+              const newS = newStats.find(s => s.grade === g);
+              const oldHit = oldS && oldS.hitRate != null ? oldS.hitRate : null;
+              const newHit = newS && newS.hitRate != null ? newS.hitRate : null;
+              const delta = oldHit != null && newHit != null ? newHit - oldHit : null;
+              return (
+                <div key={g} style={{ border: '1px solid #2a2a2a', padding: '6px 10px', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: BT_GRADE_COLORS[g], fontWeight: 600 }}>{g}</span>
+                  <div style={{ fontFamily: 'DM Mono', fontSize: '11px', display: 'flex', gap: '6px', alignItems: 'baseline' }}>
+                    <span style={{ color: '#666' }}>{oldHit != null ? oldHit.toFixed(0) + '%' : '—'}</span>
+                    <span style={{ color: '#444' }}>→</span>
+                    <span style={{ color: '#f4f4f4' }}>{newHit != null ? newHit.toFixed(0) + '%' : '—'}</span>
+                    {delta != null && (
+                      <span style={{ color: delta > 0 ? '#10b981' : delta < 0 ? '#ef4444' : '#666', fontWeight: 600 }}>
+                        {delta > 0 ? '+' : ''}{delta.toFixed(0)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* 04 — Trade table */}
+      <div>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px' }}>
+          04 · 交易紀錄
+        </div>
+        <div style={{ border: '1px solid #2a2a2a', overflow: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', fontFamily: 'DM Mono' }}>
+            <thead>
+              <tr style={{ background: '#1a1a1a', borderBottom: '1px solid #2a2a2a' }}>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px', letterSpacing: '0.1em' }}>TICKER</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>MODE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>DATE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>SCORE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>GRADE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>STOCK%</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>OPT%</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>OUTCOME</th>
+                <th style={{ padding: '6px 8px', textAlign: 'right', color: '#666', fontSize: '9px' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {trades.map(t => (
+                <tr key={t.id} style={{ borderBottom: '1px solid #1a1a1a' }}>
+                  <td style={{ padding: '6px 8px', color: '#f4f4f4', fontWeight: 600 }}>{t.ticker}</td>
+                  <td style={{ padding: '6px 8px', color: '#888' }}>{t.mode}</td>
+                  <td style={{ padding: '6px 8px', color: '#888' }}>{t.tradeDate || t.earningsDate || '—'}</td>
+                  <td style={{ padding: '6px 8px', color: '#f4f4f4' }}>{t.predictedScore}</td>
+                  <td style={{ padding: '6px 8px', color: BT_GRADE_COLORS[t.predictedGrade] || '#666' }}>{t.predictedGrade}</td>
+                  <td style={{ padding: '6px 8px', color: (t.actualMovePct || 0) >= 0 ? '#10b981' : '#ef4444' }}>
+                    {t.actualMovePct != null ? (t.actualMovePct >= 0 ? '+' : '') + t.actualMovePct.toFixed(1) : '—'}
+                  </td>
+                  <td style={{ padding: '6px 8px', color: (t.actualReturn || 0) >= 0 ? '#10b981' : '#ef4444' }}>
+                    {t.actualReturn != null ? (t.actualReturn >= 0 ? '+' : '') + t.actualReturn.toFixed(0) : '—'}
+                  </td>
+                  <td style={{ padding: '6px 8px', color: t.outcome === 'WIN' ? '#10b981' : t.outcome === 'LOSS' ? '#ef4444' : '#666' }}>
+                    {t.outcome || 'PENDING'}
+                  </td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                    <button onClick={() => { setEditingId(t.id); setShowForm(true); }} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', fontSize: '10px', padding: '0 4px' }}>編輯</button>
+                    <button onClick={() => { if (window.confirm('刪除 ' + t.ticker + '?')) bt_handleDelete(t.id); }} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '10px', padding: '0 4px' }}>×</button>
+                  </td>
+                </tr>
+              ))}
+              {trades.length === 0 && (
+                <tr><td colSpan="9" style={{ padding: '20px', textAlign: 'center', color: '#666', fontSize: '10px' }}>無紀錄。點「＋ 新增」開始累積樣本。</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Bt_TradeForm({ existing, onSubmit, onCancel }) {
+  const [form, setForm] = useState(existing || {
+    id: '', ticker: '', mode: 'preEps', earningsDate: '', tradeDate: '',
+    predictedScore: 0, predictedGrade: 'EARLY', signals: {},
+    actualReturn: 0, actualMovePct: 0, ivCrushPct: 0, outcome: 'PENDING', notes: '',
+  });
+
+  function update(field, value) { setForm(Object.assign({}, form, { [field]: value })); }
+  function updateSig(key, value) {
+    setForm(Object.assign({}, form, { signals: Object.assign({}, form.signals, { [key]: parseFloat(value) || 0 }) }));
+  }
+  function handleSave() {
+    if (!form.ticker || !form.predictedScore) {
+      window.alert('Ticker 和 Predicted Score 必填'); return;
+    }
+    const trade = Object.assign({}, form, {
+      id: form.id || (form.ticker.toLowerCase() + '-' + (form.tradeDate || form.earningsDate || Date.now())),
+      ticker: form.ticker.toUpperCase(),
+      predictedScore: parseFloat(form.predictedScore),
+      predictedGrade: bt_gradeOf(parseFloat(form.predictedScore)),
+      actualReturn: parseFloat(form.actualReturn) || 0,
+      actualMovePct: parseFloat(form.actualMovePct) || 0,
+    });
+    onSubmit(trade);
+  }
+
+  const sigKeys = Object.keys(BT_PRESET_WEIGHTS[form.mode]);
+  const inputStyle = { width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', color: '#f4f4f4', padding: '4px 6px', fontFamily: 'DM Mono', fontSize: '11px' };
+
+  return (
+    <div style={{ border: '1px solid #EAB308', background: '#1a1a1a', padding: '12px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '8px' }}>
+        <Bt_Field label="Ticker *"><input value={form.ticker} onChange={e => update('ticker', e.target.value)} style={inputStyle} /></Bt_Field>
+        <Bt_Field label="Mode">
+          <select value={form.mode} onChange={e => update('mode', e.target.value)} style={inputStyle}>
+            <option value="preEps">preEps</option><option value="postEps">postEps</option>
+          </select>
+        </Bt_Field>
+        <Bt_Field label="Earnings Date"><input type="date" value={form.earningsDate} onChange={e => update('earningsDate', e.target.value)} style={inputStyle} /></Bt_Field>
+        <Bt_Field label="Trade Date"><input type="date" value={form.tradeDate} onChange={e => update('tradeDate', e.target.value)} style={inputStyle} /></Bt_Field>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '8px' }}>
+        <Bt_Field label="Score *"><input type="number" value={form.predictedScore} onChange={e => update('predictedScore', e.target.value)} style={inputStyle} /></Bt_Field>
+        <Bt_Field label="Stock %"><input type="number" step="0.1" value={form.actualMovePct} onChange={e => update('actualMovePct', e.target.value)} style={inputStyle} /></Bt_Field>
+        <Bt_Field label="Option %"><input type="number" value={form.actualReturn} onChange={e => update('actualReturn', e.target.value)} style={inputStyle} /></Bt_Field>
+        <Bt_Field label="Outcome">
+          <select value={form.outcome} onChange={e => update('outcome', e.target.value)} style={inputStyle}>
+            <option>PENDING</option><option>WIN</option><option>LOSS</option><option>WASH</option>
+          </select>
+        </Bt_Field>
+      </div>
+      <div style={{ marginBottom: '8px' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#666', marginBottom: '4px' }}>Signal Scores (0-100, optional)</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+          {sigKeys.map(k => (
+            <Bt_Field key={k} label={BT_SIGNAL_LABELS[k] || k}>
+              <input type="number" min="0" max="100" value={form.signals[k] || ''} onChange={e => updateSig(k, e.target.value)} style={inputStyle} />
+            </Bt_Field>
+          ))}
+        </div>
+      </div>
+      <Bt_Field label="Notes">
+        <textarea value={form.notes} onChange={e => update('notes', e.target.value)} rows="2" style={inputStyle}></textarea>
+      </Bt_Field>
+      <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+        <button onClick={handleSave} style={{ background: '#EAB30814', border: '1px solid #EAB308', color: '#EAB308', padding: '4px 12px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer' }}>儲存</button>
+        <button onClick={onCancel} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#888', padding: '4px 12px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer' }}>取消</button>
+      </div>
+    </div>
+  );
+}
+
+function Bt_Field({ label, children }) {
+  return (
+    <label style={{ display: 'block' }}>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#666', marginBottom: '2px' }}>{label}</div>
+      {children}
+    </label>
+  );
+}
+
+// ============================================================
+// TEXTBOOK VIEWER (Tb_*)
+// ============================================================
+const TB_BUYER_DATA = {
+  title: '爆噴買方教科書 · CASE 002',
+  subtitle: 'SNDK 5/8/2026 · +$553K 一筆交易拆解',
+  hero: {
+    summary: '5/7 收 −4.97%，5/8 開盤 IV 已 crush — 多數人錯過機會。一位 trader 在 17 小時內把 $150K 變成 $700K。',
+    stats: [
+      { label: '單日獲利', value: '+$553K' },
+      { label: '股價漲幅', value: '+16.6%' },
+      { label: '主力 ROI', value: '+161.5%' },
+      { label: '爆噴指數', value: '98 / 100' },
+    ],
+  },
+  positions: [
+    { name: 'SNDK 1250C', strike: 1250, expiry: '5/8 (1DTE)', cost: 150, exit: 270, contracts: 10, profit: 121400, profitPct: 80, deltaAtEntry: 0.85, ivAtEntry: '~180%', note: '隔夜部位，內在價值已厚' },
+    { name: 'SNDK 1300C', strike: 1300, expiry: '5/8 (0DTE)', cost: 102, exit: 256.90, contracts: 3, profit: 46470, profitPct: 151.8, deltaAtEntry: 0.72, ivAtEntry: '~120%', note: '小倉位 ITM call，作為錨' },
+    { name: 'SNDK 1400C ★', strike: 1400, expiry: '5/8 (0DTE)', cost: 60, exit: 156.90, contracts: 39, profit: 377910, profitPct: 161.5, deltaAtEntry: 0.28, ivAtEntry: '~95%', note: '主力部位 — OTM 槓桿引擎，EOD gamma squeeze 受益最大' },
+    { name: 'MU 665C', strike: 665, expiry: '5/8', cost: 29, exit: 79.675, contracts: 2, profit: 10135, profitPct: 174.7, deltaAtEntry: 0.45, ivAtEntry: '~75%', note: '產業領先股 confirmation 部位' },
+  ],
+  signals: [
+    { id: 1, name: '結構性 Catalyst', weight: 25, met: true, rationale: 'Q3 EPS 炸裂：營收 $5.95B (+250% YoY)、毛利率擴 5,570bps 到 78.4%。非單季雜訊，是 AI 記憶體超循環。', metric: 'Revenue +250% YoY' },
+    { id: 2, name: 'IV 壓縮 vs Realized 噴發', weight: 25, met: true, rationale: '盤前 IV 已 crush 一半（180% → 95%），但市場低估後續延續性。當日 realized vol 16.6%，是 implied 預期的 3.7x。', metric: 'Realized / Implied = 3.7x' },
+    { id: 3, name: '0DTE 末日載具', weight: 20, met: true, rationale: '5/8 同日到期 OTM call ($60 權利金 / $60 OTM)，純粹槓桿無 theta 過夜成本。Delta ~0.28 但 gamma 極高。', metric: 'OTM call $60 → $156.90 (+162%)' },
+    { id: 4, name: '產業領先股確認', weight: 20, met: true, rationale: 'MU 同步強勢拉升 → 否定 SNDK 被獨力壓盤的可能。產業 capital flow 連動是 capital flow 層的關鍵讀盤。', metric: 'MU 同日 +5.4% / 領先 SNDK 半小時' },
+    { id: 5, name: 'Pin Break / Gamma Squeeze', weight: 10, met: true, rationale: '盤中跌破 $1500 但尾盤拉破 $1500 → $1562。造市商 short gamma 被迫追價，加速漲幅。', metric: '盤中低 $1,292 → 收 $1,562' },
+  ],
+  lessons: {
+    skill: [
+      { title: '轉倉節奏 (Pyramid)', detail: '把昨日獲利 lock，再用獲利去 lever 更虛值的 0DTE。worst case 是「贏少」而非「吐回」。' },
+      { title: 'Pin Break 判斷', detail: '盤中跌破 $1500 時，正常邏輯是收盤被壓回。但因為 MU 太強，反向 gamma squeeze。' },
+      { title: '部位偏向 OTM', detail: '$234K 押 1400C (39 口) vs $30K 押 1300C (3 口) — 同%報酬下，OTM 才是引擎。' },
+    ],
+    luck: [
+      { title: '+16.6% 單日漲幅', detail: '即使財報 beat，單日 16.6% 仍是右尾事件。下次同條件可能 +5% 收場。' },
+      { title: '尾盤 gamma squeeze 觸發', detail: '若 EOD 在 $1490 收盤，1400C 仍會 expire worthless。Pin break 是 binary outcome。' },
+    ],
+    avoid: [
+      { title: '不要内化 hindsight', detail: '"if I bought 1500C 賺 200萬" — 這種事後推論是噪音。真實能執行的是 1300/1400 roll。' },
+    ],
+  },
+};
+
+const TB_SELLER_DATA = {
+  title: 'IV Crush 賣方教科書 · CASE 003',
+  subtitle: '爆噴的反面 · 樂透 + 租金的雙引擎',
+  hero: {
+    summary: '爆噴模型賺右尾。這份教你賺常態 — 「implied > realized」的均值回歸。勝率 70-85%，賠率較低，但這才是每月穩定現金流。',
+    stats: [
+      { label: '典型勝率', value: '70-85%' },
+      { label: '典型賠率', value: '1 : 0.4' },
+      { label: '期望值來源', value: 'IV Crush' },
+      { label: '尾部風險(SNDK)', value: '−166%' },
+    ],
+  },
+  winCase: {
+    title: 'AAPL archetype · 18 小時 +76% max profit',
+    phases: [
+      { label: 'T −1', title: '識別 IV setup', detail: 'IV 52% (pctl 92)、Implied 4.5%、Hist 2.8% = 1.61x 過度定價' },
+      { label: 'T 0', title: '賣 16Δ short strangle', detail: '$250C $4.20 + $230P $4.50 = $8.70 credit × 5 口 = $4,350' },
+      { label: 'T 0 PM', title: '財報發布', detail: 'Beat + in-line guide。盤後 +1.5%。預期 IV 將崩' },
+      { label: 'T +1', title: 'IV crush 平倉', detail: 'Spot $244.20 (+1.75%)、IV 52→32、平倉 $2.10 → 實現 +$3,300 (76% max)' },
+    ],
+  },
+  signals: [
+    { id: 1, weight: 25, name: 'IV Percentile / Rank', target: 'IV pctl ≥ 85', caution: 'IV pctl > 95 反而是警訊', detail: 'IV 必須在 90 天範圍 top 15%。' },
+    { id: 2, weight: 22, name: 'Implied vs Historical Move', target: 'Ratio ≥ 1.4x', caution: '只看一季 sample 不夠，至少 8 季', detail: 'ATM straddle 隱含 % move vs 過去 8 季平均財報後 move。' },
+    { id: 3, weight: 15, name: 'Term Structure Backwardation', target: 'Front − Back ≥ 5 點', caution: '整條曲線都高 = 巨集風險', detail: 'Front-month IV 高於 back-month — 賣前月、保留遠月避險彈性。' },
+    { id: 4, weight: 12, name: '股性穩定度', target: 'Beta ≤ 1.3 · ADR ≤ 3%', caution: '高 beta 股 tail risk 非線性', detail: '低 beta + 低 ADR 的股票賣方 tail risk 較低。SNDK 不適合。' },
+    { id: 5, weight: 10, name: '產業共振（反向）', target: '同業 5 日 < +3%', caution: '與爆噴模型反向', detail: '產業內走勢分歧時，賣方環境較佳。' },
+    { id: 6, weight: 8, name: '流動性與 OI', target: 'OI ≥ 5,000 · Spread ≤ 5%', caution: '小型股 weekly 流動性陷阱', detail: '近月 ATM OI > 5,000、bid-ask spread < 5%。' },
+    { id: 7, weight: 8, name: '結構選擇', target: '預設 iron condor', caution: 'Naked 留給 10+ 次經驗', detail: 'Iron condor 比 naked strangle 損失有限。' },
+  ],
+  structures: [
+    { name: 'SHORT STRANGLE', alias: '裸賣勒式', risk: 'UNDEFINED', pop: '70-85%', when: '已 100% 熟悉的 underlying，IV pctl > 90，ADR < 2%', avoid: '高 beta 股、新聞前、初學者' },
+    { name: 'IRON CONDOR', alias: '鐵兀鷹（首選）', risk: 'DEFINED', pop: '65-75%', when: 'IV pctl > 85，預期股價區間震盪', avoid: 'Catalyst 太強的標的' },
+    { name: 'JADE LIZARD', alias: '玉蜥蜴', risk: 'DEFINED 上 / UNDEFINED 下', pop: '70-80%', when: '看不跌不過度漲，願意承接股票', avoid: '看空 / 不願持股' },
+    { name: 'CALENDAR', alias: '日曆價差', risk: 'DEFINED', pop: '50-65%', when: 'Term structure 極端 backwardation', avoid: '方向性不明、不熟悉 vol 動態' },
+  ],
+  riskRules: [
+    { id: 1, rule: '單一部位 ≤ 帳戶 3%', detail: 'IV crush worst case 是 -300% credit。3% × 3 倍 = 9% 帳戶風險，可承受。', nonNegotiable: true },
+    { id: 2, rule: '永遠用 defined-risk 結構', detail: '50+ 次經驗前不考慮 naked strangle。Iron condor 損失上限明確。', nonNegotiable: true },
+    { id: 3, rule: '50% 獲利平倉', detail: '收 $100 credit，跌到 $50 平倉。不要貪 last 50%。', nonNegotiable: false },
+    { id: 4, rule: '200% 虧損硬停損', detail: '收 $100，漲到 $300（虧 $200）無條件平倉。', nonNegotiable: true },
+    { id: 5, rule: '21 DTE 一律平倉或 roll', detail: '到期前 21 天 gamma 風險急升。寧可少賺。', nonNegotiable: false },
+    { id: 6, rule: '單一產業曝險上限 8%', detail: '同產業 NVDA + AVGO + AMD 合計不超過帳戶 8%。產業共振會同時打擊。', nonNegotiable: true },
+  ],
+  lossCase: {
+    title: 'SNDK 5/8/2026 · 賣方災難',
+    summary: '同一筆財報，買方 +161%、賣方 −166%。差別在 catalyst 性質，不在 IV pctl。',
+    pre: { spot: 1339.96, iv: 180, ivPctl: 85, impliedMove: 9.5, histMove: 7.2, ratio: 1.32 },
+    post: { spot: 1562.34, actualMove: 16.6, callValue: 62, creditCollected: 12000, costToClose: 18630, profit: -6630 },
+    reasons: [
+      'SNDK 是高 beta 的單向 catalyst 股 — 不適合賣 strangle',
+      'Realized 16.6% > implied 9.5% × 1.74 倍（買方賺錢條件）',
+      '產業 capital flow 連動（MU 領先）放大單方向動能',
+      'Pin break 後 gamma squeeze 加速，call 端深度 ITM',
+      'IV crush 47% 但 call leg intrinsic 增加遠超 IV 收益',
+    ],
+  },
+};
+
+function TextbookViewer() {
+  const [tab, setTab] = useState('buyer');
+  const data = tab === 'buyer' ? TB_BUYER_DATA : TB_SELLER_DATA;
+  const accentColor = tab === 'buyer' ? '#EAB308' : '#14b8a6';
+
+  return (
+    <div style={{ padding: '16px 24px', background: '#0a0a0a' }}>
+      {/* Tab toggle */}
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', borderBottom: '1px solid #2a2a2a', paddingBottom: '8px' }}>
+        <button onClick={() => setTab('buyer')} style={{
+          background: tab === 'buyer' ? '#EAB30814' : 'transparent',
+          border: '1px solid ' + (tab === 'buyer' ? '#EAB308' : '#2a2a2a'),
+          color: tab === 'buyer' ? '#EAB308' : '#888',
+          padding: '6px 14px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer',
+        }}>📚 爆噴買方</button>
+        <button onClick={() => setTab('seller')} style={{
+          background: tab === 'seller' ? '#14b8a614' : 'transparent',
+          border: '1px solid ' + (tab === 'seller' ? '#14b8a6' : '#2a2a2a'),
+          color: tab === 'seller' ? '#14b8a6' : '#888',
+          padding: '6px 14px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer',
+        }}>📚 IV Crush 賣方</button>
+      </div>
+
+      {/* Hero */}
+      <div style={{ marginBottom: '20px', padding: '14px', border: '1px solid ' + accentColor + '40', background: accentColor + '06' }}>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', color: '#f4f4f4', fontWeight: 700, marginBottom: '4px' }}>{data.title}</div>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: accentColor, marginBottom: '8px' }}>{data.subtitle}</div>
+        <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.7, margin: '0 0 12px 0', fontFamily: 'Noto Sans TC' }}>{data.hero.summary}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+          {data.hero.stats.map((s, i) => (
+            <div key={i} style={{ border: '1px solid #2a2a2a', padding: '8px', background: '#0a0a0a' }}>
+              <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#666', letterSpacing: '0.1em' }}>{s.label}</div>
+              <div style={{ fontFamily: 'DM Mono', fontSize: '18px', color: accentColor, fontWeight: 600, marginTop: '2px' }}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {tab === 'buyer' ? <Tb_BuyerContent data={data} /> : <Tb_SellerContent data={data} />}
+    </div>
+  );
+}
+
+function Tb_SectionHeader({ kicker, title, accent }) {
+  return (
+    <div style={{ marginTop: '20px', marginBottom: '10px' }}>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: accent || '#EAB308', letterSpacing: '0.15em', marginBottom: '4px' }}>{kicker}</div>
+      <div style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', color: '#f4f4f4', fontWeight: 700 }}>{title}</div>
+    </div>
+  );
+}
+
+function Tb_BuyerContent({ data }) {
+  return (
+    <div>
+      <Tb_SectionHeader kicker="ANATOMY · 部位拆解" title="他到底買了什麼" accent="#EAB308" />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {data.positions.map((p, i) => (
+          <div key={i} style={{ border: '1px solid #2a2a2a', padding: '10px', background: '#0f0f0f' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#f4f4f4', fontWeight: 600 }}>{p.name}</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#10b981', fontWeight: 600 }}>+${(p.profit).toLocaleString()} ({p.profitPct >= 0 ? '+' : ''}{p.profitPct}%)</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', marginBottom: '6px' }}>
+              <Tb_Cell label="到期" value={p.expiry} />
+              <Tb_Cell label="張數" value={p.contracts} />
+              <Tb_Cell label="成本" value={'$' + p.cost} />
+              <Tb_Cell label="出場" value={'$' + p.exit} />
+              <Tb_Cell label="進場 Δ" value={p.deltaAtEntry} />
+            </div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', borderLeft: '2px solid #EAB308', paddingLeft: '8px' }}>{p.note}</div>
+          </div>
+        ))}
+      </div>
+
+      <Tb_SectionHeader kicker="FRAMEWORK · 5 信號" title="爆噴模型 V2" accent="#EAB308" />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {data.signals.map(s => (
+          <div key={s.id} style={{ border: '1px solid #2a2a2a', padding: '10px', background: '#0f0f0f' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4', fontWeight: 600 }}>0{s.id} · {s.name}</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#EAB308' }}>w {s.weight}%</span>
+            </div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#888', lineHeight: 1.6, marginBottom: '4px' }}>{s.rationale}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#10b981' }}>★ {s.metric}</div>
+          </div>
+        ))}
+      </div>
+
+      <Tb_SectionHeader kicker="DISTILLATION · 內化" title="技術 / 運氣 / 陷阱" accent="#EAB308" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+        <Tb_LessonColumn title="技術" color="#10b981" items={data.lessons.skill} />
+        <Tb_LessonColumn title="運氣" color="#EAB308" items={data.lessons.luck} />
+        <Tb_LessonColumn title="陷阱" color="#ef4444" items={data.lessons.avoid} />
+      </div>
+    </div>
+  );
+}
+
+function Tb_SellerContent({ data }) {
+  return (
+    <div>
+      <Tb_SectionHeader kicker="ANATOMY · 4 階段" title={data.winCase.title} accent="#14b8a6" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+        {data.winCase.phases.map((p, i) => (
+          <div key={i} style={{ border: '1px solid #2a2a2a', padding: '10px', background: '#0f0f0f' }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#14b8a6', letterSpacing: '0.1em', marginBottom: '4px' }}>{p.label}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4', fontWeight: 600, marginBottom: '4px' }}>{p.title}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', lineHeight: 1.6 }}>{p.detail}</div>
+          </div>
+        ))}
+      </div>
+
+      <Tb_SectionHeader kicker="FRAMEWORK · 7 信號" title="什麼條件下才該賣" accent="#14b8a6" />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {data.signals.map(s => (
+          <div key={s.id} style={{ border: '1px solid #2a2a2a', padding: '10px', background: '#0f0f0f' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4', fontWeight: 600 }}>0{s.id} · {s.name}</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#14b8a6' }}>w {s.weight}%</span>
+            </div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#888', lineHeight: 1.6, marginBottom: '4px' }}>{s.detail}</div>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#14b8a6' }}>✓ TARGET: {s.target}</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#ef4444' }}>⚠ {s.caution}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Tb_SectionHeader kicker="STRUCTURES · 4 種結構" title="用哪種結構賣" accent="#14b8a6" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+        {data.structures.map((s, i) => (
+          <div key={i} style={{ border: '1px solid #2a2a2a', padding: '10px', background: '#0f0f0f' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4', fontWeight: 600 }}>{s.name}</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '9px', color: s.risk.indexOf('UNDEFINED') >= 0 && s.risk.indexOf('DEFINED') < 0 ? '#ef4444' : '#10b981', padding: '1px 6px', border: '1px solid currentColor' }}>{s.risk}</span>
+            </div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', marginBottom: '4px' }}>{s.alias} · PoP {s.pop}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#10b981', marginBottom: '2px' }}>✓ 用: {s.when}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#ef4444' }}>✗ 避: {s.avoid}</div>
+          </div>
+        ))}
+      </div>
+
+      <Tb_SectionHeader kicker="RISK · 6 條規則" title="不守 = 死" accent="#ef4444" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+        {data.riskRules.map(r => (
+          <div key={r.id} style={{ border: '1px solid ' + (r.nonNegotiable ? '#ef4444' : '#2a2a2a'), padding: '10px', background: r.nonNegotiable ? '#ef444408' : '#0f0f0f' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4', fontWeight: 600 }}>0{r.id} · {r.rule}</span>
+              {r.nonNegotiable && <span style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#ef4444' }}>★ 強制</span>}
+            </div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '10px', color: '#888', lineHeight: 1.6 }}>{r.detail}</div>
+          </div>
+        ))}
+      </div>
+
+      <Tb_SectionHeader kicker="CAUTIONARY · SNDK 賣方災難" title={data.lossCase.title} accent="#ef4444" />
+      <div style={{ border: '1px solid #ef4444', background: '#ef444408', padding: '12px' }}>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#888', lineHeight: 1.7, marginBottom: '10px' }}>{data.lossCase.summary}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '10px' }}>
+          <div style={{ border: '1px solid #2a2a2a', padding: '8px', background: '#0a0a0a' }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#EAB308', marginBottom: '4px' }}>進場前看似誘人</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', lineHeight: 1.7 }}>
+              Spot ${data.lossCase.pre.spot} · IV {data.lossCase.pre.iv}% (pctl {data.lossCase.pre.ivPctl}) · Implied {data.lossCase.pre.impliedMove}% / Hist {data.lossCase.pre.histMove}% = {data.lossCase.pre.ratio}x
+            </div>
+          </div>
+          <div style={{ border: '1px solid #ef4444', padding: '8px', background: '#0a0a0a' }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#ef4444', marginBottom: '4px' }}>18 小時後</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', lineHeight: 1.7 }}>
+              Spot ${data.lossCase.post.spot} (+{data.lossCase.post.actualMove}%) · 平倉 ${data.lossCase.post.costToClose.toLocaleString()} · 損益 <span style={{ color: '#ef4444', fontWeight: 600 }}>${data.lossCase.post.profit.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#888', marginBottom: '6px', fontWeight: 600 }}>為什麼炸：</div>
+        <ol style={{ margin: 0, paddingLeft: '20px', fontFamily: 'Noto Sans TC', fontSize: '10px', color: '#888', lineHeight: 1.8 }}>
+          {data.lossCase.reasons.map((r, i) => <li key={i}>{r}</li>)}
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+function Tb_Cell({ label, value }) {
+  return (
+    <div>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#666', letterSpacing: '0.1em' }}>{label}</div>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#f4f4f4', marginTop: '1px' }}>{value}</div>
+    </div>
+  );
+}
+
+function Tb_LessonColumn({ title, color, items }) {
+  return (
+    <div>
+      <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: color, fontWeight: 700, marginBottom: '6px', borderLeft: '3px solid ' + color, paddingLeft: '6px' }}>{title}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {items.map((item, i) => (
+          <div key={i} style={{ border: '1px solid #2a2a2a', padding: '8px', background: '#0f0f0f' }}>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#f4f4f4', fontWeight: 600, marginBottom: '2px' }}>{item.title}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '10px', color: '#888', lineHeight: 1.6 }}>{item.detail}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // MAIN APP
 // ============================================================
 function App() {
@@ -6002,6 +7332,9 @@ function App() {
   const [showSetup, setShowSetup] = useState(!SUPABASE_ANON_KEY);
   const [collapseL2, setCollapseL2] = useState(false);
   const [collapseL1, setCollapseL1] = useState(false);
+  const [collapseScanner, setCollapseScanner] = useState(true);
+  const [collapseTextbook, setCollapseTextbook] = useState(true);
+  const [collapseBacktest, setCollapseBacktest] = useState(true);
 
   // AI portfolio summary — auto-triggered on positions change (debounced 30 min)
   const [aiSummary, setAiSummary] = useState(null);
@@ -6390,6 +7723,39 @@ function App() {
             )}
           </div>
         )}
+
+        {/* ── 選擇權機會掃描器（爆噴 ⊕ IV Crush 雙邊評分）── */}
+        <CollapsibleSection
+          title="選擇權機會掃描器"
+          subtitle="爆噴買方 ⊕ IV Crush 賣方 · 7-signal 雙邊評分"
+          collapsed={collapseScanner}
+          setCollapsed={setCollapseScanner}
+          icon={Target}
+        >
+          <OptionsScanner positions={positions} />
+        </CollapsibleSection>
+
+        {/* ── 期權教科書（Buyer / Seller 雙本）── */}
+        <CollapsibleSection
+          title="期權教科書"
+          subtitle="爆噴買方 (CASE 002) ⊕ IV Crush 賣方 (CASE 003)"
+          collapsed={collapseTextbook}
+          setCollapsed={setCollapseTextbook}
+          icon={BookOpen}
+        >
+          <TextbookViewer />
+        </CollapsibleSection>
+
+        {/* ── Scanner Backtest 校準 ── */}
+        <CollapsibleSection
+          title="Scanner Backtest 校準"
+          subtitle="hit rate · signal correlation · weight tuning"
+          collapsed={collapseBacktest}
+          setCollapsed={setCollapseBacktest}
+          icon={Activity}
+        >
+          <BacktestPanel />
+        </CollapsibleSection>
 
         {/* ── 暗池 × 期權流 交叉訊號 ── */}
         <CrossSignalSection positions={positions} />
