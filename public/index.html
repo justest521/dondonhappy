@@ -3662,6 +3662,25 @@ function approxQQQWeight(details) {
 }
 
 // ────────────────────────────────────────────────────────────
+// Source health tracker (per-source success/error timestamps)
+// Widgets read this via FreshnessBadge to show live freshness state.
+// ────────────────────────────────────────────────────────────
+if (typeof window !== 'undefined' && !window.__SOURCE_HEALTH) {
+  window.__SOURCE_HEALTH = {};
+}
+function recordSourceHealth(source, ok, errMsg) {
+  if (typeof window === 'undefined') return;
+  if (!window.__SOURCE_HEALTH) window.__SOURCE_HEALTH = {};
+  const h = window.__SOURCE_HEALTH[source] || { ok: 0, err: 0, lastOk: null, lastErr: null, lastErrMsg: null };
+  if (ok) {
+    h.ok++; h.lastOk = Date.now(); h.lastErrMsg = null;
+  } else {
+    h.err++; h.lastErr = Date.now(); h.lastErrMsg = errMsg || 'unknown';
+  }
+  window.__SOURCE_HEALTH[source] = h;
+}
+
+// ────────────────────────────────────────────────────────────
 // Unusual Whales helpers — IVR, earnings, GEX (all 15min cached server-side)
 // ────────────────────────────────────────────────────────────
 async function fetchIVR(ticker) {
@@ -3669,19 +3688,20 @@ async function fetchIVR(ticker) {
   if (!t) return null;
   try {
     const r = await fetch(WORKER_URL + '/api/uw/api/stock/' + encodeURIComponent(t) + '/iv-rank?timespan=1m');
-    if (!r.ok) return null;
+    if (!r.ok) { recordSourceHealth('ivr', false, 'HTTP ' + r.status); return null; }
     const d = await r.json();
     const arr = d && d.data;
-    if (!Array.isArray(arr) || arr.length === 0) return null;
+    if (!Array.isArray(arr) || arr.length === 0) { recordSourceHealth('ivr', false, 'no data'); return null; }
     const latest = arr[arr.length - 1];
     const rank = parseFloat(latest.iv_rank_1y);
     const iv = parseFloat(latest.volatility);
+    recordSourceHealth('ivr', true);
     return {
       ivr: isFinite(rank) ? parseFloat(rank.toFixed(1)) : null,
-      iv: isFinite(iv) ? parseFloat((iv * 100).toFixed(1)) : null,  // implied vol % annualized
+      iv: isFinite(iv) ? parseFloat((iv * 100).toFixed(1)) : null,
       asOf: latest.date,
     };
-  } catch (_) { return null; }
+  } catch (e) { recordSourceHealth('ivr', false, e.message); return null; }
 }
 
 async function fetchEarnings(ticker) {
@@ -3689,18 +3709,18 @@ async function fetchEarnings(ticker) {
   if (!t) return null;
   try {
     const r = await fetch(WORKER_URL + '/api/uw/api/earnings/' + encodeURIComponent(t));
-    if (!r.ok) return null;
+    if (!r.ok) { recordSourceHealth('earnings', false, 'HTTP ' + r.status); return null; }
     const d = await r.json();
     const arr = d && d.data;
-    if (!Array.isArray(arr) || arr.length === 0) return null;
-    // Find next future earnings (sort ascending and grab first one >= today)
+    if (!Array.isArray(arr) || arr.length === 0) { recordSourceHealth('earnings', false, 'no data'); return null; }
     const today = new Date().toISOString().slice(0, 10);
     const future = arr
       .filter((e) => e.report_date && e.report_date >= today)
       .sort((a, b) => (a.report_date < b.report_date ? -1 : 1));
-    if (future.length === 0) return null;
+    if (future.length === 0) { recordSourceHealth('earnings', true); return null; }  // no upcoming = ok response
     const next = future[0];
     const movePct = parseFloat(next.expected_move_perc);
+    recordSourceHealth('earnings', true);
     return {
       date: next.report_date,
       time: next.report_time || null,
@@ -3708,29 +3728,31 @@ async function fetchEarnings(ticker) {
       expectedMove: parseFloat(next.expected_move) || null,
       streetEst: parseFloat(next.street_mean_est) || null,
     };
-  } catch (_) { return null; }
+  } catch (e) { recordSourceHealth('earnings', false, e.message); return null; }
 }
 
 // ── UW: Options Flow (異常期權流) ──
-// UW real path: /api/option-trades/flow-alerts (worker strips /api/uw, then prefixes api.unusualwhales.com)
 async function fetchUWFlow(limit = 100) {
   try {
     const r = await fetch(WORKER_URL + '/api/uw/api/option-trades/flow-alerts?limit=' + limit);
-    if (!r.ok) return null;
+    if (!r.ok) { recordSourceHealth('uwFlow', false, 'HTTP ' + r.status); return null; }
     const d = await r.json();
-    return (d.data || d || []).slice(0, limit);
-  } catch(e) { return null; }
+    const arr = (d.data || d || []).slice(0, limit);
+    recordSourceHealth('uwFlow', true);
+    return arr;
+  } catch(e) { recordSourceHealth('uwFlow', false, e.message); return null; }
 }
 
 // ── UW: Dark Pool (暗池大單) ──
-// UW real path: /api/darkpool/recent
 async function fetchUWDark(limit = 50) {
   try {
     const r = await fetch(WORKER_URL + '/api/uw/api/darkpool/recent?limit=' + limit);
-    if (!r.ok) return null;
+    if (!r.ok) { recordSourceHealth('uwDark', false, 'HTTP ' + r.status); return null; }
     const d = await r.json();
-    return (d.data || d || []).slice(0, limit);
-  } catch(e) { return null; }
+    const arr = (d.data || d || []).slice(0, limit);
+    recordSourceHealth('uwDark', true);
+    return arr;
+  } catch(e) { recordSourceHealth('uwDark', false, e.message); return null; }
 }
 
 // ── Cross Signal Engine: 暗池 × 期權流交叉比對 ──
@@ -6246,6 +6268,7 @@ function OptionsScanner({ positions }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#9a9a9a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>MODE</span>
+          <FreshnessBadge sources={['ivr', 'earnings', 'uwFlow']} label="資料" />
           {[
             { id: 'both', label: '雙邊', color: '#EAB308' },
             { id: 'buyer', label: '爆噴買方', color: '#a78bfa' },
@@ -7231,8 +7254,9 @@ function TextbookLiveMatches({ onJumpToScanner }) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', borderBottom: '1px solid #2a2a2a', paddingBottom: '10px' }}>
         <div>
-          <div style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', fontWeight: 700, color: '#f4f4f4' }}>
+          <div style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', fontWeight: 700, color: '#f4f4f4', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             🎯 即時符合教科書條件的標的 · LIVE
+            <FreshnessBadge sources={['ivr', 'earnings', 'uwFlow']} label="資料" />
           </div>
           <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', marginTop: '3px', letterSpacing: '0.05em' }}>
             掃 {watchlist.length} 檔 watchlist · IVR + earnings + β + UW flow · {ageStr} · auto 60s
@@ -8398,6 +8422,71 @@ function HealthIndicator() {
   );
 }
 
+// ────────────────────────────── Freshness Badge
+// Per-widget honest indicator of data source freshness. Reads from
+// window.__SOURCE_HEALTH (populated by recordSourceHealth in fetcher
+// wrappers). Renders dot + label:
+//   🟢 "Xs 前更新"   — last success within 5 min
+//   🟡 "Xm 前 (舊)"  — last success but >5 min stale
+//   🔴 "失敗"         — last attempt was an error after last success
+//   ⚫ "尚未取得"     — never succeeded (might still be loading)
+function FreshnessBadge({ sources, label }) {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  const stats = sources.map(s => (typeof window !== 'undefined' && window.__SOURCE_HEALTH && window.__SOURCE_HEALTH[s]) || null);
+  const present = stats.filter(s => s != null);
+  const noneReady = present.length === 0 || present.every(s => !s.lastOk && !s.lastErr);
+  const anyFailedSinceSuccess = present.some(s => s.lastErr && (!s.lastOk || s.lastErr > s.lastOk));
+  const oldestSuccess = present
+    .map(s => s && s.lastOk)
+    .filter(x => x)
+    .reduce((a, b) => Math.min(a, b), Date.now());
+
+  let color = '#10b981';
+  let text = '已連線';
+  let title = sources.join(' · ');
+
+  if (noneReady) {
+    color = '#7a7a7a'; text = '尚未取得';
+  } else if (anyFailedSinceSuccess) {
+    color = '#ef4444';
+    const failed = present.filter(s => s.lastErr && (!s.lastOk || s.lastErr > s.lastOk));
+    text = '失敗 (' + failed.length + '/' + present.length + ')';
+    title = failed.map((s, i) => sources[stats.indexOf(s)] + ': ' + (s.lastErrMsg || '?')).join('\n');
+  } else {
+    const ageS = Math.round((Date.now() - oldestSuccess) / 1000);
+    if (ageS < 300) { color = '#10b981'; text = ageS + 's 前更新'; }
+    else if (ageS < 1800) { color = '#EAB308'; text = Math.round(ageS / 60) + 'm 前 (舊)'; }
+    else { color = '#ef4444'; text = Math.round(ageS / 60) + 'm 前 (太舊)'; }
+  }
+
+  return (
+    <span
+      title={title}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '5px',
+        padding: '2px 8px',
+        background: color + '14',
+        border: '1px solid ' + color + '60',
+        borderRadius: '10px',
+        fontFamily: 'DM Mono', fontSize: '10px',
+        color: color, letterSpacing: '0.05em',
+      }}
+    >
+      <span style={{
+        width: '6px', height: '6px', borderRadius: '50%',
+        background: color,
+        boxShadow: color === '#10b981' ? '0 0 4px ' + color : 'none',
+      }} />
+      {label || ''}{label ? ' · ' : ''}{text}
+    </span>
+  );
+}
+
 // ────────────────────────────── Tab Nav (sticky under AppHeader)
 function TabNav({ activeTab, setActiveTab }) {
   const tabs = [
@@ -8886,7 +8975,7 @@ function CrossSignalSection({ positions }) {
           borderBottom: collapsed ? 'none' : '1px solid #2a2a2a',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '14px' }}>🎯</span>
           <div>
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#f4f4f4', fontFamily: 'DM Mono', letterSpacing: '0.08em' }}>
@@ -8896,6 +8985,7 @@ function CrossSignalSection({ positions }) {
               機構同步佈局偵測
             </span>
           </div>
+          <FreshnessBadge sources={['uwFlow', 'uwDark']} label="UW" />
           {signals.length > 0 && (
             <span style={{
               fontSize: '12px', padding: '1px 7px', borderRadius: '10px',
