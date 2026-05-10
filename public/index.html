@@ -6021,6 +6021,7 @@ function MacroContextBanner({ score, band, alerts, hedgeBudgetBps }) {
     fetchIVR, fetchEarnings, fetchUWFlow, fetchUWDark,
     fetchScannerBatchAndCache,
     fetchTickerDetails,
+    classifyTickerProfile,
     recordSourceHealth,
     bsGreeks: typeof bsGreeks !== 'undefined' ? bsGreeks : null,
     fetchSpotPrice: typeof fetchSpotPrice !== 'undefined' ? fetchSpotPrice : null,
@@ -6032,6 +6033,7 @@ const {
   fetchIVR, fetchEarnings, fetchUWFlow, fetchUWDark,
   fetchScannerBatchAndCache,
   fetchTickerDetails,
+  classifyTickerProfile,
   recordSourceHealth,
 } = VIXModule;
 // Expose WORKER_URL globally so anywhere can use it without scope drama
@@ -6421,11 +6423,29 @@ function RiskDashboard({ positions, portfolioTotal }) {
       .map(p => (p.ticker || '').toUpperCase())
       .filter(Boolean))];
     if (uniqueTickers.length === 0) return;
+
+    // 1. Scanner batch (IVR + earnings + spot price)
     const spotCache = window.__SPOT_CACHE || {};
     const ivrCache = window.__IVR_CACHE || {};
-    const missing = uniqueTickers.filter(t => spotCache[t] == null || ivrCache[t] == null);
-    if (missing.length === 0) return;
-    fetchScannerBatchAndCache(uniqueTickers).finally(() => setTick(x => x + 1));
+    const missingScan = uniqueTickers.filter(t => spotCache[t] == null || ivrCache[t] == null);
+    if (missingScan.length > 0) {
+      fetchScannerBatchAndCache(uniqueTickers).finally(() => setTick(x => x + 1));
+    }
+
+    // 2. Ticker profiles (sector classification) — L2 only seeds 10 tickers,
+    //    users may hold others (KO, JNJ, FLEX, XOM, VIX). Fetch missing ones.
+    const profiles = window.__TICKER_PROFILES || {};
+    const missingProfiles = uniqueTickers.filter(t => profiles[t] == null && t !== 'CASH' && t !== 'VIX');
+    if (missingProfiles.length > 0) {
+      Promise.all(missingProfiles.map(t =>
+        fetchTickerDetails(t).then(d => {
+          if (d) {
+            window.__TICKER_PROFILES = window.__TICKER_PROFILES || {};
+            window.__TICKER_PROFILES[t] = classifyTickerProfile(d);
+          }
+        }).catch(() => {})
+      )).finally(() => setTick(x => x + 1));
+    }
   }, [positions]);
 
   // Auto-refresh every 5 min
@@ -6457,7 +6477,22 @@ function RiskDashboard({ positions, portfolioTotal }) {
 
       // Option position
       const strike = parseFloat(p.strike) || 0;
-      const expiryDate = p.expiry ? new Date(typeof p.expiry === 'string' && p.expiry.includes('/') ? p.expiry.split('/').reverse().join('-') : p.expiry) : null;
+      // Expiry parsing: support "MM/DD/YYYY" (US, what Supabase stores) or ISO "YYYY-MM-DD"
+      let expiryDate = null;
+      if (p.expiry) {
+        if (typeof p.expiry === 'string' && p.expiry.includes('/')) {
+          const parts = p.expiry.split('/');  // [MM, DD, YYYY]
+          if (parts.length === 3) {
+            const yyyy = parts[2].length === 2 ? '20' + parts[2] : parts[2];  // handle "06/18/26" too
+            const mm = parts[0].padStart(2, '0');
+            const dd = parts[1].padStart(2, '0');
+            expiryDate = new Date(yyyy + '-' + mm + '-' + dd);
+          }
+        } else {
+          expiryDate = new Date(p.expiry);
+        }
+        if (expiryDate && isNaN(expiryDate.getTime())) expiryDate = null;
+      }
       const dte = expiryDate ? Math.max(1, Math.round((expiryDate.getTime() - Date.now()) / 86400000)) : 30;
       const spot = spotCache[t] || 0;
       const ivData = ivrCache[t];
@@ -6500,13 +6535,22 @@ function RiskDashboard({ positions, portfolioTotal }) {
     return { netDelta, netDeltaShares, netGammaPer1Pct, netVega, netTheta };
   }, [enriched]);
 
-  // Sector concentration (uses __TICKER_PROFILES if seeded)
+  // Sector concentration (uses __TICKER_PROFILES — bucket label set by classifyTickerProfile)
+  // The cache stores a string label like 'AI_LEADER' / 'MEGA_CAP' / 'STANDALONE' (not an object).
+  // Map those to display labels here.
+  const PROFILE_LABEL = {
+    AI_LEADER: '🤖 AI 領先股 (NVDA/AVGO/AMD)',
+    AI_BENEFICIARY: 'AI 半導體/軟體',
+    MEGA_CAP: '超大型科技股',
+    RIPPLE: '跟漲股',
+    STANDALONE: '個股',
+  };
   const sectorBreakdown = useMemo(() => {
     const profiles = window.__TICKER_PROFILES || {};
     const bucket = {};
     enriched.forEach(p => {
-      const profile = profiles[p.t];
-      const sec = (profile && profile.sector) ? profile.sector : '未分類';
+      const profileLabel = profiles[p.t];
+      const sec = profileLabel ? (PROFILE_LABEL[profileLabel] || profileLabel) : '未分類 (尚未取得 profile)';
       if (!bucket[sec]) bucket[sec] = { delta: 0, mv: 0, tickers: new Set() };
       bucket[sec].delta += p.deltaDollars || 0;
       bucket[sec].mv += p.marketValue || 0;
@@ -7252,7 +7296,8 @@ function PreTradeChecklist({ positions, portfolioTotal }) {
   const ivrData = (typeof window !== 'undefined' && window.__IVR_CACHE && window.__IVR_CACHE[t]) || null;
   const earnData = (typeof window !== 'undefined' && window.__EARNINGS_CACHE && window.__EARNINGS_CACHE[t]) || null;
   const tickerProfile = (typeof window !== 'undefined' && window.__TICKER_PROFILES && window.__TICKER_PROFILES[t]) || null;
-  const sector = tickerProfile && tickerProfile.sector ? tickerProfile.sector : null;
+  // tickerProfile is a string label ('AI_LEADER' / 'MEGA_CAP' / etc.), not an object
+  const sector = typeof tickerProfile === 'string' ? tickerProfile : (tickerProfile && tickerProfile.sector ? tickerProfile.sector : null);
 
   // Compute derived values
   const ivr = ivrData ? ivrData.ivr : null;
