@@ -83,6 +83,13 @@ export default {
         return await handleHealthIntegrations(request, env);
       }
 
+      // ── Scanner batch: fetch IVR + earnings for many tickers in one call.
+      // Frontend (OptionsScanner / TextbookLiveMatches) uses this to avoid
+      // N×2 browser fetches (which can be blocked by extensions / SW).
+      if (path === '/api/scanner/batch') {
+        return await handleScannerBatch(request, env);
+      }
+
       return new Response('Not Found', { status: 404, headers: corsHeaders() });
     } catch (err) {
       return jsonResponse({ error: 'Worker error', message: err.message }, 500);
@@ -942,4 +949,88 @@ async function handleHealthIntegrations(request, env) {
     time: new Date().toISOString(),
     worker: 'solitary-wood-898d',
   });
+}
+
+// ════════════════════════════════════════════════════════════
+// Scanner batch — pre-aggregate IVR + earnings for many tickers
+// ════════════════════════════════════════════════════════════
+// Frontend usage:
+//   GET /api/scanner/batch?tickers=NVDA,AAPL,MSFT,...
+// Returns:
+//   {
+//     tickers: [
+//       { ticker: "NVDA", ivr: {ivr, iv, asOf}, earnings: {date, expectedMovePct, ...} },
+//       ...
+//     ]
+//   }
+// Saves the browser from making N×2 cross-origin fetches.
+async function handleScannerBatch(request, env) {
+  const url = new URL(request.url);
+  const tickersParam = url.searchParams.get('tickers');
+  if (!tickersParam) return jsonResponse({ error: 'Missing tickers param (comma-separated)' }, 400);
+  if (!env.UW_API_KEY) return jsonResponse({ error: 'UW_API_KEY not configured' }, 500);
+
+  const tickers = tickersParam.split(',').map(s => s.trim().toUpperCase()).filter(Boolean).slice(0, 30);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const headers = { 'Accept': 'application/json', 'Authorization': 'Bearer ' + env.UW_API_KEY };
+
+  const results = await Promise.all(tickers.map(async (t) => {
+    const [ivrR, earnR] = await Promise.allSettled([
+      fetch('https://api.unusualwhales.com/api/stock/' + encodeURIComponent(t) + '/iv-rank?timespan=1m', { headers }),
+      fetch('https://api.unusualwhales.com/api/earnings/' + encodeURIComponent(t), { headers }),
+    ]);
+
+    let ivr = null;
+    if (ivrR.status === 'fulfilled' && ivrR.value.ok) {
+      try {
+        const j = await ivrR.value.json();
+        const arr = j && j.data;
+        if (Array.isArray(arr) && arr.length > 0) {
+          const latest = arr[arr.length - 1];
+          const rank = parseFloat(latest.iv_rank_1y);
+          const iv = parseFloat(latest.volatility);
+          ivr = {
+            ivr: isFinite(rank) ? parseFloat(rank.toFixed(1)) : null,
+            iv: isFinite(iv) ? parseFloat((iv * 100).toFixed(1)) : null,
+            asOf: latest.date,
+          };
+        }
+      } catch (_) {}
+    }
+
+    let earnings = null;
+    if (earnR.status === 'fulfilled' && earnR.value.ok) {
+      try {
+        const j = await earnR.value.json();
+        const arr = j && j.data;
+        if (Array.isArray(arr) && arr.length > 0) {
+          const future = arr
+            .filter((e) => e.report_date && e.report_date >= today)
+            .sort((a, b) => (a.report_date < b.report_date ? -1 : 1));
+          if (future.length > 0) {
+            const next = future[0];
+            const movePct = parseFloat(next.expected_move_perc);
+            earnings = {
+              date: next.report_date,
+              time: next.report_time || null,
+              expectedMovePct: isFinite(movePct) ? parseFloat((movePct * 100).toFixed(2)) : null,
+              expectedMove: parseFloat(next.expected_move) || null,
+              streetEst: parseFloat(next.street_mean_est) || null,
+            };
+          }
+        }
+      } catch (_) {}
+    }
+
+    return { ticker: t, ivr, earnings };
+  }));
+
+  const response = jsonResponse({
+    tickers: results,
+    fetched_at: new Date().toISOString(),
+    count: results.length,
+  });
+  response.headers.set('Cache-Control', 's-maxage=300');  // 5min server cache
+  return response;
 }
