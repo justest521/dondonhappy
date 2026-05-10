@@ -6752,19 +6752,48 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
               {(positions || []).length} positions · {enriched.filter(p => p.isOpt).length} options
             </span>
           </div>
-          <div style={{ padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            {[
-              { l: 'Net Δ', v: fmt(agg.netDelta), s: '美元等值方向曝險', c: agg.netDelta >= 0 ? palette.bull : palette.bear },
-              { l: 'Net Γ /1%', v: fmt(agg.netGamma), s: '大盤動 1% 的 P&L', c: palette.accent },
-              { l: 'Net V /1pt IV', v: fmt(agg.netVega), s: agg.netVega >= 0 ? 'long vega — IV ↑ 賺' : 'short vega — IV ↑ 虧', c: palette.vio },
-              { l: 'Net Θ /day', v: fmt(agg.netTheta), s: agg.netTheta >= 0 ? '時間順風' : '時間逆風', c: agg.netTheta >= 0 ? palette.bull : palette.warn },
-            ].map((m, i) => (
-              <div key={i} style={{ padding: '12px', background: palette.panel2, borderRadius: '6px' }}>
-                <div style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim, letterSpacing: '0.12em' }}>{m.l}</div>
-                <div style={{ fontFamily: 'JetBrains Mono', fontSize: '20px', fontWeight: 700, color: m.c, marginTop: '4px' }}>{m.v}</div>
-                <div style={{ fontSize: '11px', color: palette.mute, marginTop: '2px' }}>{m.s}</div>
+          <div style={{ padding: '14px 16px' }}>
+            {/* 4 aggregate metric cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              {[
+                { l: 'Net Δ', v: fmt(agg.netDelta), s: '美元等值方向曝險', c: agg.netDelta >= 0 ? palette.bull : palette.bear },
+                { l: 'Net Γ /1%', v: fmt(agg.netGamma), s: '大盤動 1% 的 P&L', c: palette.accent },
+                { l: 'Net V /1pt IV', v: fmt(agg.netVega), s: agg.netVega >= 0 ? 'long vega — IV ↑ 賺' : 'short vega — IV ↑ 虧', c: palette.vio },
+                { l: 'Net Θ /day', v: fmt(agg.netTheta), s: agg.netTheta >= 0 ? '時間順風' : '時間逆風', c: agg.netTheta >= 0 ? palette.bull : palette.warn },
+              ].map((m, i) => (
+                <div key={i} style={{ padding: '12px', background: palette.panel2, borderRadius: '6px' }}>
+                  <div style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim, letterSpacing: '0.12em' }}>{m.l}</div>
+                  <div style={{ fontFamily: 'JetBrains Mono', fontSize: '20px', fontWeight: 700, color: m.c, marginTop: '4px' }}>{m.v}</div>
+                  <div style={{ fontSize: '11px', color: palette.mute, marginTop: '2px' }}>{m.s}</div>
+                </div>
+              ))}
+            </div>
+            {/* per-position breakdown */}
+            <div style={{ marginTop: '14px' }}>
+              <div style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim, letterSpacing: '0.14em', marginBottom: '6px' }}>
+                BREAKDOWN · 哪個 leg 拉曝險
               </div>
-            ))}
+              <div style={{ background: palette.panel2, borderRadius: '6px', overflow: 'hidden' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 38px 60px 50px 70px 70px 70px 70px', gap: '6px', padding: '8px 12px', fontFamily: 'JetBrains Mono', fontSize: '9px', color: palette.dim, letterSpacing: '0.08em', borderBottom: '1px solid ' + palette.line }}>
+                  <span>TICKER</span><span>S/L</span><span>STRIKE</span><span>DTE</span><span style={{ textAlign: 'right' }}>Δ$</span><span style={{ textAlign: 'right' }}>Γ/1%</span><span style={{ textAlign: 'right' }}>V/pt</span><span style={{ textAlign: 'right' }}>Θ/d</span>
+                </div>
+                {enriched.filter(p => p.isOpt).slice().sort((a, b) => Math.abs(b.deltaDollars || 0) - Math.abs(a.deltaDollars || 0)).map((p, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 38px 60px 50px 70px 70px 70px 70px', gap: '6px', padding: '7px 12px', fontFamily: 'JetBrains Mono', fontSize: '11px', borderBottom: i < enriched.length - 1 ? '1px solid ' + palette.line : 'none' }}>
+                    <span style={{ color: palette.fg, fontWeight: 600 }}>{p.t}</span>
+                    <span style={{ color: p.optType === 'PUT' ? palette.bear : palette.bull }}>{p.optType?.[0] || '?'}</span>
+                    <span style={{ color: palette.mute }}>{p.strike || '—'}</span>
+                    <span style={{ color: p.dte <= 7 ? palette.warn : palette.mute }}>{p.dte}</span>
+                    <span style={{ textAlign: 'right', color: (p.deltaDollars || 0) >= 0 ? palette.bull : palette.bear }}>{fmt(p.deltaDollars)}</span>
+                    <span style={{ textAlign: 'right', color: palette.mute }}>{fmt(p.gammaShares)}</span>
+                    <span style={{ textAlign: 'right', color: (p.vegaPos || 0) >= 0 ? palette.vio : palette.warn }}>{fmt(p.vegaPos)}</span>
+                    <span style={{ textAlign: 'right', color: (p.thetaPos || 0) >= 0 ? palette.bull : palette.warn }}>{fmt(p.thetaPos)}</span>
+                  </div>
+                ))}
+                {enriched.filter(p => p.isOpt).length === 0 && (
+                  <div style={{ padding: '14px', textAlign: 'center', color: palette.mute, fontSize: '12px' }}>無期權持倉</div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -6806,18 +6835,49 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
               <path d={buildPath(payoffCurves.plus1d)} fill="none" stroke={palette.info} strokeWidth="1.5" opacity="0.85" />
               <path d={buildPath(payoffCurves.today)} fill="none" stroke={palette.accent} strokeWidth="2.5" />
             </svg>
-            <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', fontFamily: 'JetBrains Mono', fontSize: '11px' }}>
-              <div style={{ padding: '8px', background: palette.panel2, borderRadius: '4px' }}>
-                <div style={{ color: palette.dim, fontSize: '9px', letterSpacing: '0.12em' }}>SPY −3% P&L</div>
-                <div style={{ color: payoffCurves.today[0].y < 0 ? palette.bear : palette.bull, fontSize: '14px', marginTop: '2px' }}>{fmt(payoffCurves.today[0].y)}</div>
+            {/* 3×3 stress matrix · spot × vol */}
+            <div style={{ marginTop: '12px' }}>
+              <div style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim, letterSpacing: '0.14em', marginBottom: '6px' }}>
+                STRESS MATRIX · SPOT × VOL
               </div>
-              <div style={{ padding: '8px', background: palette.panel2, borderRadius: '4px' }}>
-                <div style={{ color: palette.dim, fontSize: '9px', letterSpacing: '0.12em' }}>FLAT P&L</div>
-                <div style={{ fontSize: '14px', marginTop: '2px' }}>{fmt(payoffCurves.today[6].y)}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '50px 1fr 1fr 1fr', gap: '6px', fontFamily: 'JetBrains Mono', fontSize: '11px' }}>
+                {/* header row */}
+                <span></span>
+                <span style={{ textAlign: 'center', color: palette.dim, fontSize: '9px', letterSpacing: '0.1em' }}>SPY −3%</span>
+                <span style={{ textAlign: 'center', color: palette.dim, fontSize: '9px', letterSpacing: '0.1em' }}>FLAT</span>
+                <span style={{ textAlign: 'center', color: palette.dim, fontSize: '9px', letterSpacing: '0.1em' }}>SPY +3%</span>
+                {[
+                  { lbl: 'IV +5pt', v: 5 },
+                  { lbl: 'IV ±0', v: 0 },
+                  { lbl: 'IV −5pt', v: -5 },
+                ].map(volRow => (
+                  <React.Fragment key={volRow.lbl}>
+                    <span style={{ color: palette.dim, fontSize: '9px', letterSpacing: '0.1em', alignSelf: 'center' }}>{volRow.lbl}</span>
+                    {[-3, 0, 3].map(spotPct => {
+                      const pnl = (agg.netDelta * spotPct / 100) + (agg.netGamma * spotPct * spotPct / 2) + (agg.netVega * volRow.v);
+                      const accountPct = portfolioTotal > 0 ? (pnl / portfolioTotal) * 100 : 0;
+                      const isExtreme = Math.abs(accountPct) > 5;
+                      const color = pnl >= 0 ? palette.bull : palette.bear;
+                      return (
+                        <div key={spotPct} style={{
+                          padding: '8px 6px',
+                          background: 'color-mix(in oklab, ' + color + ' ' + Math.min(Math.abs(accountPct) * 4, 25) + '%, ' + palette.panel2 + ')',
+                          borderRadius: '4px',
+                          textAlign: 'center',
+                          border: isExtreme ? '1px solid ' + color : '1px solid transparent',
+                        }}>
+                          <div style={{ color, fontSize: '12px', fontWeight: 600 }}>{fmt(pnl)}</div>
+                          {portfolioTotal > 0 && (
+                            <div style={{ color: palette.dim, fontSize: '9px', marginTop: '1px' }}>{accountPct >= 0 ? '+' : ''}{accountPct.toFixed(2)}% acct</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
               </div>
-              <div style={{ padding: '8px', background: palette.panel2, borderRadius: '4px' }}>
-                <div style={{ color: palette.dim, fontSize: '9px', letterSpacing: '0.12em' }}>SPY +3% P&L</div>
-                <div style={{ color: payoffCurves.today[12].y >= 0 ? palette.bull : palette.bear, fontSize: '14px', marginTop: '2px' }}>{fmt(payoffCurves.today[12].y)}</div>
+              <div style={{ marginTop: '6px', fontSize: '10px', color: palette.dim, fontFamily: 'JetBrains Mono' }}>
+                公式: Δ·spot + ½·Γ·spot² + V·iv (一階近似 — 非線性誤差 10-20%)
               </div>
             </div>
           </div>
@@ -6839,26 +6899,40 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
               <div style={{ color: palette.mute, fontSize: '12px', fontFamily: 'JetBrains Mono' }}>無持倉 ticker GEX 資料</div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
-                {gexData.map(g => {
-                  const netDelta = g.callDelta + g.putDelta;
-                  const netGamma = g.callGamma + g.putGamma;
-                  const isLongGamma = netGamma > 0;
-                  return (
-                    <div key={g.ticker} style={{ padding: '12px', background: palette.panel2, borderRadius: '6px', borderLeft: '3px solid ' + (isLongGamma ? palette.bull : palette.bear) }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '15px', fontWeight: 700, color: palette.fg }}>{g.ticker}</span>
-                        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim }}>{g.asOf}</span>
-                      </div>
-                      <div style={{ marginTop: '8px', fontFamily: 'JetBrains Mono', fontSize: '11px', color: palette.mute, lineHeight: 1.7 }}>
-                        <div>Net Δ: <b style={{ color: netDelta > 0 ? palette.bull : palette.bear }}>{(netDelta / 1e6).toFixed(1)}M</b></div>
-                        <div>Net Γ: <b style={{ color: isLongGamma ? palette.bull : palette.bear }}>{(netGamma / 1e6).toFixed(2)}M</b></div>
-                        <div style={{ marginTop: '4px', color: isLongGamma ? palette.bull : palette.bear, fontSize: '10px' }}>
-                          {isLongGamma ? '↑ Long-γ regime · vol 抑制' : '↓ Short-γ regime · vol 放大'}
+                {(() => {
+                  const heldSet = new Set((positions || []).map(p => (p.ticker || '').toUpperCase()));
+                  const sorted = gexData.slice().sort((a, b) => Math.abs(b.callGamma + b.putGamma) - Math.abs(a.callGamma + a.putGamma));
+                  return sorted.map(g => {
+                    const netDelta = g.callDelta + g.putDelta;
+                    const netGamma = g.callGamma + g.putGamma;
+                    const isLongGamma = netGamma > 0;
+                    const isHeld = heldSet.has(g.ticker);
+                    return (
+                      <div key={g.ticker} style={{
+                        padding: '12px',
+                        background: isHeld ? 'color-mix(in oklab, ' + palette.accent + ' 8%, ' + palette.panel2 + ')' : palette.panel2,
+                        borderRadius: '6px',
+                        borderLeft: '3px solid ' + (isLongGamma ? palette.bull : palette.bear),
+                        border: isHeld ? '1px solid ' + palette.accent + '60' : '1px solid transparent',
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                          <span style={{ fontFamily: 'JetBrains Mono', fontSize: '15px', fontWeight: 700, color: palette.fg }}>
+                            {g.ticker}
+                            {isHeld && <span style={{ marginLeft: '6px', fontSize: '9px', color: palette.accent, fontWeight: 600, padding: '2px 6px', borderRadius: '8px', background: 'color-mix(in oklab, ' + palette.accent + ' 20%, transparent)' }}>持倉</span>}
+                          </span>
+                          <span style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim }}>{g.asOf}</span>
+                        </div>
+                        <div style={{ marginTop: '8px', fontFamily: 'JetBrains Mono', fontSize: '11px', color: palette.mute, lineHeight: 1.7 }}>
+                          <div>Net Δ: <b style={{ color: netDelta > 0 ? palette.bull : palette.bear }}>{(netDelta / 1e6).toFixed(1)}M</b></div>
+                          <div>Net Γ: <b style={{ color: isLongGamma ? palette.bull : palette.bear }}>{(netGamma / 1e6).toFixed(2)}M</b></div>
+                          <div style={{ marginTop: '4px', color: isLongGamma ? palette.bull : palette.bear, fontSize: '10px' }}>
+                            {isLongGamma ? '↑ Long-γ regime · vol 抑制' : '↓ Short-γ regime · vol 放大'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
             )}
             <div style={{ marginTop: '10px', fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim }}>
@@ -6883,9 +6957,17 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
               </div>
             ) : events.map((e, i) => {
               const wColor = e.weight === 'HIGH' ? palette.bear : e.weight === 'MED' ? palette.warn : palette.mute;
+              // RICH/FAIR/CHEAP from implied vs historical
+              let richTag = null;
+              if (e.impl != null && e.hist != null && e.hist > 0) {
+                const ratio = e.impl / e.hist;
+                if (ratio > 1.2) richTag = { label: 'RICH', color: palette.bear, sub: '+' + ((ratio - 1) * 100).toFixed(0) + '% vs hist · 賣方優勢' };
+                else if (ratio < 0.9) richTag = { label: 'CHEAP', color: palette.bull, sub: ((ratio - 1) * 100).toFixed(0) + '% vs hist · 買方優勢' };
+                else richTag = { label: 'FAIR', color: palette.mute, sub: '±' + (Math.abs(ratio - 1) * 100).toFixed(0) + '% · 公允定價' };
+              }
               return (
                 <div key={i} style={{
-                  display: 'grid', gridTemplateColumns: '90px 64px 100px 1fr 110px',
+                  display: 'grid', gridTemplateColumns: '90px 64px 100px 1fr 130px 80px',
                   gap: '14px', alignItems: 'center', padding: '12px 0',
                   borderBottom: i < events.length - 1 ? '1px solid ' + palette.line : 'none',
                 }}>
@@ -6913,11 +6995,31 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
                   <div style={{ textAlign: 'right' }}>
                     {e.impl != null ? (
                       <>
-                        <div style={{ fontFamily: 'JetBrains Mono', fontSize: '13px', fontWeight: 600 }}>±{e.impl.toFixed(1)}%</div>
+                        <div style={{ fontFamily: 'JetBrains Mono', fontSize: '13px', fontWeight: 600 }}>
+                          ±{e.impl.toFixed(1)}%
+                          {e.hist != null && <span style={{ fontSize: '10px', color: palette.dim, fontWeight: 400 }}> / hist {e.hist.toFixed(1)}%</span>}
+                        </div>
                         <div style={{ fontFamily: 'JetBrains Mono', fontSize: '9px', color: palette.dim, letterSpacing: '0.12em' }}>IMPLIED MOVE</div>
+                        {/* mini bar: implied vs hist */}
+                        {e.hist != null && (
+                          <div style={{ height: '4px', background: palette.bg, borderRadius: '2px', marginTop: '4px', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: Math.min(e.impl / 8 * 100, 100) + '%', background: palette.accent }} />
+                            <div style={{ position: 'absolute', top: '-2px', width: '2px', height: '8px', left: Math.min(e.hist / 8 * 100, 100) + '%', background: palette.fg }} />
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: palette.dim }}>—</div>
+                    )}
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    {richTag ? (
+                      <>
+                        <div style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: richTag.color, fontWeight: 700, letterSpacing: '0.1em' }}>{richTag.label}</div>
+                        <div style={{ fontFamily: 'JetBrains Mono', fontSize: '9px', color: palette.dim, marginTop: '2px' }}>{richTag.sub}</div>
+                      </>
+                    ) : (
+                      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim }}>—</div>
                     )}
                   </div>
                 </div>
