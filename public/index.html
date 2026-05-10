@@ -6013,9 +6013,33 @@ function MacroContextBanner({ score, band, alerts, hedgeBudgetBps }) {
   );
 }
 
-  return { VIXHedgeCalculator };
+  return {
+    VIXHedgeCalculator,
+    // Helpers used by App-scope components (RiskDashboard, OptionsScanner,
+    // PreTradeChecklist, TextbookLiveMatches) — they live inside this IIFE
+    // and would otherwise be ReferenceError outside.
+    fetchIVR, fetchEarnings, fetchUWFlow, fetchUWDark,
+    fetchScannerBatchAndCache,
+    fetchTickerDetails,
+    recordSourceHealth,
+    bsGreeks: typeof bsGreeks !== 'undefined' ? bsGreeks : null,
+    fetchSpotPrice: typeof fetchSpotPrice !== 'undefined' ? fetchSpotPrice : null,
+    WORKER_URL: typeof WORKER_URL !== 'undefined' ? WORKER_URL : 'https://solitary-wood-898d.justest521.workers.dev',
+  };
 })();
-const { VIXHedgeCalculator } = VIXModule;
+const {
+  VIXHedgeCalculator,
+  fetchIVR, fetchEarnings, fetchUWFlow, fetchUWDark,
+  fetchScannerBatchAndCache,
+  fetchTickerDetails,
+  recordSourceHealth,
+} = VIXModule;
+// Expose WORKER_URL globally so anywhere can use it without scope drama
+if (typeof window !== 'undefined' && VIXModule.WORKER_URL) {
+  window.WORKER_URL = VIXModule.WORKER_URL;
+}
+// Use the exported WORKER_URL so App scope identifier resolution works
+const WORKER_URL = VIXModule.WORKER_URL;
 
 
 // ============================================================
