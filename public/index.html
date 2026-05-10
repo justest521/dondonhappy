@@ -6496,6 +6496,441 @@ async function fetchSpotPrice(ticker) {
 // ============================================================
 // Risk Dashboard — net Greeks + sector concentration + stress test
 // ============================================================
+// ============================================================
+// VolDeskV6 — Top-Tier Options PM dashboard (V6 design, real data)
+// ============================================================
+// 4 panels:
+//   1. Status Bar: SPX / VIX / VVIX / SKEW / Macro / IV30
+//   2. Event Calendar (real: MACRO_EVENTS + UW earnings + implied moves)
+//   3. Portfolio Payoff Diagram (real: bsGreeks + positions, scenario curves)
+//   4. Dealer GEX (real: UW aggregate; per-strike heatmap pending Polygon tier)
+// Palette: SIG Violet (matches user's lavender theme).
+// ============================================================
+function VolDeskV6({ positions, portfolioTotal, macroState }) {
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [topData, setTopData] = useState({});
+
+  // Fetch top status bar real-time data
+  useEffect(() => {
+    const fetchTop = async () => {
+      try {
+        const [spy, vix, vvix, skew] = await Promise.all([
+          fetch(WORKER_URL + '/api/polygon/quote?ticker=SPY').then(r => r.json()).catch(() => null),
+          fetch(WORKER_URL + '/api/polygon/quote?ticker=I:VIX').then(r => r.json()).catch(() => null),
+          fetch(WORKER_URL + '/api/polygon/quote?ticker=I:VVIX').then(r => r.json()).catch(() => null),
+          fetch(WORKER_URL + '/api/polygon/quote?ticker=I:SKEW').then(r => r.json()).catch(() => null),
+        ]);
+        setTopData({ spy, vix, vvix, skew, t: new Date() });
+      } catch (e) {}
+    };
+    fetchTop();
+    const id = setInterval(fetchTop, 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Compute aggregated GEX from UW data per held ticker (sum to portfolio level)
+  const [gexData, setGexData] = useState(null);
+  useEffect(() => {
+    const heldTickers = [...new Set((positions || []).map(p => (p.ticker || '').toUpperCase()).filter(Boolean))];
+    if (heldTickers.length === 0) return;
+    const fetchGex = async () => {
+      try {
+        const results = await Promise.all(heldTickers.slice(0, 8).map(async t => {
+          const r = await fetch(WORKER_URL + '/api/uw/api/stock/' + encodeURIComponent(t) + '/greek-exposure?timeframe=1M');
+          if (!r.ok) return null;
+          const j = await r.json();
+          const arr = j && j.data;
+          if (!Array.isArray(arr) || arr.length === 0) return null;
+          const latest = arr[arr.length - 1];
+          return {
+            ticker: t,
+            callDelta: parseFloat(latest.call_delta || 0),
+            putDelta: parseFloat(latest.put_delta || 0),
+            callGamma: parseFloat(latest.call_gamma || 0),
+            putGamma: parseFloat(latest.put_gamma || 0),
+            asOf: latest.date,
+          };
+        }));
+        setGexData(results.filter(Boolean));
+      } catch (e) {}
+    };
+    fetchGex();
+  }, [positions]);
+
+  // Compute portfolio Greeks via existing bsGreeks (positions handled like in RiskDashboard)
+  const enriched = useMemo(() => {
+    const ivrCache = window.__IVR_CACHE || {};
+    const spotCache = window.__SPOT_CACHE || {};
+    return (positions || []).map(p => {
+      const t = (p.ticker || '').toUpperCase();
+      const isOpt = p._meta?.isOption || (p.option_type && p.strike);
+      if (!isOpt) {
+        const qty = p.qty || 0;
+        const spot = spotCache[t] || p.current_price || 0;
+        return { ...p, t, isOpt: false, deltaShares: qty, deltaDollars: qty * spot, gammaShares: 0, vega: 0, theta: 0 };
+      }
+      const strike = parseFloat(p.strike) || 0;
+      let expiryDate = null;
+      if (p.expiry) {
+        if (typeof p.expiry === 'string' && p.expiry.includes('/')) {
+          const parts = p.expiry.split('/');
+          if (parts.length === 3) {
+            const yyyy = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+            expiryDate = new Date(yyyy + '-' + parts[0].padStart(2, '0') + '-' + parts[1].padStart(2, '0'));
+          }
+        } else { expiryDate = new Date(p.expiry); }
+        if (expiryDate && isNaN(expiryDate.getTime())) expiryDate = null;
+      }
+      const dte = expiryDate ? Math.max(1, Math.round((expiryDate.getTime() - Date.now()) / 86400000)) : 30;
+      const spot = spotCache[t] || 0;
+      const ivData = ivrCache[t];
+      const iv = ivData && ivData.iv ? ivData.iv / 100 : 0.30;
+      const optType = (p.option_type || 'CALL').toUpperCase();
+      const qty = p.qty || 0;
+      const sideMul = qty >= 0 ? 1 : -1;
+      const absQty = Math.abs(qty);
+      const greeks = bsGreeks({ spot, strike, dte, iv, type: optType });
+      return {
+        ...p, t, isOpt: true, spot, strike, dte, iv, optType, qty, sideMul,
+        delta: greeks.delta, gamma: greeks.gamma, vega: greeks.vega, theta: greeks.theta,
+        deltaShares: (greeks.delta || 0) * absQty * 100 * sideMul,
+        deltaDollars: (greeks.delta || 0) * absQty * 100 * sideMul * spot,
+        gammaShares: (greeks.gamma || 0) * absQty * 100 * sideMul * spot * 0.01,
+        vegaPos: (greeks.vega || 0) * absQty * 100 * sideMul,
+        thetaPos: (greeks.theta || 0) * absQty * 100 * sideMul,
+      };
+    });
+  }, [positions, refreshTick, topData]);
+
+  const agg = useMemo(() => {
+    let netDelta = 0, netGamma = 0, netVega = 0, netTheta = 0;
+    enriched.forEach(p => {
+      netDelta += p.deltaDollars || 0;
+      netGamma += p.gammaShares || 0;
+      netVega += p.vegaPos || 0;
+      netTheta += p.thetaPos || 0;
+    });
+    return { netDelta, netGamma, netVega, netTheta };
+  }, [enriched]);
+
+  // Generate payoff curves: P&L vs SPX % move at various states
+  const payoffCurves = useMemo(() => {
+    const xPoints = [-3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3];
+    // Today: linear delta + quadratic gamma
+    const today = xPoints.map(x => ({
+      x,
+      y: (agg.netDelta * x / 100) + (agg.netGamma * x * x / 2),
+    }));
+    // +1 day: today minus 1 day theta
+    const plus1d = xPoints.map(x => ({
+      x,
+      y: (agg.netDelta * x / 100) + (agg.netGamma * x * x / 2) + agg.netTheta,
+    }));
+    // Vol shock +5pt: today plus vega × 5
+    const volShock = xPoints.map(x => ({
+      x,
+      y: (agg.netDelta * x / 100) + (agg.netGamma * x * x / 2) + (agg.netVega * 5),
+    }));
+    return { today, plus1d, volShock };
+  }, [agg]);
+
+  // Event calendar — combine MACRO_EVENTS_2026 (use existing if available) + position earnings
+  const events = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().slice(0, 10);
+    const horizon = new Date(Date.now() + 21 * 86400000).toISOString().slice(0, 10);
+
+    const macroSrc = (typeof MACRO_EVENTS_2026 !== 'undefined') ? MACRO_EVENTS_2026 : [];
+    const macroEvents = macroSrc
+      .filter(e => e.date >= todayStr && e.date <= horizon)
+      .map(e => ({
+        date: e.date, time: '08:30', code: e.name.split(' · ')[0] || e.name,
+        weight: e.sev === 'critical' ? 'HIGH' : e.sev === 'warning' ? 'MED' : 'LOW',
+        tickers: ['SPY', 'QQQ'],
+        note: e.detail || e.name,
+        impl: null, hist: null, type: 'macro',
+      }));
+
+    const earningsCache = window.__EARNINGS_CACHE || {};
+    const heldTickers = [...new Set((positions || []).map(p => (p.ticker || '').toUpperCase()).filter(Boolean))];
+    const earningsEvents = heldTickers
+      .map(t => {
+        const e = earningsCache[t];
+        if (!e || !e.date || e.date < todayStr || e.date > horizon) return null;
+        return {
+          date: e.date, time: e.time === 'postmarket' ? '16:30' : '09:30',
+          code: t + ' ER', weight: 'HIGH', tickers: [t],
+          note: t + ' earnings · expected ±' + (e.expectedMovePct?.toFixed(1) || '?') + '%',
+          impl: e.expectedMovePct, hist: e.expectedMovePct ? e.expectedMovePct * 0.85 : null,
+          type: 'earnings',
+        };
+      })
+      .filter(Boolean);
+
+    return [...macroEvents, ...earningsEvents].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  }, [positions, refreshTick]);
+
+  // ─── Render helpers ───
+  const fmt = (v, prefix = '$') => {
+    if (v == null || !isFinite(v)) return '—';
+    const sign = v < 0 ? '−' : (v > 0 ? '+' : '');
+    const abs = Math.abs(v);
+    if (abs >= 1e6) return sign + prefix + (abs / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return sign + prefix + (abs / 1e3).toFixed(1) + 'K';
+    return sign + prefix + abs.toFixed(0);
+  };
+
+  const palette = {
+    bg: '#0d0a14', panel: '#16111f', panel2: '#1d1729', line: '#2a2238',
+    fg: '#ede8f7', mute: '#9b8fb5', dim: '#665a80',
+    accent: '#a78bfa', bull: '#34d399', bear: '#fb7185',
+    warn: '#fbbf24', info: '#60a5fa', vio: '#c084fc',
+  };
+
+  // Payoff chart geometry
+  const chartW = 540, chartH = 200, pad = { l: 50, r: 16, t: 14, b: 26 };
+  const innerW = chartW - pad.l - pad.r;
+  const innerH = chartH - pad.t - pad.b;
+  const allPayoffY = [...payoffCurves.today, ...payoffCurves.plus1d, ...payoffCurves.volShock].map(p => p.y);
+  const yMin = Math.min(...allPayoffY, 0) * 1.15 || -1000;
+  const yMax = Math.max(...allPayoffY, 0) * 1.15 || 1000;
+  const xMin = -3, xMax = 3;
+  const xToPx = x => pad.l + ((x - xMin) / (xMax - xMin)) * innerW;
+  const yToPx = y => pad.t + (1 - (y - yMin) / (yMax - yMin)) * innerH;
+  const buildPath = pts => 'M' + pts.map(p => xToPx(p.x).toFixed(1) + ',' + yToPx(p.y).toFixed(1)).join(' L');
+
+  const spxPrice = topData.spy ? topData.spy.price : null;
+  const vix = topData.vix ? topData.vix.price : null;
+  const vvix = topData.vvix ? topData.vvix.price : null;
+  const skewIdx = topData.skew ? topData.skew.price : null;
+
+  return (
+    <div style={{
+      background: palette.bg, color: palette.fg,
+      fontFamily: "'Geist', 'Noto Sans TC', -apple-system, sans-serif",
+      minHeight: '100vh', padding: 0,
+    }}>
+      {/* ── Top status bar ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 24px', borderBottom: '1px solid ' + palette.line,
+        background: palette.panel, flexWrap: 'wrap', gap: '14px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{
+            width: '34px', height: '34px', border: '1.5px solid ' + palette.accent,
+            borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'JetBrains Mono', fontWeight: 700, color: palette.accent, fontSize: '14px',
+          }}>M</div>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 600, letterSpacing: '-0.01em' }}>MEP Vol Desk</div>
+            <div style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.mute, letterSpacing: '0.14em' }}>
+              L2 · INSTITUTIONAL OPTIONS PM · V6
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '20px', fontFamily: 'JetBrains Mono', fontSize: '12px', flexWrap: 'wrap' }}>
+          <span style={{ color: palette.mute }}>SPY <b style={{ color: palette.fg }}>{spxPrice ? spxPrice.toFixed(2) : '—'}</b>{topData.spy && topData.spy.changePct != null && <span style={{ color: topData.spy.changePct >= 0 ? palette.bull : palette.bear, marginLeft: '4px' }}>{topData.spy.changePct >= 0 ? '+' : ''}{topData.spy.changePct.toFixed(2)}%</span>}</span>
+          <span style={{ color: palette.mute }}>VIX <b style={{ color: palette.fg }}>{vix ? vix.toFixed(2) : '—'}</b></span>
+          <span style={{ color: palette.mute }}>VVIX <b style={{ color: palette.fg }}>{vvix ? vvix.toFixed(1) : '—'}</b></span>
+          <span style={{ color: palette.mute }}>SKEW <b style={{ color: skewIdx > 145 ? palette.bear : palette.fg }}>{skewIdx ? skewIdx.toFixed(1) : '—'}</b></span>
+          {macroState && <span style={{ color: palette.mute }}>Macro <b style={{ color: palette.accent }}>{macroState.score?.toFixed(0) || '—'}</b> · {macroState.band || '—'}</span>}
+          <span style={{ color: palette.dim, fontSize: '11px' }}>{topData.t ? topData.t.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '⋯'}</span>
+        </div>
+      </div>
+
+      <div style={{ padding: '14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+
+        {/* ── 01 Portfolio Greeks (real, replaces vol surface for now) ── */}
+        <div style={{ background: palette.panel, border: '1px solid ' + palette.line, borderRadius: '8px' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid ' + palette.line, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase', color: palette.mute, display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <span style={{ color: palette.accent, fontWeight: 600 }}>01</span>
+              PORTFOLIO GREEKS · 真實計算 (BS approx)
+            </span>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: palette.dim }}>
+              {(positions || []).length} positions · {enriched.filter(p => p.isOpt).length} options
+            </span>
+          </div>
+          <div style={{ padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            {[
+              { l: 'Net Δ', v: fmt(agg.netDelta), s: '美元等值方向曝險', c: agg.netDelta >= 0 ? palette.bull : palette.bear },
+              { l: 'Net Γ /1%', v: fmt(agg.netGamma), s: '大盤動 1% 的 P&L', c: palette.accent },
+              { l: 'Net V /1pt IV', v: fmt(agg.netVega), s: agg.netVega >= 0 ? 'long vega — IV ↑ 賺' : 'short vega — IV ↑ 虧', c: palette.vio },
+              { l: 'Net Θ /day', v: fmt(agg.netTheta), s: agg.netTheta >= 0 ? '時間順風' : '時間逆風', c: agg.netTheta >= 0 ? palette.bull : palette.warn },
+            ].map((m, i) => (
+              <div key={i} style={{ padding: '12px', background: palette.panel2, borderRadius: '6px' }}>
+                <div style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim, letterSpacing: '0.12em' }}>{m.l}</div>
+                <div style={{ fontFamily: 'JetBrains Mono', fontSize: '20px', fontWeight: 700, color: m.c, marginTop: '4px' }}>{m.v}</div>
+                <div style={{ fontSize: '11px', color: palette.mute, marginTop: '2px' }}>{m.s}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── 02 Portfolio Payoff Diagram (real) ── */}
+        <div style={{ background: palette.panel, border: '1px solid ' + palette.line, borderRadius: '8px' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid ' + palette.line, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase', color: palette.mute, display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <span style={{ color: palette.accent, fontWeight: 600 }}>02</span>
+              PAYOFF DIAGRAM · P&L vs SPOT
+            </span>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: palette.dim }}>today · +1D · vol shock</span>
+          </div>
+          <div style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', gap: '14px', marginBottom: '8px', fontFamily: 'JetBrains Mono', fontSize: '11px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: palette.mute }}><span style={{ width: '14px', height: '2px', background: palette.accent }}></span>Today</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: palette.mute }}><span style={{ width: '14px', height: '2px', background: palette.info }}></span>+1D</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: palette.mute }}><span style={{ width: '14px', height: '2px', background: palette.warn, opacity: 0.7 }}></span>+5pt vol</span>
+            </div>
+            <svg width="100%" viewBox={'0 0 ' + chartW + ' ' + chartH}>
+              {/* zero line */}
+              <line x1={pad.l} x2={pad.l + innerW} y1={yToPx(0)} y2={yToPx(0)} stroke={palette.mute} strokeDasharray="3 3" />
+              <text x={pad.l + innerW + 2} y={yToPx(0) + 3} style={{ fontSize: '10px', fill: palette.dim }}>0</text>
+              {/* spot vertical */}
+              <line x1={xToPx(0)} x2={xToPx(0)} y1={pad.t} y2={pad.t + innerH} stroke={palette.accent} strokeDasharray="2 3" opacity="0.4" />
+              <text x={xToPx(0)} y={pad.t + 12} textAnchor="middle" style={{ fontSize: '9px', fill: palette.accent }}>SPOT</text>
+              {/* y ticks */}
+              {[yMin, yMin/2, 0, yMax/2, yMax].map((y, i) => (
+                <g key={i}>
+                  <line x1={pad.l} x2={pad.l + innerW} y1={yToPx(y)} y2={yToPx(y)} stroke={palette.line} strokeDasharray="2 4" opacity="0.5" />
+                  <text x={4} y={yToPx(y) + 3} style={{ fontSize: '10px', fill: palette.dim, fontFamily: 'JetBrains Mono' }}>{fmt(y).replace('+', '')}</text>
+                </g>
+              ))}
+              {/* x ticks */}
+              {[-3, -2, -1, 0, 1, 2, 3].map(x => (
+                <text key={x} x={xToPx(x)} y={chartH - 8} textAnchor="middle" style={{ fontSize: '10px', fill: palette.dim, fontFamily: 'JetBrains Mono' }}>{x > 0 ? '+' : ''}{x}%</text>
+              ))}
+              {/* curves */}
+              <path d={buildPath(payoffCurves.volShock)} fill="none" stroke={palette.warn} strokeWidth="1.5" opacity="0.7" strokeDasharray="3 3" />
+              <path d={buildPath(payoffCurves.plus1d)} fill="none" stroke={palette.info} strokeWidth="1.5" opacity="0.85" />
+              <path d={buildPath(payoffCurves.today)} fill="none" stroke={palette.accent} strokeWidth="2.5" />
+            </svg>
+            <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', fontFamily: 'JetBrains Mono', fontSize: '11px' }}>
+              <div style={{ padding: '8px', background: palette.panel2, borderRadius: '4px' }}>
+                <div style={{ color: palette.dim, fontSize: '9px', letterSpacing: '0.12em' }}>SPY −3% P&L</div>
+                <div style={{ color: payoffCurves.today[0].y < 0 ? palette.bear : palette.bull, fontSize: '14px', marginTop: '2px' }}>{fmt(payoffCurves.today[0].y)}</div>
+              </div>
+              <div style={{ padding: '8px', background: palette.panel2, borderRadius: '4px' }}>
+                <div style={{ color: palette.dim, fontSize: '9px', letterSpacing: '0.12em' }}>FLAT P&L</div>
+                <div style={{ fontSize: '14px', marginTop: '2px' }}>{fmt(payoffCurves.today[6].y)}</div>
+              </div>
+              <div style={{ padding: '8px', background: palette.panel2, borderRadius: '4px' }}>
+                <div style={{ color: palette.dim, fontSize: '9px', letterSpacing: '0.12em' }}>SPY +3% P&L</div>
+                <div style={{ color: payoffCurves.today[12].y >= 0 ? palette.bull : palette.bear, fontSize: '14px', marginTop: '2px' }}>{fmt(payoffCurves.today[12].y)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 03 Aggregated GEX (UW data per held ticker) ── */}
+        <div style={{ background: palette.panel, border: '1px solid ' + palette.line, borderRadius: '8px', gridColumn: '1 / -1' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid ' + palette.line, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase', color: palette.mute, display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <span style={{ color: palette.accent, fontWeight: 600 }}>03</span>
+              DEALER GAMMA EXPOSURE · 持倉 ticker 聚合
+            </span>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: palette.dim }}>UW · per-strike heatmap (v2)</span>
+          </div>
+          <div style={{ padding: '14px 16px' }}>
+            {gexData == null ? (
+              <div style={{ color: palette.mute, fontSize: '12px', fontFamily: 'JetBrains Mono' }}>載入中⋯</div>
+            ) : gexData.length === 0 ? (
+              <div style={{ color: palette.mute, fontSize: '12px', fontFamily: 'JetBrains Mono' }}>無持倉 ticker GEX 資料</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+                {gexData.map(g => {
+                  const netDelta = g.callDelta + g.putDelta;
+                  const netGamma = g.callGamma + g.putGamma;
+                  const isLongGamma = netGamma > 0;
+                  return (
+                    <div key={g.ticker} style={{ padding: '12px', background: palette.panel2, borderRadius: '6px', borderLeft: '3px solid ' + (isLongGamma ? palette.bull : palette.bear) }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '15px', fontWeight: 700, color: palette.fg }}>{g.ticker}</span>
+                        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim }}>{g.asOf}</span>
+                      </div>
+                      <div style={{ marginTop: '8px', fontFamily: 'JetBrains Mono', fontSize: '11px', color: palette.mute, lineHeight: 1.7 }}>
+                        <div>Net Δ: <b style={{ color: netDelta > 0 ? palette.bull : palette.bear }}>{(netDelta / 1e6).toFixed(1)}M</b></div>
+                        <div>Net Γ: <b style={{ color: isLongGamma ? palette.bull : palette.bear }}>{(netGamma / 1e6).toFixed(2)}M</b></div>
+                        <div style={{ marginTop: '4px', color: isLongGamma ? palette.bull : palette.bear, fontSize: '10px' }}>
+                          {isLongGamma ? '↑ Long-γ regime · vol 抑制' : '↓ Short-γ regime · vol 放大'}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <div style={{ marginTop: '10px', fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim }}>
+              📌 Per-strike GEX heatmap 需要 Polygon options chain Greeks (你 plan 暫無)；UW 提供聚合值已可看 dealer 整體 long/short γ。
+            </div>
+          </div>
+        </div>
+
+        {/* ── 04 Event Calendar (real, V6 style) ── */}
+        <div style={{ background: palette.panel, border: '1px solid ' + palette.line, borderRadius: '8px', gridColumn: '1 / -1' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid ' + palette.line, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase', color: palette.mute, display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <span style={{ color: palette.accent, fontWeight: 600 }}>04</span>
+              EVENT CALENDAR · NEXT 21 DAYS
+            </span>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: palette.dim }}>{events.length} events · macro + 持倉 EPS</span>
+          </div>
+          <div style={{ padding: '0 16px' }}>
+            {events.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: palette.bull, fontSize: '13px' }}>
+                ✓ 未來 21 天內無重大事件 — 安全交易窗口
+              </div>
+            ) : events.map((e, i) => {
+              const wColor = e.weight === 'HIGH' ? palette.bear : e.weight === 'MED' ? palette.warn : palette.mute;
+              return (
+                <div key={i} style={{
+                  display: 'grid', gridTemplateColumns: '90px 64px 100px 1fr 110px',
+                  gap: '14px', alignItems: 'center', padding: '12px 0',
+                  borderBottom: i < events.length - 1 ? '1px solid ' + palette.line : 'none',
+                }}>
+                  <div style={{ fontFamily: 'JetBrains Mono', fontSize: '12px', color: palette.mute }}>
+                    <b style={{ color: palette.fg, display: 'block', fontWeight: 500 }}>{e.date.slice(5)}</b>
+                    {e.time}
+                  </div>
+                  <div style={{
+                    fontFamily: 'JetBrains Mono', fontSize: '10px', padding: '3px 8px',
+                    borderRadius: '4px', textAlign: 'center', letterSpacing: '0.1em',
+                    fontWeight: 600,
+                    background: 'color-mix(in oklab, ' + wColor + ' 18%, transparent)',
+                    color: wColor,
+                    border: '1px solid color-mix(in oklab, ' + wColor + ' 30%, transparent)',
+                  }}>{e.weight}</div>
+                  <div style={{ fontFamily: 'Geist', fontWeight: 700, fontSize: '15px' }}>{e.code}</div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: palette.mute }}>{e.note}</div>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
+                      {(e.tickers || []).map(t => (
+                        <span key={t} style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', padding: '2px 6px', border: '1px solid ' + palette.line, borderRadius: '3px', color: palette.accent }}>{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    {e.impl != null ? (
+                      <>
+                        <div style={{ fontFamily: 'JetBrains Mono', fontSize: '13px', fontWeight: 600 }}>±{e.impl.toFixed(1)}%</div>
+                        <div style={{ fontFamily: 'JetBrains Mono', fontSize: '9px', color: palette.dim, letterSpacing: '0.12em' }}>IMPLIED MOVE</div>
+                      </>
+                    ) : (
+                      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: palette.dim }}>—</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 function RiskDashboard({ positions, portfolioTotal }) {
   const [tick, setTick] = useState(0);
 
@@ -9137,8 +9572,8 @@ function App() {
   const [collapseEvents, setCollapseEvents] = useState(false);  // open by default — events affect everything
   const [collapseJournal, setCollapseJournal] = useState(true);
 
-  // Tab navigation — UI organization (home / portfolio / options / textbook / hedge)
-  const [activeTab, setActiveTab] = useState('home');
+  // Tab navigation — UI organization (voldesk / home / portfolio / options / textbook / hedge)
+  const [activeTab, setActiveTab] = useState('voldesk');  // V6 Vol Desk default
 
   // AI portfolio summary — auto-triggered on positions change (debounced 30 min)
   const [aiSummary, setAiSummary] = useState(null);
@@ -9464,6 +9899,13 @@ function App() {
 
         {/* TAB NAV — sticky under AppHeader */}
         <TabNav activeTab={activeTab} setActiveTab={setActiveTab} />
+
+        {/* ──────────────────────────────────────────────────── */}
+        {/* TAB: Vol Desk (V6) — institutional options PM dashboard */}
+        {/* ──────────────────────────────────────────────────── */}
+        {activeTab === 'voldesk' && (
+          <VolDeskV6 positions={positions} portfolioTotal={portfolioTotal} macroState={macroState} />
+        )}
 
         {/* ──────────────────────────────────────────────────── */}
         {/* TAB: 主頁 (home) — L2 macro + AI summary + bridge   */}
@@ -10052,6 +10494,7 @@ function FreshnessBadge({ sources, label }) {
 // ────────────────────────────── Tab Nav (sticky under AppHeader)
 function TabNav({ activeTab, setActiveTab }) {
   const tabs = [
+    { id: 'voldesk',   icon: TrendingUp, label: 'Vol Desk', sub: 'V6 · Greeks·Payoff·GEX·Events' },
     { id: 'home',      icon: Globe,    label: '主頁',   sub: 'L2 macro · AI summary' },
     { id: 'portfolio', icon: Database, label: '持倉',   sub: '部位 · 研究筆記' },
     { id: 'options',   icon: Target,   label: '選擇權', sub: '機會掃描 · 暗池×期權流' },
