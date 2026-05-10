@@ -8178,6 +8178,15 @@ function HealthIndicator() {
     return () => clearInterval(id);
   }, [runAll]);
 
+  // When modal opens, force a fresh check (so user always sees current state)
+  const [openedAt, setOpenedAt] = useState(null);
+  useEffect(() => {
+    if (open) {
+      setOpenedAt(Date.now());
+      runAll();
+    }
+  }, [open, runAll]);
+
   // Close popover on outside click
   useEffect(() => {
     if (!open) return;
@@ -8255,30 +8264,50 @@ function HealthIndicator() {
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
-                onClick={() => {
-                  const dump = JSON.stringify(Object.entries(checks).map(([k, c]) => ({
-                    provider: k, name: c.name, status: c.status, httpStatus: c.httpStatus,
-                    path: c.path, sample: c.sample, t: c.t ? c.t.toISOString() : null,
-                  })), null, 2);
+                onClick={async () => {
+                  // Force fresh checks then wait 6s for fetches to complete
+                  runAll();
+                  await new Promise(r => setTimeout(r, 6000));
+                  // Re-read state via setChecks updater pattern (snapshot at this moment)
+                  let snapshot = null;
+                  setChecks(prev => { snapshot = prev; return prev; });
+                  // setChecks is sync about updater, but we need the value — fall back to ref via closure
+                  await new Promise(r => setTimeout(r, 50));
+                  const data = snapshot || checks;
+                  const stillPending = Object.values(data).filter(c => c.status === 'pending').length;
+                  const dump = JSON.stringify({
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent.slice(0, 120),
+                    workerUrl: WORKER_URL,
+                    pageUrl: location.href,
+                    stillPending,
+                    checks: Object.entries(data).map(([k, c]) => ({
+                      provider: k, name: c.name, status: c.status,
+                      httpStatus: c.httpStatus != null ? c.httpStatus : 'N/A',
+                      path: c.path || 'N/A',
+                      sample: c.sample || '(empty)',
+                      t: c.t ? c.t.toISOString() : null,
+                    })),
+                  }, null, 2);
                   try {
                     if (navigator.clipboard && navigator.clipboard.writeText) {
-                      navigator.clipboard.writeText(dump);
-                      alert('診斷已複製到剪貼簿（' + dump.length + ' 字）');
+                      await navigator.clipboard.writeText(dump);
+                      alert('✅ 診斷已複製（' + dump.length + ' 字）' + (stillPending > 0 ? '\n\n⚠️ ' + stillPending + ' 個還是 pending — 可能 fetch 被瀏覽器擋住，看 DevTools Console 找紅色錯誤' : ''));
                     } else {
-                      // Fallback: open in textarea
                       const ta = document.createElement('textarea');
                       ta.value = dump; document.body.appendChild(ta); ta.select();
                       try { document.execCommand('copy'); alert('診斷已複製'); } catch (_) { prompt('複製此段：', dump); }
                       document.body.removeChild(ta);
                     }
-                  } catch (e) { alert('複製失敗: ' + e.message); }
+                  } catch (e) { alert('複製失敗: ' + e.message + '\n\n手動複製：\n' + dump); }
                 }}
                 style={{
                   background: '#EAB30822', border: '1px solid #EAB308',
                   color: '#EAB308', padding: '6px 14px', borderRadius: '4px',
                   cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '12px', fontWeight: 700,
                 }}
-              >📋 複製診斷</button>
+                title="先重跑檢查 → 等 6 秒 → 複製完整結果"
+              >📋 複製診斷 (重跑+等)</button>
               <button
                 onClick={runAll}
                 style={{
@@ -8318,8 +8347,8 @@ function HealthIndicator() {
                       HTTP {c.httpStatus || 'NET'}
                     </span>
                   )}
-                  <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#9a9a9a', marginLeft: 'auto' }}>
-                    {ageS != null ? ageS + 's ago' : 'pending'}
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: c.status === 'pending' ? '#ef4444' : '#9a9a9a', marginLeft: 'auto' }}>
+                    {ageS != null ? ageS + 's ago' : (openedAt ? 'pending ' + Math.round((Date.now() - openedAt) / 1000) + 's ⏳' : 'pending')}
                   </span>
                 </div>
                 {c.path && (
