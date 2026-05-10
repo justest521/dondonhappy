@@ -8120,21 +8120,47 @@ function HealthIndicator() {
   const [open, setOpen] = useState(false);
 
   const runCheck = async (key, path, validate) => {
+    const fullUrl = WORKER_URL + path;
     try {
-      const r = await fetch(WORKER_URL + path);
+      const r = await fetch(fullUrl);
       const txt = await r.text();
       let json = null;
-      try { json = JSON.parse(txt); } catch (_) {}
-      const ok = r.ok && json && !json.error && (validate ? validate(json) : true);
-      const sample = json ? (JSON.stringify(json).slice(0, 80)) : txt.slice(0, 80);
+      let parseErr = null;
+      try { json = JSON.parse(txt); } catch (e) { parseErr = e.message; }
+
+      let ok = false;
+      let reason = '';
+      if (!r.ok) {
+        reason = 'HTTP ' + r.status;
+      } else if (parseErr) {
+        reason = 'JSON parse: ' + parseErr;
+      } else if (!json) {
+        reason = 'Empty response';
+      } else if (json.error) {
+        reason = 'API error: ' + json.error;
+      } else if (validate && !validate(json)) {
+        reason = 'Validator failed (shape mismatch)';
+      } else {
+        ok = true;
+      }
+
+      const sample = ok
+        ? (typeof json === 'object' ? JSON.stringify(json).slice(0, 240) : String(txt).slice(0, 240))
+        : (reason + ' · body: ' + (txt || '(empty)').slice(0, 200));
+
+      // eslint-disable-next-line no-console
+      try { console.log('[health:' + key + ']', ok ? 'OK' : 'FAIL', { path, status: r.status, reason, sample: sample.slice(0, 120) }); } catch (_) {}
+
       setChecks(prev => ({
         ...prev,
-        [key]: { ...prev[key], status: ok ? 'ok' : 'error', sample, t: new Date() }
+        [key]: { ...prev[key], status: ok ? 'ok' : 'error', sample, t: new Date(), httpStatus: r.status, path }
       }));
     } catch (e) {
+      // eslint-disable-next-line no-console
+      try { console.warn('[health:' + key + '] network error', e); } catch (_) {}
       setChecks(prev => ({
         ...prev,
-        [key]: { ...prev[key], status: 'error', sample: e.message || 'network error', t: new Date() }
+        [key]: { ...prev[key], status: 'error', sample: 'NETWORK: ' + (e.message || 'fetch threw'), t: new Date(), httpStatus: 0, path }
       }));
     }
   };
@@ -8238,11 +8264,33 @@ function HealthIndicator() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
                   <span style={{ fontSize: '14px' }}>{cIcon}</span>
                   <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: cColor, fontWeight: 700, minWidth: '60px' }}>{c.name}</span>
+                  {c.httpStatus != null && (
+                    <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: c.httpStatus === 200 ? '#10b981' : '#ef4444', fontWeight: 600 }}>
+                      [{c.httpStatus || 'NET'}]
+                    </span>
+                  )}
                   <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#7a7a7a', marginLeft: 'auto' }}>
                     {ageS != null ? ageS + 's ago' : 'pending'}
                   </span>
                 </div>
-                <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#9a9a9a', paddingLeft: '22px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {c.path && (
+                  <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#7a7a7a', paddingLeft: '22px', marginBottom: '3px' }}>
+                    {c.path}
+                  </div>
+                )}
+                <div style={{
+                  fontFamily: 'DM Mono', fontSize: '11px',
+                  color: c.status === 'error' ? '#fca5a5' : '#b8b8b8',
+                  paddingLeft: '22px',
+                  wordBreak: 'break-all',
+                  whiteSpace: 'pre-wrap',
+                  maxHeight: '90px',
+                  overflowY: 'auto',
+                  background: c.status === 'error' ? 'rgba(239,68,68,0.08)' : 'transparent',
+                  padding: c.status === 'error' ? '6px 8px' : '0 0 0 22px',
+                  borderRadius: '3px',
+                  marginLeft: c.status === 'error' ? '22px' : '0',
+                }}>
                   {c.sample || '(no sample yet)'}
                 </div>
               </div>
