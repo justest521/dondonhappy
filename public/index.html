@@ -240,9 +240,9 @@ Anthropic API: docs.claude.com` },
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid #2a2a2a' }}>
               <div>
                 <div style={{ fontFamily: 'Noto Sans TC', fontSize: '18px', fontWeight: 700, color: '#f4f4f4' }}>📖 MEP Trading System · 使用說明</div>
-                <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#666', marginTop: '4px', letterSpacing: '0.1em' }}>L2 MACRO · L1 HEDGE · POLYGON · SUPABASE</div>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', marginTop: '4px', letterSpacing: '0.1em' }}>L2 MACRO · L1 HEDGE · POLYGON · SUPABASE</div>
               </div>
-              <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#888', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '12px' }}>關閉 ESC</button>
+              <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#b8b8b8', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '12px' }}>關閉 ESC</button>
             </div>
             {sections.map((s, i) => (
               <div key={i} style={{ marginBottom: '24px' }}>
@@ -250,7 +250,7 @@ Anthropic API: docs.claude.com` },
                 <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#d4d4d4', lineHeight: '1.8', whiteSpace: 'pre-line', paddingLeft: '4px' }}>{s.body}</div>
               </div>
             ))}
-            <div style={{ marginTop: '20px', paddingTop: '14px', borderTop: '1px solid #2a2a2a', fontFamily: 'DM Mono', fontSize: '10px', color: '#555', textAlign: 'center' }}>完整說明請見 GitHub README · 點背景或按 ESC 關閉</div>
+            <div style={{ marginTop: '20px', paddingTop: '14px', borderTop: '1px solid #2a2a2a', fontFamily: 'DM Mono', fontSize: '12px', color: '#7a7a7a', textAlign: 'center' }}>完整說明請見 GitHub README · 點背景或按 ESC 關閉</div>
           </div>
         </div>
       );
@@ -1228,7 +1228,7 @@ const AUTO_BADGE = (
   </span>
 );
 const MANUAL_BADGE = (
-  <span style={{ marginLeft: '6px', fontSize: '8.5px', color: '#888', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>
+  <span style={{ marginLeft: '6px', fontSize: '8.5px', color: '#b8b8b8', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>
     ✎ MANUAL
   </span>
 );
@@ -1564,21 +1564,21 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
             {/* Quick stats summary */}
             <div className="flex items-center gap-4 text-xs font-mono-dm">
               <div className="flex flex-col items-end">
-                <span className="text-muted-2" style={{ fontSize: '9px', letterSpacing: '0.1em' }}>SCORE</span>
+                <span className="text-muted-2" style={{ fontSize: '11px', letterSpacing: '0.1em' }}>SCORE</span>
                 <span style={{ color: positionBand.color, fontSize: '20px', fontWeight: 700 }}>
                   {weightedTotal.toFixed(0)}
                 </span>
               </div>
               <div style={{ width: '1px', height: '24px', background: '#2a2a2a' }} />
               <div className="flex flex-col items-end">
-                <span className="text-muted-2" style={{ fontSize: '9px', letterSpacing: '0.1em' }}>BAND</span>
+                <span className="text-muted-2" style={{ fontSize: '11px', letterSpacing: '0.1em' }}>BAND</span>
                 <span style={{ color: positionBand.color, fontSize: '13px', fontWeight: 700 }} className="font-tc">
                   {positionBand.label}
                 </span>
               </div>
               <div style={{ width: '1px', height: '24px', background: '#2a2a2a' }} />
               <div className="flex flex-col items-end">
-                <span className="text-muted-2" style={{ fontSize: '9px', letterSpacing: '0.1em' }}>ALERTS</span>
+                <span className="text-muted-2" style={{ fontSize: '11px', letterSpacing: '0.1em' }}>ALERTS</span>
                 <span style={{
                   color: redAlerts.length > 0 ? '#ef4444' : '#10b981',
                   fontSize: '13px',
@@ -1589,7 +1589,7 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
               </div>
               <div style={{ width: '1px', height: '24px', background: '#2a2a2a' }} />
               <div className="flex flex-col items-end">
-                <span className="text-muted-2" style={{ fontSize: '9px', letterSpacing: '0.1em' }}>L1 HEDGE</span>
+                <span className="text-muted-2" style={{ fontSize: '11px', letterSpacing: '0.1em' }}>L1 HEDGE</span>
                 <span className="text-accent" style={{ fontSize: '13px', fontWeight: 700 }}>
                   {l1HedgeBudgetBps} bps
                 </span>
@@ -1645,10 +1645,10 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs text-primary font-tc">
                   淨流動性 站上 20MA
-                  <span className="text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginLeft: '4px' }}>×0.40</span>
+                  <span className="text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginLeft: '4px' }}>×0.40</span>
                   {AUTO_BADGE}
                 </label>
-                <span style={{ fontSize: '10px', color: indicatorScores.net_liquidity > 0 ? '#10b981' : '#ef4444' }}>
+                <span style={{ fontSize: '12px', color: indicatorScores.net_liquidity > 0 ? '#10b981' : '#ef4444' }}>
                   {indicatorScores.net_liquidity}/100
                 </span>
               </div>
@@ -1668,7 +1668,7 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
                   ✗ 下方
                 </button>
               </div>
-              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginTop: '3px' }}>
+              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginTop: '3px' }}>
                 FRED:WALCL - WTREGEN - RRPONTSYD
               </div>
             </div>
@@ -1678,10 +1678,10 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs text-primary font-tc">
                   MOVE Index
-                  <span className="text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginLeft: '4px' }}>×0.30</span>
+                  <span className="text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginLeft: '4px' }}>×0.30</span>
                   {AUTO_BADGE}
                 </label>
-                <span style={{ fontSize: '10px', color: indicatorScores.move >= 100 ? '#10b981' : indicatorScores.move >= 50 ? '#EAB308' : '#ef4444' }}>
+                <span style={{ fontSize: '12px', color: indicatorScores.move >= 100 ? '#10b981' : indicatorScores.move >= 50 ? '#EAB308' : '#ef4444' }}>
                   {indicatorScores.move}/100
                 </span>
               </div>
@@ -1702,11 +1702,11 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
                     }}
                   />
                 </div>
-                <span className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', minWidth: '30px', textAlign: 'right' }}>
+                <span className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', minWidth: '30px', textAlign: 'right' }}>
                   /150
                 </span>
               </div>
-              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginTop: '3px' }}>
+              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginTop: '3px' }}>
                 {'<100 安全 / 100-120 警戒 / >120 撤退'}
               </div>
               {/* Quick-set buttons (MOVE 沒有公開免費 API，提供常用值快速設定) */}
@@ -1731,7 +1731,7 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
                   </button>
                 ))}
               </div>
-              <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '9px', marginTop: '3px', fontStyle: 'italic' }}>
+              <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '11px', marginTop: '3px', fontStyle: 'italic' }}>
                 MOVE 無免費 API，請從 TradingView (TVC:MOVE) 複製
               </div>
             </div>
@@ -1741,10 +1741,10 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs text-primary font-tc">
                   T10Y2Y 利差 (%)
-                  <span className="text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginLeft: '4px' }}>×0.20</span>
+                  <span className="text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginLeft: '4px' }}>×0.20</span>
                   {AUTO_BADGE}
                 </label>
-                <span style={{ fontSize: '10px', color: indicatorScores.t10y2y >= 100 ? '#10b981' : indicatorScores.t10y2y >= 50 ? '#EAB308' : '#ef4444' }}>
+                <span style={{ fontSize: '12px', color: indicatorScores.t10y2y >= 100 ? '#10b981' : indicatorScores.t10y2y >= 50 ? '#EAB308' : '#ef4444' }}>
                   {indicatorScores.t10y2y}/100
                 </span>
               </div>
@@ -1755,7 +1755,7 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
                 onChange={(e) => setT10y2yValue(Number(e.target.value))}
                 className="num-input"
               />
-              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginTop: '3px' }}>
+              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginTop: '3px' }}>
                 {'<0.20 安全 / 0.20-0.50 解除倒掛中段 / >0.50 衰退倒數'}
               </div>
             </div>
@@ -1765,10 +1765,10 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs text-primary font-tc">
                   RRG 進攻板塊在 Leading
-                  <span className="text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginLeft: '4px' }}>×0.10</span>
+                  <span className="text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginLeft: '4px' }}>×0.10</span>
                   {AUTO_BADGE}
                 </label>
-                <span style={{ fontSize: '10px', color: indicatorScores.rrg > 0 ? '#10b981' : '#ef4444' }}>
+                <span style={{ fontSize: '12px', color: indicatorScores.rrg > 0 ? '#10b981' : '#ef4444' }}>
                   {indicatorScores.rrg}/100
                 </span>
               </div>
@@ -1776,7 +1776,7 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
                 <div className="font-mono-dm tabular text-accent" style={{ fontSize: '14px', fontWeight: 500 }}>
                   {effectiveRrgCount} / 6 進攻板塊
                 </div>
-                <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginTop: '2px' }}>
+                <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginTop: '2px' }}>
                   自動從 RRG 矩陣計算（≥2 → 100 分）
                 </div>
               </div>
@@ -1820,7 +1820,7 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
 
             <div className="mb-3">
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs text-primary font-tc">ISM PMI{AUTO_BADGE}<span style={{ marginLeft: '4px', fontSize: '8.5px', color: '#666', fontFamily: 'DM Mono' }}>(CFNAI 代理)</span></label>
+                <label className="text-xs text-primary font-tc">ISM PMI{AUTO_BADGE}<span style={{ marginLeft: '4px', fontSize: '8.5px', color: '#9a9a9a', fontFamily: 'DM Mono' }}>(CFNAI 代理)</span></label>
                 <span className="font-mono-dm tabular" style={{
                   fontSize: '11px',
                   color: pmiValue >= 50 ? '#10b981' : '#ef4444',
@@ -1835,7 +1835,7 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
                 onChange={(e) => setPmiValue(Number(e.target.value))}
                 className="num-input"
               />
-              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginTop: '3px' }}>
+              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginTop: '3px' }}>
                 {'>= 50 擴張，< 50 收縮'}
               </div>
             </div>
@@ -1859,13 +1859,13 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
               borderRadius: '4px',
               borderColor: '#EAB30830',
             }}>
-              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', letterSpacing: '0.08em' }}>
+              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', letterSpacing: '0.08em' }}>
                 當前象限
               </div>
               <div className="font-tc" style={{ fontSize: '13px', fontWeight: 700, color: '#EAB308' }}>
                 {economicQuadrant.label}
               </div>
-              <div className="text-xs text-muted font-tc" style={{ fontSize: '10px', marginTop: '2px' }}>
+              <div className="text-xs text-muted font-tc" style={{ fontSize: '12px', marginTop: '2px' }}>
                 最佳: {economicQuadrant.best}
               </div>
             </div>
@@ -1879,7 +1879,7 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
               <label className="text-xs text-primary font-tc block mb-1">
                 總價值 (USD)
                 {portfolioTotal != null && portfolioTotal > 0 && (
-                  <span style={{ marginLeft: '6px', fontSize: '9px', color: '#10b981', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>
+                  <span style={{ marginLeft: '6px', fontSize: '11px', color: '#10b981', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>
                     ⟲ AUTO
                   </span>
                 )}
@@ -1890,7 +1890,7 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
                 onChange={(e) => setPortfolioValue(Number(e.target.value))}
                 className="num-input"
               />
-              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginTop: '3px' }}>
+              <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginTop: '3px' }}>
                 {portfolioTotal != null && portfolioTotal > 0
                   ? '已自動同步 Supabase 持倉總值；可手動覆寫做 what-if'
                   : '用於計算 L1 hedge 預算 USD 金額'}
@@ -2062,7 +2062,7 @@ function TodayCallHero({ score, band, redAlerts, l1HedgeBudgetBps, l1HedgeBudget
               borderRadius: '3px',
               background: band.leverageOk ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
               color: band.leverageOk ? '#10b981' : '#ef4444',
-              fontSize: '10px',
+              fontSize: '12px',
               letterSpacing: '0.08em',
             }}>
               {band.leverageOk ? '✓ 槓桿可開' : '✗ 禁止槓桿'}
@@ -2095,7 +2095,7 @@ function TodayCallHero({ score, band, redAlerts, l1HedgeBudgetBps, l1HedgeBudget
               }}
             >
               <Bell size={11} style={{ color: '#ef4444' }} />
-              <span className="text-xs font-mono-dm" style={{ color: '#ef4444', fontSize: '10px', letterSpacing: '0.08em' }}>
+              <span className="text-xs font-mono-dm" style={{ color: '#ef4444', fontSize: '12px', letterSpacing: '0.08em' }}>
                 {redAlerts.length} RED ALERT{redAlerts.length > 1 ? 'S' : ''}
               </span>
             </div>
@@ -2196,7 +2196,7 @@ function ScorecardBreakdown({ indicatorScores, moveValue, t10y2yValue, effective
             }}
           />
         </div>
-        <div className="flex justify-between text-xs text-muted-2 font-mono-dm mt-1" style={{ fontSize: '9px' }}>
+        <div className="flex justify-between text-xs text-muted-2 font-mono-dm mt-1" style={{ fontSize: '11px' }}>
           <span>0 RETREAT</span>
           <span>50</span>
           <span>80 ATTACK</span>
@@ -2215,7 +2215,7 @@ function IndicatorCard({ def, score, readout, readoutColor }) {
           <div className="font-tc text-primary" style={{ fontSize: '13px', fontWeight: 500 }}>
             {def.name}
           </div>
-          <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', letterSpacing: '0.05em' }}>
+          <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', letterSpacing: '0.05em' }}>
             {def.nameEn} · ×{def.weight.toFixed(2)}
           </div>
         </div>
@@ -2232,12 +2232,12 @@ function IndicatorCard({ def, score, readout, readoutColor }) {
       </div>
       <div className="hair-border-t" style={{ paddingTop: '8px' }}>
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted font-tc" style={{ fontSize: '10px' }}>當前</span>
+          <span className="text-xs text-muted font-tc" style={{ fontSize: '12px' }}>當前</span>
           <span className="font-mono-dm tabular" style={{ fontSize: '13px', color: readoutColor, fontWeight: 500 }}>
             {readout}
           </span>
         </div>
-        <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '10px', marginTop: '4px', lineHeight: 1.4 }}>
+        <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '12px', marginTop: '4px', lineHeight: 1.4 }}>
           {def.description}
         </div>
       </div>
@@ -2349,7 +2349,7 @@ function AlertRow({ name, check, detail, action, severity }) {
             <span
               className="font-mono-dm"
               style={{
-                fontSize: '9px',
+                fontSize: '11px',
                 padding: '2px 6px',
                 borderRadius: '3px',
                 letterSpacing: '0.08em',
@@ -2360,11 +2360,11 @@ function AlertRow({ name, check, detail, action, severity }) {
               {check ? (severity === 'critical' ? 'CRITICAL' : 'TRIGGERED') : 'SAFE'}
             </span>
           </div>
-          <div className="text-xs text-muted font-mono-dm" style={{ fontSize: '10px', marginTop: '3px' }}>
+          <div className="text-xs text-muted font-mono-dm" style={{ fontSize: '12px', marginTop: '3px' }}>
             {detail}
           </div>
           <div className="text-xs text-muted font-tc" style={{ fontSize: '11px', marginTop: '4px', lineHeight: 1.4 }}>
-            <span className="text-muted-2 font-mono-dm" style={{ fontSize: '9px', letterSpacing: '0.08em' }}>ACTION: </span>
+            <span className="text-muted-2 font-mono-dm" style={{ fontSize: '11px', letterSpacing: '0.08em' }}>ACTION: </span>
             {action}
           </div>
         </div>
@@ -2382,7 +2382,7 @@ function ExecRow({ label, priority, condition }) {
           {label}
         </div>
         {condition && (
-          <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginTop: '2px' }}>
+          <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginTop: '2px' }}>
             {condition}
           </div>
         )}
@@ -2425,23 +2425,23 @@ function EconomicCycleSection({ economicQuadrant, pmiValue, cpiTrend }) {
         {/* Top-left empty */}
         <div></div>
         {/* Top header - CPI Falling */}
-        <div className="text-xs text-muted-2 font-mono-dm flex items-center justify-center" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>
+        <div className="text-xs text-muted-2 font-mono-dm flex items-center justify-center" style={{ fontSize: '12px', letterSpacing: '0.1em' }}>
           CPI 降溫 ↓
         </div>
         {/* Top header - CPI Rising */}
-        <div className="text-xs text-muted-2 font-mono-dm flex items-center justify-center" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>
+        <div className="text-xs text-muted-2 font-mono-dm flex items-center justify-center" style={{ fontSize: '12px', letterSpacing: '0.1em' }}>
           CPI 上升 ↑
         </div>
 
         {/* Row 1: PMI Expansion */}
-        <div className="text-xs text-muted-2 font-mono-dm flex items-center justify-center" style={{ fontSize: '10px', letterSpacing: '0.1em', writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+        <div className="text-xs text-muted-2 font-mono-dm flex items-center justify-center" style={{ fontSize: '12px', letterSpacing: '0.1em', writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
           PMI 擴張
         </div>
         <QuadrantCell q={quadrants[0]} active={economicQuadrant.id === 'recovery'} />
         <QuadrantCell q={quadrants[1]} active={economicQuadrant.id === 'overheat'} />
 
         {/* Row 2: PMI Contraction */}
-        <div className="text-xs text-muted-2 font-mono-dm flex items-center justify-center" style={{ fontSize: '10px', letterSpacing: '0.1em', writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+        <div className="text-xs text-muted-2 font-mono-dm flex items-center justify-center" style={{ fontSize: '12px', letterSpacing: '0.1em', writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
           PMI 收縮
         </div>
         <QuadrantCell q={quadrants[2]} active={economicQuadrant.id === 'recession'} />
@@ -2462,13 +2462,13 @@ function EconomicCycleSection({ economicQuadrant, pmiValue, cpiTrend }) {
             </div>
             <div className="grid grid-cols-2 gap-3 mt-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <div className="font-mono-dm text-muted-2" style={{ fontSize: '9px', letterSpacing: '0.1em' }}>BEST PERFORMERS</div>
+                <div className="font-mono-dm text-muted-2" style={{ fontSize: '11px', letterSpacing: '0.1em' }}>BEST PERFORMERS</div>
                 <div className="font-mono-dm text-green" style={{ fontSize: '12px', fontWeight: 500, marginTop: '2px' }}>
                   {economicQuadrant.best}
                 </div>
               </div>
               <div>
-                <div className="font-mono-dm text-muted-2" style={{ fontSize: '9px', letterSpacing: '0.1em' }}>AVOID</div>
+                <div className="font-mono-dm text-muted-2" style={{ fontSize: '11px', letterSpacing: '0.1em' }}>AVOID</div>
                 <div className="font-mono-dm text-red" style={{ fontSize: '12px', fontWeight: 500, marginTop: '2px' }}>
                   {economicQuadrant.worst}
                 </div>
@@ -2500,7 +2500,7 @@ function QuadrantCell({ q, active }) {
       }}>
         {q.label}
       </div>
-      <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', marginTop: '4px' }}>
+      <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', marginTop: '4px' }}>
         {q.best}
       </div>
     </div>
@@ -2594,17 +2594,17 @@ function QuadrantContainer({ quadrant, label, subLabel, color, icon: Icon, secto
           <Icon size={12} style={{ color }} />
           <span className="font-tc" style={{ fontSize: '13px', fontWeight: 600, color }}>{label}</span>
         </div>
-        <span className="font-mono-dm" style={{ fontSize: '10px', color }}>
+        <span className="font-mono-dm" style={{ fontSize: '12px', color }}>
           {sectors.length}
         </span>
       </div>
-      <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '10px', marginBottom: '8px' }}>
+      <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '12px', marginBottom: '8px' }}>
         {subLabel} · {action}
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', minHeight: '40px' }}>
         {sectors.length === 0 ? (
-          <span className="text-xs text-muted-2 font-tc" style={{ fontSize: '10px', fontStyle: 'italic' }}>
+          <span className="text-xs text-muted-2 font-tc" style={{ fontSize: '12px', fontStyle: 'italic' }}>
             (無板塊)
           </span>
         ) : sectors.map((s) => (
@@ -2640,7 +2640,7 @@ function ScenarioPlannerSection({
             <span
               className="font-mono-dm"
               style={{
-                fontSize: '9px',
+                fontSize: '11px',
                 padding: '3px 8px',
                 borderRadius: '3px',
                 background: 'rgba(167,139,250,0.15)',
@@ -2659,7 +2659,7 @@ function ScenarioPlannerSection({
               style={{
                 borderColor: '#a78bfa',
                 color: '#a78bfa',
-                fontSize: '10px',
+                fontSize: '12px',
                 padding: '4px 10px',
               }}
               title="用 AI 動態生成 scenarios（call Anthropic API via Worker）"
@@ -2668,7 +2668,7 @@ function ScenarioPlannerSection({
             </button>
           )}
           {aiLoading && (
-            <span className="font-mono-dm" style={{ fontSize: '10px', color: '#a78bfa', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span className="font-mono-dm" style={{ fontSize: '12px', color: '#a78bfa', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <Sparkles size={11} className="text-purple" style={{ animation: 'pulse 1s infinite' }} />
               AI 生成中…
             </span>
@@ -2677,7 +2677,7 @@ function ScenarioPlannerSection({
             <button
               onClick={onResetAI}
               className="icon-btn"
-              style={{ fontSize: '10px', padding: '4px 8px' }}
+              style={{ fontSize: '12px', padding: '4px 8px' }}
               title="還原為 hardcoded 劇本"
             >
               ↺ Reset
@@ -2774,18 +2774,18 @@ function ScenarioPlannerSection({
           {activeScenario.title}
         </div>
         <div className="text-xs text-muted font-tc" style={{ fontSize: '11.5px', marginBottom: '12px', lineHeight: 1.5 }}>
-          <span className="text-muted-2 font-mono-dm" style={{ fontSize: '9px', letterSpacing: '0.08em' }}>IMPACT: </span>
+          <span className="text-muted-2 font-mono-dm" style={{ fontSize: '11px', letterSpacing: '0.08em' }}>IMPACT: </span>
           {activeScenario.impact}
         </div>
 
-        <div className="font-mono-dm text-xs text-muted-2" style={{ letterSpacing: '0.1em', marginBottom: '6px', fontSize: '9px' }}>
+        <div className="font-mono-dm text-xs text-muted-2" style={{ letterSpacing: '0.1em', marginBottom: '6px', fontSize: '11px' }}>
           EXECUTION CHECKLIST
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {activeScenario.actions.map((action, idx) => (
             <div key={idx} className="flex items-start gap-2">
               <span className="font-mono-dm" style={{
-                fontSize: '10px',
+                fontSize: '12px',
                 color: scenarioMode === 'bullish' ? '#10b981' : '#ef4444',
                 fontWeight: 600,
                 minWidth: '18px',
@@ -2803,7 +2803,7 @@ function ScenarioPlannerSection({
       {/* Context: current state */}
       <div className="mt-3 grid grid-cols-2 gap-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
         <div className="bg-subcard hair-border" style={{ padding: '8px 12px', borderRadius: '4px' }}>
-          <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', letterSpacing: '0.08em' }}>
+          <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', letterSpacing: '0.08em' }}>
             CURRENT MACRO SCORE
           </div>
           <div className="font-mono-dm tabular" style={{ fontSize: '14px', fontWeight: 500, color: currentBand.color }}>
@@ -2811,7 +2811,7 @@ function ScenarioPlannerSection({
           </div>
         </div>
         <div className="bg-subcard hair-border" style={{ padding: '8px 12px', borderRadius: '4px' }}>
-          <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '9px', letterSpacing: '0.08em' }}>
+          <div className="text-xs text-muted-2 font-mono-dm" style={{ fontSize: '11px', letterSpacing: '0.08em' }}>
             EVENT BEING PLANNED
           </div>
           <div className="font-tc" style={{ fontSize: '13px', fontWeight: 500, color: '#EAB308' }}>
@@ -2895,7 +2895,7 @@ function L1IntegrationSection({ weightedTotal, positionBand, redAlerts, l1HedgeB
 
       {/* Calculation breakdown */}
       <div className="mt-4 hair-border-t" style={{ paddingTop: '14px' }}>
-        <div className="font-mono-dm text-xs text-muted" style={{ letterSpacing: '0.1em', marginBottom: '10px', fontSize: '10px' }}>
+        <div className="font-mono-dm text-xs text-muted" style={{ letterSpacing: '0.1em', marginBottom: '10px', fontSize: '12px' }}>
           計算明細
         </div>
 
@@ -2927,18 +2927,18 @@ function L1IntegrationSection({ weightedTotal, positionBand, redAlerts, l1HedgeB
 
       {/* Mapping table */}
       <div className="mt-4 hair-border-t" style={{ paddingTop: '14px' }}>
-        <div className="font-mono-dm text-xs text-muted" style={{ letterSpacing: '0.1em', marginBottom: '8px', fontSize: '10px' }}>
+        <div className="font-mono-dm text-xs text-muted" style={{ letterSpacing: '0.1em', marginBottom: '8px', fontSize: '12px' }}>
           L2 SCORE → L1 BUDGET MAPPING
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }} className="font-mono-dm tabular">
             <thead>
               <tr className="hair-border-b">
-                <th style={{ textAlign: 'left', padding: '6px 6px', color: '#888', fontWeight: 500 }}>L2 Score</th>
-                <th style={{ textAlign: 'left', padding: '6px 6px', color: '#888', fontWeight: 500 }}>Band</th>
-                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#888', fontWeight: 500 }}>Base bps</th>
-                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#888', fontWeight: 500 }}>槓桿</th>
-                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#888', fontWeight: 500 }}>現金 %</th>
+                <th style={{ textAlign: 'left', padding: '6px 6px', color: '#b8b8b8', fontWeight: 500 }}>L2 Score</th>
+                <th style={{ textAlign: 'left', padding: '6px 6px', color: '#b8b8b8', fontWeight: 500 }}>Band</th>
+                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#b8b8b8', fontWeight: 500 }}>Base bps</th>
+                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#b8b8b8', fontWeight: 500 }}>槓桿</th>
+                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#b8b8b8', fontWeight: 500 }}>現金 %</th>
               </tr>
             </thead>
             <tbody>
@@ -2960,7 +2960,7 @@ function L1IntegrationSection({ weightedTotal, positionBand, redAlerts, l1HedgeB
                     <td style={{ padding: '6px', textAlign: 'right', color: b.leverageOk ? '#10b981' : '#ef4444' }}>
                       {b.leverageOk ? '✓' : '✗'}
                     </td>
-                    <td style={{ padding: '6px', textAlign: 'right', color: '#888' }}>
+                    <td style={{ padding: '6px', textAlign: 'right', color: '#b8b8b8' }}>
                       {b.cashPct}%
                     </td>
                   </tr>
@@ -2969,7 +2969,7 @@ function L1IntegrationSection({ weightedTotal, positionBand, redAlerts, l1HedgeB
             </tbody>
           </table>
         </div>
-        <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '10px', marginTop: '8px', lineHeight: 1.4 }}>
+        <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '12px', marginTop: '8px', lineHeight: 1.4 }}>
           紅色警報觸發時自動加碼：critical +30 bps / high +15 bps，但封頂 150 bps。
         </div>
       </div>
@@ -3055,7 +3055,7 @@ function ModelingNotesSection() {
 // ────────────────────────────── FREDSyncBar (NEW: auto-sync from FRED)
 function FREDSyncBar({ status, syncTime, error, details, onSync }) {
   const colorMap = {
-    idle:     { color: '#888',    label: 'IDLE' },
+    idle:     { color: '#b8b8b8',    label: 'IDLE' },
     fetching: { color: '#EAB308', label: 'FETCHING' },
     synced:   { color: '#10b981', label: 'SYNCED' },
     error:    { color: '#ef4444', label: '錯誤' },
@@ -3088,13 +3088,13 @@ function FREDSyncBar({ status, syncTime, error, details, onSync }) {
               width: '6px', height: '6px', background: cfg.color, borderRadius: '50%',
             } : {}}
           />
-          <span className="font-mono-dm" style={{ fontSize: '10px', letterSpacing: '0.1em', color: cfg.color, fontWeight: 600 }}>
+          <span className="font-mono-dm" style={{ fontSize: '12px', letterSpacing: '0.1em', color: cfg.color, fontWeight: 600 }}>
             FRED · {cfg.label}
           </span>
         </div>
         <div className="flex items-center gap-2">
           {syncTime && status !== 'error' && (
-            <span className="font-mono-dm text-muted-2" style={{ fontSize: '9px' }}>
+            <span className="font-mono-dm text-muted-2" style={{ fontSize: '11px' }}>
               {timeAgo} ago
             </span>
           )}
@@ -3103,7 +3103,7 @@ function FREDSyncBar({ status, syncTime, error, details, onSync }) {
             disabled={status === 'fetching'}
             className="icon-btn"
             style={{
-              fontSize: '10px',
+              fontSize: '12px',
               padding: '3px 8px',
               borderColor: '#EAB308',
               color: '#EAB308',
@@ -3117,14 +3117,14 @@ function FREDSyncBar({ status, syncTime, error, details, onSync }) {
       </div>
 
       {error && (
-        <div className="text-xs text-red font-tc" style={{ fontSize: '10px', marginTop: '6px', lineHeight: 1.4 }}>
+        <div className="text-xs text-red font-tc" style={{ fontSize: '12px', marginTop: '6px', lineHeight: 1.4 }}>
           {error}
         </div>
       )}
 
       {/* Show derived stats */}
       {details && status === 'synced' && (
-        <div style={{ marginTop: '8px', fontSize: '9.5px', color: '#666', fontFamily: 'DM Mono' }}>
+        <div style={{ marginTop: '8px', fontSize: '9.5px', color: '#9a9a9a', fontFamily: 'DM Mono' }}>
           <div className="flex justify-between" style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>淨流動性 vs 20MA</span>
             <span style={{ color: details.netLiq?.aboveMA ? '#10b981' : '#ef4444' }}>
@@ -3149,7 +3149,7 @@ function FREDSyncBar({ status, syncTime, error, details, onSync }) {
       )}
 
       {!syncTime && status === 'idle' && (
-        <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '10px', marginTop: '4px' }}>
+        <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '12px', marginTop: '4px' }}>
           首次同步將自動執行…
         </div>
       )}
@@ -3160,7 +3160,7 @@ function FREDSyncBar({ status, syncTime, error, details, onSync }) {
 // ────────────────────────────── PolygonSyncBar (SPX 20MA + VIX/SPY)
 function PolygonSyncBar({ status, syncTime, error, details, onSync }) {
   const colorMap = {
-    idle:     { color: '#888',    label: 'IDLE' },
+    idle:     { color: '#b8b8b8',    label: 'IDLE' },
     fetching: { color: '#a78bfa', label: 'FETCHING' },
     synced:   { color: '#10b981', label: 'SYNCED' },
     error:    { color: '#ef4444', label: '錯誤' },
@@ -3197,7 +3197,7 @@ function PolygonSyncBar({ status, syncTime, error, details, onSync }) {
               animation: status === 'fetching' ? 'pulse 1s infinite' : 'none',
             }}
           />
-          <span className="font-mono-dm" style={{ fontSize: '10px', letterSpacing: '0.1em', color: cfg.color, fontWeight: 600 }}>
+          <span className="font-mono-dm" style={{ fontSize: '12px', letterSpacing: '0.1em', color: cfg.color, fontWeight: 600 }}>
             POLYGON · {cfg.label}
           </span>
           {hasPartialError && status === 'synced' && (
@@ -3208,7 +3208,7 @@ function PolygonSyncBar({ status, syncTime, error, details, onSync }) {
         </div>
         <div className="flex items-center gap-2">
           {syncTime && status !== 'error' && (
-            <span className="font-mono-dm text-muted-2" style={{ fontSize: '9px' }}>
+            <span className="font-mono-dm text-muted-2" style={{ fontSize: '11px' }}>
               {timeAgo} ago
             </span>
           )}
@@ -3217,7 +3217,7 @@ function PolygonSyncBar({ status, syncTime, error, details, onSync }) {
             disabled={status === 'fetching'}
             className="icon-btn"
             style={{
-              fontSize: '10px',
+              fontSize: '12px',
               padding: '3px 8px',
               borderColor: '#a78bfa',
               color: '#a78bfa',
@@ -3231,13 +3231,13 @@ function PolygonSyncBar({ status, syncTime, error, details, onSync }) {
       </div>
 
       {error && (
-        <div className="text-xs text-red font-tc" style={{ fontSize: '10px', marginTop: '6px', lineHeight: 1.4 }}>
+        <div className="text-xs text-red font-tc" style={{ fontSize: '12px', marginTop: '6px', lineHeight: 1.4 }}>
           {error}
         </div>
       )}
 
       {details && status !== 'error' && (
-        <div style={{ marginTop: '8px', fontSize: '9.5px', color: '#666', fontFamily: 'DM Mono' }}>
+        <div style={{ marginTop: '8px', fontSize: '9.5px', color: '#9a9a9a', fontFamily: 'DM Mono' }}>
           {/* SPX 20MA */}
           <div className="flex justify-between" style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>SPX 20MA</span>
@@ -3286,7 +3286,7 @@ function PolygonSyncBar({ status, syncTime, error, details, onSync }) {
       )}
 
       {!syncTime && status === 'idle' && (
-        <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '10px', marginTop: '4px' }}>
+        <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '12px', marginTop: '4px' }}>
           首次同步將自動執行…
         </div>
       )}
@@ -4575,7 +4575,7 @@ function VIXHedgeCalculator({
                 <button
                   onClick={() => setAutoSyncPV(!autoSyncPV)}
                   className="icon-btn"
-                  style={{ fontSize: '9px', padding: '2px 6px' }}
+                  style={{ fontSize: '11px', padding: '2px 6px' }}
                 >
                   {autoSyncPV ? 'AUTO' : 'MANUAL'}
                 </button>
@@ -4736,7 +4736,7 @@ function VIXHedgeCalculator({
               />
             </div>
             <div className="bg-subcard hair-border text-xs text-muted-2 font-tc" style={{
-              padding: '6px 8px', borderRadius: '4px', fontSize: '10px', lineHeight: 1.5,
+              padding: '6px 8px', borderRadius: '4px', fontSize: '12px', lineHeight: 1.5,
             }}>
               IV 從 {vixIvBefore} → {vixIvAfter}（Δ {(vixIvAfter - vixIvBefore).toFixed(0)}），影響事件後剩餘時間價值
             </div>
@@ -4750,7 +4750,7 @@ function VIXHedgeCalculator({
                 disabled={chainStatus === 'fetching'}
                 style={{
                   marginLeft: 'auto',
-                  fontSize: '10px',
+                  fontSize: '12px',
                   padding: '3px 8px',
                   borderRadius: '3px',
                   border: '1px solid ' + (chainStatus === 'error' ? '#ef4444' : chainStatus === 'synced' ? '#10b981' : '#2a2a2a'),
@@ -4766,12 +4766,12 @@ function VIXHedgeCalculator({
               </button>
             </div>
             {chainStatus === 'synced' && chainSyncTime && (
-              <div style={{ fontSize: '10px', color: '#888', fontFamily: 'DM Mono', marginTop: '4px', marginBottom: '6px' }}>
+              <div style={{ fontSize: '12px', color: '#b8b8b8', fontFamily: 'DM Mono', marginTop: '4px', marginBottom: '6px' }}>
                 expiry {targetExpiry} · {Math.round((Date.now() - chainSyncTime.getTime()) / 1000)}s ago
               </div>
             )}
             {chainStatus === 'error' && chainError && (
-              <div style={{ fontSize: '10px', color: '#ef4444', marginTop: '4px', marginBottom: '6px', lineHeight: '1.4' }}>
+              <div style={{ fontSize: '12px', color: '#ef4444', marginTop: '4px', marginBottom: '6px', lineHeight: '1.4' }}>
                 {chainError.slice(0, 120)}
               </div>
             )}
@@ -4870,12 +4870,12 @@ function VIXHedgeCalculator({
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }} className="font-mono-dm tabular">
                   <thead>
                     <tr className="hair-border-b">
-                      <th style={{ textAlign: 'left', padding: '8px 6px', color: '#888', fontWeight: 500 }}>情境</th>
-                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#888', fontWeight: 500 }}>VIX 收</th>
-                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#888', fontWeight: 500 }}>組合衝擊</th>
-                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#888', fontWeight: 500 }}>A 純買</th>
-                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#888', fontWeight: 500 }}>B Spread</th>
-                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#888', fontWeight: 500 }}>C 混搭</th>
+                      <th style={{ textAlign: 'left', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500 }}>情境</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500 }}>VIX 收</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500 }}>組合衝擊</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500 }}>A 純買</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500 }}>B Spread</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500 }}>C 混搭</th>
                       <th style={{ textAlign: 'right', padding: '8px 6px', color: '#EAB308', fontWeight: 500 }}>淨 (選中)</th>
                     </tr>
                   </thead>
@@ -5069,7 +5069,7 @@ function StrategyCard({ id, strat, selected, onSelect, badge, recommended }) {
             right: '12px',
             background: '#EAB308',
             color: '#0f0f0f',
-            fontSize: '9px',
+            fontSize: '11px',
             fontWeight: 700,
             padding: '2px 6px',
             borderRadius: '3px',
@@ -5084,11 +5084,11 @@ function StrategyCard({ id, strat, selected, onSelect, badge, recommended }) {
         <span
           className="font-mono-dm"
           style={{
-            fontSize: '10px',
+            fontSize: '12px',
             padding: '2px 6px',
             borderRadius: '3px',
             background: '#242424',
-            color: '#888',
+            color: '#b8b8b8',
             letterSpacing: '0.08em',
           }}
         >
@@ -5152,7 +5152,7 @@ function RecommendationBanner({ rec, onApply, currentSelection, ivr, dte, eventT
               <span
                 className="font-mono-dm"
                 style={{
-                  fontSize: '10px',
+                  fontSize: '12px',
                   padding: '3px 8px',
                   borderRadius: '3px',
                   background: rec.tone === 'go' ? 'rgba(16,185,129,0.15)' :
@@ -5172,7 +5172,7 @@ function RecommendationBanner({ rec, onApply, currentSelection, ivr, dte, eventT
                   style={{
                     borderColor: '#EAB308',
                     color: '#EAB308',
-                    fontSize: '10px',
+                    fontSize: '12px',
                     padding: '4px 10px',
                   }}
                 >
@@ -5180,7 +5180,7 @@ function RecommendationBanner({ rec, onApply, currentSelection, ivr, dte, eventT
                 </button>
               )}
               {isApplied && rec.id && (
-                <span className="font-mono-dm text-xs text-green" style={{ fontSize: '10px' }}>
+                <span className="font-mono-dm text-xs text-green" style={{ fontSize: '12px' }}>
                   ✓ APPLIED
                 </span>
               )}
@@ -5189,7 +5189,7 @@ function RecommendationBanner({ rec, onApply, currentSelection, ivr, dte, eventT
           <div className="text-xs text-muted font-tc mt-2" style={{ fontSize: '11.5px', lineHeight: 1.5 }}>
             {rec.reason}
           </div>
-          <div className="flex items-center gap-3 mt-2 text-xs font-mono-dm text-muted-2" style={{ fontSize: '10px' }}>
+          <div className="flex items-center gap-3 mt-2 text-xs font-mono-dm text-muted-2" style={{ fontSize: '12px' }}>
             <span>IVR <span className="text-accent">{ivr}</span></span>
             <span>·</span>
             <span>DTE <span className="text-accent">T-{dte}</span></span>
@@ -5246,7 +5246,7 @@ function VegaImpactBadge({ strat, ivDelta }) {
           {ivDelta !== 0 ? formatMoney(vegaLoss) : '—'}
         </span>
       </div>
-      <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '9px', marginTop: '1px' }}>
+      <div className="text-xs text-muted-2 font-tc" style={{ fontSize: '11px', marginTop: '1px' }}>
         若 IV {ivDelta > 0 ? '+' : ''}{ivDelta.toFixed(0)} → vega 影響
       </div>
     </div>
@@ -5287,12 +5287,12 @@ function PortfolioBetaSection({
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }} className="font-mono-dm tabular">
           <thead>
             <tr className="hair-border-b">
-              <th style={{ textAlign: 'left', padding: '8px 6px', color: '#888', fontWeight: 500 }}>Ticker</th>
-              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#888', fontWeight: 500 }}>金額</th>
-              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#888', fontWeight: 500 }}>權重</th>
-              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#888', fontWeight: 500 }}>β (vs SPY)</th>
-              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#888', fontWeight: 500 }}>β-貢獻</th>
-              <th style={{ textAlign: 'center', padding: '8px 6px', color: '#888', fontWeight: 500, width: '40px' }}></th>
+              <th style={{ textAlign: 'left', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500 }}>Ticker</th>
+              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500 }}>金額</th>
+              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500 }}>權重</th>
+              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500 }}>β (vs SPY)</th>
+              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500 }}>β-貢獻</th>
+              <th style={{ textAlign: 'center', padding: '8px 6px', color: '#b8b8b8', fontWeight: 500, width: '40px' }}></th>
             </tr>
           </thead>
           <tbody>
@@ -5312,7 +5312,7 @@ function PortfolioBetaSection({
                       style={{ width: '80px', padding: '4px 8px' }}
                     />
                     {isUnknown && (
-                      <span className="ml-1" style={{ fontSize: '9px', color: '#fb923c' }}>?</span>
+                      <span className="ml-1" style={{ fontSize: '11px', color: '#fb923c' }}>?</span>
                     )}
                   </td>
                   <td style={{ padding: '6px', textAlign: 'right' }}>
@@ -5324,7 +5324,7 @@ function PortfolioBetaSection({
                       style={{ width: '100px', padding: '4px 8px', textAlign: 'right' }}
                     />
                   </td>
-                  <td style={{ padding: '6px', textAlign: 'right', color: '#888' }}>
+                  <td style={{ padding: '6px', textAlign: 'right', color: '#b8b8b8' }}>
                     {(weight * 100).toFixed(1)}%
                   </td>
                   <td style={{ padding: '6px', textAlign: 'right', color: beta > 1.3 ? '#ef4444' : beta > 1.0 ? '#fb923c' : beta < 0.7 ? '#10b981' : '#f4f4f4' }}>
@@ -5414,7 +5414,7 @@ function StockStressSection({
           disabled={straddleStatus === 'fetching' || !fetchStressStraddle}
           style={{
             marginLeft: 'auto',
-            fontSize: '10px',
+            fontSize: '12px',
             padding: '3px 8px',
             borderRadius: '3px',
             border: '1px solid ' + (straddleStatus === 'error' ? '#ef4444' : straddleStatus === 'synced' ? '#10b981' : '#2a2a2a'),
@@ -5436,12 +5436,12 @@ function StockStressSection({
         ▸ 把單一重倉股（NVDA）的下跌情境放大到整個持倉，並建議用 QQQ Put 對沖規模。
       </div>
       {straddleStatus === 'synced' && straddleSyncTime && (
-        <div style={{ fontSize: '10px', color: '#888', fontFamily: 'DM Mono', marginTop: '-8px', marginBottom: '10px' }}>
+        <div style={{ fontSize: '12px', color: '#b8b8b8', fontFamily: 'DM Mono', marginTop: '-8px', marginBottom: '10px' }}>
           {stressTicker} expiry {targetExpiry} · {Math.round((Date.now() - straddleSyncTime.getTime()) / 1000)}s ago
         </div>
       )}
       {straddleStatus === 'error' && straddleError && (
-        <div style={{ fontSize: '10px', color: '#ef4444', marginTop: '-8px', marginBottom: '10px', lineHeight: '1.4' }}>
+        <div style={{ fontSize: '12px', color: '#ef4444', marginTop: '-8px', marginBottom: '10px', lineHeight: '1.4' }}>
           {straddleError.slice(0, 140)}
         </div>
       )}
@@ -5536,7 +5536,7 @@ function StockStressSection({
             <div className="font-mono-dm tabular text-red" style={{ fontSize: '24px', fontWeight: 500 }}>
               -{(stressResult.qqqGapPct * 100).toFixed(2)}%
             </div>
-            <div className="text-xs text-muted font-tc" style={{ fontSize: '10px', marginTop: '2px' }}>
+            <div className="text-xs text-muted font-tc" style={{ fontSize: '12px', marginTop: '2px' }}>
               {stressImpliedMove}% × {stressQQQWeight.toFixed(1)}% × {stressContagion}x
             </div>
           </div>
@@ -5547,7 +5547,7 @@ function StockStressSection({
             <div className="font-mono-dm tabular text-primary" style={{ fontSize: '24px', fontWeight: 500 }}>
               {formatMoney(stressResult.exposureValue)}
             </div>
-            <div className="text-xs text-muted font-tc" style={{ fontSize: '10px', marginTop: '2px' }}>
+            <div className="text-xs text-muted font-tc" style={{ fontSize: '12px', marginTop: '2px' }}>
               組合 {formatMoney(portfolioValue)} × {qqqExposurePct}%
             </div>
           </div>
@@ -5558,7 +5558,7 @@ function StockStressSection({
             <div className="font-mono-dm tabular text-red" style={{ fontSize: '24px', fontWeight: 500 }}>
               {formatMoney(-stressResult.expectedLoss)}
             </div>
-            <div className="text-xs text-muted font-tc" style={{ fontSize: '10px', marginTop: '2px' }}>
+            <div className="text-xs text-muted font-tc" style={{ fontSize: '12px', marginTop: '2px' }}>
               {stressTicker} 事件造成
             </div>
           </div>
@@ -5595,7 +5595,7 @@ function StockStressSection({
             <div className="font-mono-dm tabular text-accent" style={{ fontSize: '20px', fontWeight: 500 }}>
               ${qqqPutSuggestion.strike.toFixed(2)}
             </div>
-            <div className="text-xs text-muted font-tc" style={{ fontSize: '10px', marginTop: '2px' }}>
+            <div className="text-xs text-muted font-tc" style={{ fontSize: '12px', marginTop: '2px' }}>
               QQQ {qqqPrice} 下 {(qqqPutOTMPct).toFixed(1)}% OTM
             </div>
           </div>
@@ -5649,7 +5649,7 @@ function MiniMetric({ label, value, accent, red, green }) {
   const color = accent ? '#EAB308' : red ? '#ef4444' : green ? '#10b981' : '#f4f4f4';
   return (
     <div>
-      <div className="text-muted-2 font-mono-dm" style={{ fontSize: '10px', letterSpacing: '0.1em', marginBottom: '2px' }}>
+      <div className="text-muted-2 font-mono-dm" style={{ fontSize: '12px', letterSpacing: '0.1em', marginBottom: '2px' }}>
         {label}
       </div>
       <div
@@ -5690,7 +5690,7 @@ function PremiumInput({ label, value, onChange, accent, muted }) {
       <label
         className="block mb-1 font-mono-dm"
         style={{
-          fontSize: '10px',
+          fontSize: '12px',
           color: accent ? '#EAB308' : muted ? '#555' : '#888',
           letterSpacing: '0.05em',
         }}
@@ -5805,7 +5805,7 @@ function MacroContextBanner({ score, band, alerts, hedgeBudgetBps }) {
             }}
           />
           <div>
-            <div className="font-mono-dm text-muted-2" style={{ fontSize: '9px', letterSpacing: '0.12em' }}>
+            <div className="font-mono-dm text-muted-2" style={{ fontSize: '11px', letterSpacing: '0.12em' }}>
               L2 MACRO CONTEXT · UPSTREAM SIGNAL
             </div>
             <div className="font-tc font-bold" style={{ fontSize: '13px', color: '#f4f4f4', marginTop: '2px' }}>
@@ -5820,7 +5820,7 @@ function MacroContextBanner({ score, band, alerts, hedgeBudgetBps }) {
             <span
               className="font-mono-dm"
               style={{
-                fontSize: '9px',
+                fontSize: '11px',
                 padding: '2px 8px',
                 borderRadius: '3px',
                 background: accentColor + '25',
@@ -5830,7 +5830,7 @@ function MacroContextBanner({ score, band, alerts, hedgeBudgetBps }) {
             >
               {alerts.length} L2 ALERT{alerts.length > 1 ? 'S' : ''}
             </span>
-            <span className="text-xs text-muted font-tc" style={{ fontSize: '10px' }}>
+            <span className="text-xs text-muted font-tc" style={{ fontSize: '12px' }}>
               {alerts.map((a) => a.name).join(' · ')}
             </span>
           </div>
@@ -5959,7 +5959,7 @@ const STATUS_CONFIG = {
   connected:  { label: '已連線',  color: '#10b981', icon: Wifi,      animate: null   },
   error:      { label: '錯誤',      color: '#ef4444', icon: AlertCircle, animate: null },
   no_key:     { label: '缺 API KEY', color: '#fb923c', icon: WifiOff,   animate: null   },
-  mock:       { label: '示範資料',  color: '#888',    icon: Database,  animate: null   },
+  mock:       { label: '示範資料',  color: '#b8b8b8',    icon: Database,  animate: null   },
 };
 
 const formatTimestamp = (date) => {
@@ -6243,7 +6243,7 @@ function OptionsScanner({ positions }) {
       {/* Top controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666', letterSpacing: '0.1em', textTransform: 'uppercase' }}>MODE</span>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#9a9a9a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>MODE</span>
           {[
             { id: 'both', label: '雙邊', color: '#EAB308' },
             { id: 'buyer', label: '爆噴買方', color: '#a78bfa' },
@@ -6317,8 +6317,8 @@ function OptionsScanner({ positions }) {
           background: '#1a1a1a',
           borderBottom: '1px solid #2a2a2a',
           fontFamily: 'DM Mono',
-          fontSize: '9px',
-          color: '#666',
+          fontSize: '11px',
+          color: '#9a9a9a',
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
         }}>
@@ -6343,14 +6343,14 @@ function OptionsScanner({ positions }) {
           />
         ))}
         {sortedList.length === 0 && (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#666', fontFamily: 'DM Mono', fontSize: '11px' }}>
+          <div style={{ padding: '24px', textAlign: 'center', color: '#9a9a9a', fontFamily: 'DM Mono', fontSize: '11px' }}>
             無 ticker。加入 watchlist 或新增 positions。
           </div>
         )}
       </div>
 
       {/* Footnote */}
-      <div style={{ marginTop: '12px', fontSize: '10px', color: '#555', fontFamily: 'DM Mono', lineHeight: 1.6 }}>
+      <div style={{ marginTop: '12px', fontSize: '12px', color: '#7a7a7a', fontFamily: 'DM Mono', lineHeight: 1.6 }}>
         資料來源: window.__IVR_CACHE / __EARNINGS_CACHE / __BETA_CACHE (UW + Polygon · 15min cache)。
         缺資料的訊號自動跳過，分數依可用訊號重新標準化。
         BUYER mode 找「IV 便宜 + 高 beta + 接近財報」；SELLER mode 找「IV 過熱 + 低 beta + 高 implied move」。
@@ -6362,7 +6362,7 @@ function OptionsScanner({ positions }) {
 function ScannerStat({ label, value, color }) {
   return (
     <div style={{ border: '1px solid ' + color + '40', background: color + '08', padding: '8px 10px' }}>
-      <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#888', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#b8b8b8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontFamily: 'DM Mono', fontSize: '20px', color: color, fontWeight: 600, marginTop: '2px' }}>{value}</div>
     </div>
   );
@@ -6392,9 +6392,9 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
       >
         <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#f4f4f4', fontWeight: 600 }}>{s.ticker}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', color: '#888', fontFamily: 'DM Mono' }}>
-          {s.inPosition && <span style={{ color: '#EAB308', fontSize: '9px' }}>★ 持倉中</span>}
-          {!s.hasData && <span style={{ color: '#666' }}>無資料</span>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#b8b8b8', fontFamily: 'DM Mono' }}>
+          {s.inPosition && <span style={{ color: '#EAB308', fontSize: '11px' }}>★ 持倉中</span>}
+          {!s.hasData && <span style={{ color: '#9a9a9a' }}>無資料</span>}
           {s.earnDate && (
             <span style={{ color: s.daysToEarnings <= 7 ? '#a78bfa' : '#666' }}>
               EPS {s.earnDate} ({s.daysToEarnings >= 0 ? 'T−' + s.daysToEarnings : '已過'})
@@ -6404,10 +6404,10 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
         <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: s.ivr != null ? (s.ivr > 70 ? '#ef4444' : s.ivr > 40 ? '#EAB308' : '#10b981') : '#444' }}>
           {s.ivr != null ? s.ivr.toFixed(0) : '—'}
         </div>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#888' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#b8b8b8' }}>
           {s.beta != null ? s.beta.toFixed(2) : '—'}
         </div>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#888' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#b8b8b8' }}>
           {s.expectedMove != null ? '±' + s.expectedMove.toFixed(1) + '%' : '—'}
         </div>
         <div style={{ textAlign: 'right', opacity: showBuyer ? 1 : 0.3 }}>
@@ -6426,7 +6426,7 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
             </div>
           ) : <span style={{ color: '#444', fontFamily: 'DM Mono', fontSize: '11px' }}>—</span>}
         </div>
-        <div style={{ color: '#666', fontFamily: 'DM Mono', fontSize: '12px', textAlign: 'center' }}>{isExpanded ? '−' : '+'}</div>
+        <div style={{ color: '#9a9a9a', fontFamily: 'DM Mono', fontSize: '12px', textAlign: 'center' }}>{isExpanded ? '−' : '+'}</div>
       </div>
 
       {isExpanded && (
@@ -6441,7 +6441,7 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
           </div>
           {/* Action row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #1a1a1a' }}>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666' }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#9a9a9a' }}>
               {s.buyer.score != null && s.seller.score != null ? (
                 s.buyer.score > s.seller.score
                   ? '建議偏向：買方（' + (s.buyer.score - s.seller.score) + ' 分優勢）'
@@ -6455,7 +6455,7 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
                 onClick={onRemove}
                 style={{
                   background: 'transparent', border: '1px solid #ef444440', color: '#ef4444',
-                  padding: '3px 10px', fontFamily: 'DM Mono', fontSize: '10px',
+                  padding: '3px 10px', fontFamily: 'DM Mono', fontSize: '12px',
                   cursor: 'pointer', borderRadius: '3px',
                 }}
               >移出 watchlist</button>
@@ -6475,7 +6475,7 @@ function ScannerSignalPanel({ title, signals, score, grade, accent }) {
         {score != null && grade && (
           <div>
             <span style={{ fontFamily: 'DM Mono', fontSize: '20px', color: grade.color, fontWeight: 600 }}>{score}</span>
-            <span style={{ fontFamily: 'DM Mono', fontSize: '9px', color: grade.color, marginLeft: '6px', letterSpacing: '0.1em' }}>{grade.label}</span>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: grade.color, marginLeft: '6px', letterSpacing: '0.1em' }}>{grade.label}</span>
           </div>
         )}
       </div>
@@ -6483,11 +6483,11 @@ function ScannerSignalPanel({ title, signals, score, grade, accent }) {
         {Object.entries(signals).map(([key, sig]) => (
           <div key={key}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
-              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888' }}>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#b8b8b8' }}>
                 {sig.label}
                 <span style={{ color: '#444', marginLeft: '6px' }}>w{sig.weight}</span>
               </span>
-              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: sig.score != null ? accent : '#444' }}>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: sig.score != null ? accent : '#444' }}>
                 {sig.score != null ? sig.score.toFixed(0) : '—'}
               </span>
             </div>
@@ -6500,7 +6500,7 @@ function ScannerSignalPanel({ title, signals, score, grade, accent }) {
                 transition: 'width 0.4s',
               }}></div>
             </div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#555', marginTop: '2px' }}>{sig.detail}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#7a7a7a', marginTop: '2px' }}>{sig.detail}</div>
           </div>
         ))}
       </div>
@@ -6707,7 +6707,7 @@ function BacktestPanel() {
       {/* Mode + actions */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666', letterSpacing: '0.1em' }}>MODE</span>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#9a9a9a', letterSpacing: '0.1em' }}>MODE</span>
           {['preEps', 'postEps'].map(m => (
             <button key={m} onClick={() => setMode(m)} style={{
               background: mode === m ? '#a78bfa14' : 'transparent',
@@ -6717,7 +6717,7 @@ function BacktestPanel() {
               cursor: 'pointer', borderRadius: '3px',
             }}>{m}</button>
           ))}
-          <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666', marginLeft: '12px' }}>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#9a9a9a', marginLeft: '12px' }}>
             {trades.length} 筆樣本
           </span>
         </div>
@@ -6726,8 +6726,8 @@ function BacktestPanel() {
             background: 'transparent', border: '1px solid #EAB308', color: '#EAB308',
             padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer', borderRadius: '3px',
           }}>{showForm ? '× 取消' : '＋ 新增'}</button>
-          <button onClick={bt_handleExport} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#888', padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer', borderRadius: '3px' }}>匯出 JSON</button>
-          <button onClick={bt_handleImport} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#888', padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer', borderRadius: '3px' }}>匯入 JSON</button>
+          <button onClick={bt_handleExport} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#b8b8b8', padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer', borderRadius: '3px' }}>匯出 JSON</button>
+          <button onClick={bt_handleImport} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#b8b8b8', padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer', borderRadius: '3px' }}>匯入 JSON</button>
         </div>
       </div>
 
@@ -6746,24 +6746,24 @@ function BacktestPanel() {
 
       {/* 01 — Hit rate by grade */}
       <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px' }}>
           01 · 各等級命中率
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
           {stats.map(s => (
             <div key={s.grade} style={{ border: '1px solid ' + BT_GRADE_COLORS[s.grade] + '40', background: BT_GRADE_COLORS[s.grade] + '08', padding: '8px 10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
-                <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: BT_GRADE_COLORS[s.grade], fontWeight: 600 }}>{s.grade}</span>
-                <span style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#666' }}>n={s.count}</span>
+                <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: BT_GRADE_COLORS[s.grade], fontWeight: 600 }}>{s.grade}</span>
+                <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a' }}>n={s.count}</span>
               </div>
               {s.count === 0 ? (
-                <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#444' }}>無樣本</div>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#444' }}>無樣本</div>
               ) : (
                 <div>
                   <div style={{ fontFamily: 'DM Mono', fontSize: '20px', color: BT_GRADE_COLORS[s.grade], fontWeight: 600 }}>
                     {s.hitRate.toFixed(0)}%
                   </div>
-                  <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', marginTop: '4px' }}>
+                  <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#b8b8b8', marginTop: '4px' }}>
                     avg {s.avgReturn != null ? (s.avgReturn >= 0 ? '+' : '') + s.avgReturn.toFixed(0) + '%' : '—'}
                   </div>
                 </div>
@@ -6775,11 +6775,11 @@ function BacktestPanel() {
 
       {/* 02 — Signal correlation */}
       <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px' }}>
           02 · 信號預測力 (Pearson r)
         </div>
         {corrs.length === 0 ? (
-          <div style={{ padding: '12px', border: '1px solid #2a2a2a', color: '#666', fontFamily: 'DM Mono', fontSize: '11px' }}>
+          <div style={{ padding: '12px', border: '1px solid #2a2a2a', color: '#9a9a9a', fontFamily: 'DM Mono', fontSize: '11px' }}>
             樣本不足（需要至少 2 筆有 signals + actualReturn）
           </div>
         ) : (
@@ -6807,24 +6807,24 @@ function BacktestPanel() {
 
       {/* 03 — Weight tuning */}
       <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
           <span>03 · 權重實驗室</span>
           <button onClick={() => setCustomWeights(BT_PRESET_WEIGHTS[mode])} style={{
-            background: 'transparent', border: '1px solid #2a2a2a', color: '#666',
-            padding: '2px 8px', fontFamily: 'DM Mono', fontSize: '9px', cursor: 'pointer',
+            background: 'transparent', border: '1px solid #2a2a2a', color: '#9a9a9a',
+            padding: '2px 8px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer',
           }}>↺ 重設</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           {/* Sliders */}
           <div style={{ border: '1px solid #2a2a2a', padding: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontFamily: 'DM Mono', fontSize: '10px' }}>
-              <span style={{ color: '#666' }}>{mode} 權重</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontFamily: 'DM Mono', fontSize: '12px' }}>
+              <span style={{ color: '#9a9a9a' }}>{mode} 權重</span>
               <span style={{ color: Math.abs(totalWeight - 100) < 1 ? '#10b981' : '#EAB308' }}>合計: {totalWeight.toFixed(0)}%</span>
             </div>
             {sliderKeys.map(k => (
               <div key={k} style={{ marginBottom: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px', fontFamily: 'DM Mono', fontSize: '10px' }}>
-                  <span style={{ color: '#888' }}>{BT_SIGNAL_LABELS[k] || k}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px', fontFamily: 'DM Mono', fontSize: '12px' }}>
+                  <span style={{ color: '#b8b8b8' }}>{BT_SIGNAL_LABELS[k] || k}</span>
                   <span style={{ color: '#a78bfa' }}>{customWeights[k]}%</span>
                 </div>
                 <input
@@ -6837,7 +6837,7 @@ function BacktestPanel() {
           </div>
           {/* Comparison */}
           <div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666', marginBottom: '4px' }}>新權重 vs 預設權重</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#9a9a9a', marginBottom: '4px' }}>新權重 vs 預設權重</div>
             {['PREMIUM', 'STRONG', 'EARLY', 'TRAP'].map(g => {
               const oldS = stats.find(s => s.grade === g);
               const newS = newStats.find(s => s.grade === g);
@@ -6846,9 +6846,9 @@ function BacktestPanel() {
               const delta = oldHit != null && newHit != null ? newHit - oldHit : null;
               return (
                 <div key={g} style={{ border: '1px solid #2a2a2a', padding: '6px 10px', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: BT_GRADE_COLORS[g], fontWeight: 600 }}>{g}</span>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: BT_GRADE_COLORS[g], fontWeight: 600 }}>{g}</span>
                   <div style={{ fontFamily: 'DM Mono', fontSize: '11px', display: 'flex', gap: '6px', alignItems: 'baseline' }}>
-                    <span style={{ color: '#666' }}>{oldHit != null ? oldHit.toFixed(0) + '%' : '—'}</span>
+                    <span style={{ color: '#9a9a9a' }}>{oldHit != null ? oldHit.toFixed(0) + '%' : '—'}</span>
                     <span style={{ color: '#444' }}>→</span>
                     <span style={{ color: '#f4f4f4' }}>{newHit != null ? newHit.toFixed(0) + '%' : '—'}</span>
                     {delta != null && (
@@ -6866,30 +6866,30 @@ function BacktestPanel() {
 
       {/* 04 — Trade table */}
       <div>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a78bfa', letterSpacing: '0.1em', marginBottom: '8px' }}>
           04 · 交易紀錄
         </div>
         <div style={{ border: '1px solid #2a2a2a', overflow: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', fontFamily: 'DM Mono' }}>
             <thead>
               <tr style={{ background: '#1a1a1a', borderBottom: '1px solid #2a2a2a' }}>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px', letterSpacing: '0.1em' }}>TICKER</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>MODE</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>DATE</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>SCORE</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>GRADE</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>STOCK%</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>OPT%</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#666', fontSize: '9px' }}>OUTCOME</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: '#666', fontSize: '9px' }}></th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9a9a9a', fontSize: '11px', letterSpacing: '0.1em' }}>TICKER</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9a9a9a', fontSize: '11px' }}>MODE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9a9a9a', fontSize: '11px' }}>DATE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9a9a9a', fontSize: '11px' }}>SCORE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9a9a9a', fontSize: '11px' }}>GRADE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9a9a9a', fontSize: '11px' }}>STOCK%</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9a9a9a', fontSize: '11px' }}>OPT%</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9a9a9a', fontSize: '11px' }}>OUTCOME</th>
+                <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9a9a9a', fontSize: '11px' }}></th>
               </tr>
             </thead>
             <tbody>
               {trades.map(t => (
                 <tr key={t.id} style={{ borderBottom: '1px solid #1a1a1a' }}>
                   <td style={{ padding: '6px 8px', color: '#f4f4f4', fontWeight: 600 }}>{t.ticker}</td>
-                  <td style={{ padding: '6px 8px', color: '#888' }}>{t.mode}</td>
-                  <td style={{ padding: '6px 8px', color: '#888' }}>{t.tradeDate || t.earningsDate || '—'}</td>
+                  <td style={{ padding: '6px 8px', color: '#b8b8b8' }}>{t.mode}</td>
+                  <td style={{ padding: '6px 8px', color: '#b8b8b8' }}>{t.tradeDate || t.earningsDate || '—'}</td>
                   <td style={{ padding: '6px 8px', color: '#f4f4f4' }}>{t.predictedScore}</td>
                   <td style={{ padding: '6px 8px', color: BT_GRADE_COLORS[t.predictedGrade] || '#666' }}>{t.predictedGrade}</td>
                   <td style={{ padding: '6px 8px', color: (t.actualMovePct || 0) >= 0 ? '#10b981' : '#ef4444' }}>
@@ -6902,13 +6902,13 @@ function BacktestPanel() {
                     {t.outcome || 'PENDING'}
                   </td>
                   <td style={{ padding: '6px 8px', textAlign: 'right' }}>
-                    <button onClick={() => { setEditingId(t.id); setShowForm(true); }} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', fontSize: '10px', padding: '0 4px' }}>編輯</button>
-                    <button onClick={() => { if (window.confirm('刪除 ' + t.ticker + '?')) bt_handleDelete(t.id); }} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '10px', padding: '0 4px' }}>×</button>
+                    <button onClick={() => { setEditingId(t.id); setShowForm(true); }} style={{ background: 'transparent', border: 'none', color: '#9a9a9a', cursor: 'pointer', fontSize: '12px', padding: '0 4px' }}>編輯</button>
+                    <button onClick={() => { if (window.confirm('刪除 ' + t.ticker + '?')) bt_handleDelete(t.id); }} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: '0 4px' }}>×</button>
                   </td>
                 </tr>
               ))}
               {trades.length === 0 && (
-                <tr><td colSpan="9" style={{ padding: '20px', textAlign: 'center', color: '#666', fontSize: '10px' }}>無紀錄。點「＋ 新增」開始累積樣本。</td></tr>
+                <tr><td colSpan="9" style={{ padding: '20px', textAlign: 'center', color: '#9a9a9a', fontSize: '12px' }}>無紀錄。點「＋ 新增」開始累積樣本。</td></tr>
               )}
             </tbody>
           </table>
@@ -6970,7 +6970,7 @@ function Bt_TradeForm({ existing, onSubmit, onCancel }) {
         </Bt_Field>
       </div>
       <div style={{ marginBottom: '8px' }}>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#666', marginBottom: '4px' }}>Signal Scores (0-100, optional)</div>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', marginBottom: '4px' }}>Signal Scores (0-100, optional)</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
           {sigKeys.map(k => (
             <Bt_Field key={k} label={BT_SIGNAL_LABELS[k] || k}>
@@ -6984,7 +6984,7 @@ function Bt_TradeForm({ existing, onSubmit, onCancel }) {
       </Bt_Field>
       <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
         <button onClick={handleSave} style={{ background: '#EAB30814', border: '1px solid #EAB308', color: '#EAB308', padding: '4px 12px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer' }}>儲存</button>
-        <button onClick={onCancel} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#888', padding: '4px 12px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer' }}>取消</button>
+        <button onClick={onCancel} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#b8b8b8', padding: '4px 12px', fontFamily: 'DM Mono', fontSize: '11px', cursor: 'pointer' }}>取消</button>
       </div>
     </div>
   );
@@ -6993,7 +6993,7 @@ function Bt_TradeForm({ existing, onSubmit, onCancel }) {
 function Bt_Field({ label, children }) {
   return (
     <label style={{ display: 'block' }}>
-      <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#666', marginBottom: '2px' }}>{label}</div>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', marginBottom: '2px' }}>{label}</div>
       {children}
     </label>
   );
@@ -7128,12 +7128,12 @@ function TextbookViewer() {
       {/* Hero */}
       <div style={{ marginBottom: '20px', padding: '14px', border: '1px solid ' + accentColor + '40', background: accentColor + '06' }}>
         <div style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', color: '#f4f4f4', fontWeight: 700, marginBottom: '4px' }}>{data.title}</div>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: accentColor, marginBottom: '8px' }}>{data.subtitle}</div>
-        <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.7, margin: '0 0 12px 0', fontFamily: 'Noto Sans TC' }}>{data.hero.summary}</p>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: accentColor, marginBottom: '8px' }}>{data.subtitle}</div>
+        <p style={{ fontSize: '12px', color: '#b8b8b8', lineHeight: 1.7, margin: '0 0 12px 0', fontFamily: 'Noto Sans TC' }}>{data.hero.summary}</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
           {data.hero.stats.map((s, i) => (
             <div key={i} style={{ border: '1px solid #2a2a2a', padding: '8px', background: '#0a0a0a' }}>
-              <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#666', letterSpacing: '0.1em' }}>{s.label}</div>
+              <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', letterSpacing: '0.1em' }}>{s.label}</div>
               <div style={{ fontFamily: 'DM Mono', fontSize: '18px', color: accentColor, fontWeight: 600, marginTop: '2px' }}>{s.value}</div>
             </div>
           ))}
@@ -7148,7 +7148,7 @@ function TextbookViewer() {
 function Tb_SectionHeader({ kicker, title, accent }) {
   return (
     <div style={{ marginTop: '20px', marginBottom: '10px' }}>
-      <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: accent || '#EAB308', letterSpacing: '0.15em', marginBottom: '4px' }}>{kicker}</div>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: accent || '#EAB308', letterSpacing: '0.15em', marginBottom: '4px' }}>{kicker}</div>
       <div style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', color: '#f4f4f4', fontWeight: 700 }}>{title}</div>
     </div>
   );
@@ -7172,7 +7172,7 @@ function Tb_BuyerContent({ data }) {
               <Tb_Cell label="出場" value={'$' + p.exit} />
               <Tb_Cell label="進場 Δ" value={p.deltaAtEntry} />
             </div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', borderLeft: '2px solid #EAB308', paddingLeft: '8px' }}>{p.note}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#b8b8b8', borderLeft: '2px solid #EAB308', paddingLeft: '8px' }}>{p.note}</div>
           </div>
         ))}
       </div>
@@ -7183,10 +7183,10 @@ function Tb_BuyerContent({ data }) {
           <div key={s.id} style={{ border: '1px solid #2a2a2a', padding: '10px', background: '#0f0f0f' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4', fontWeight: 600 }}>0{s.id} · {s.name}</span>
-              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#EAB308' }}>w {s.weight}%</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#EAB308' }}>w {s.weight}%</span>
             </div>
-            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#888', lineHeight: 1.6, marginBottom: '4px' }}>{s.rationale}</div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#10b981' }}>★ {s.metric}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#b8b8b8', lineHeight: 1.6, marginBottom: '4px' }}>{s.rationale}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#10b981' }}>★ {s.metric}</div>
           </div>
         ))}
       </div>
@@ -7208,9 +7208,9 @@ function Tb_SellerContent({ data }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
         {data.winCase.phases.map((p, i) => (
           <div key={i} style={{ border: '1px solid #2a2a2a', padding: '10px', background: '#0f0f0f' }}>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#14b8a6', letterSpacing: '0.1em', marginBottom: '4px' }}>{p.label}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#14b8a6', letterSpacing: '0.1em', marginBottom: '4px' }}>{p.label}</div>
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4', fontWeight: 600, marginBottom: '4px' }}>{p.title}</div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', lineHeight: 1.6 }}>{p.detail}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#b8b8b8', lineHeight: 1.6 }}>{p.detail}</div>
           </div>
         ))}
       </div>
@@ -7221,12 +7221,12 @@ function Tb_SellerContent({ data }) {
           <div key={s.id} style={{ border: '1px solid #2a2a2a', padding: '10px', background: '#0f0f0f' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4', fontWeight: 600 }}>0{s.id} · {s.name}</span>
-              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#14b8a6' }}>w {s.weight}%</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#14b8a6' }}>w {s.weight}%</span>
             </div>
-            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#888', lineHeight: 1.6, marginBottom: '4px' }}>{s.detail}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#b8b8b8', lineHeight: 1.6, marginBottom: '4px' }}>{s.detail}</div>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#14b8a6' }}>✓ TARGET: {s.target}</span>
-              <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#ef4444' }}>⚠ {s.caution}</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#14b8a6' }}>✓ TARGET: {s.target}</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#ef4444' }}>⚠ {s.caution}</span>
             </div>
           </div>
         ))}
@@ -7238,9 +7238,9 @@ function Tb_SellerContent({ data }) {
           <div key={i} style={{ border: '1px solid #2a2a2a', padding: '10px', background: '#0f0f0f' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4', fontWeight: 600 }}>{s.name}</span>
-              <span style={{ fontFamily: 'DM Mono', fontSize: '9px', color: s.risk.indexOf('UNDEFINED') >= 0 && s.risk.indexOf('DEFINED') < 0 ? '#ef4444' : '#10b981', padding: '1px 6px', border: '1px solid currentColor' }}>{s.risk}</span>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: s.risk.indexOf('UNDEFINED') >= 0 && s.risk.indexOf('DEFINED') < 0 ? '#ef4444' : '#10b981', padding: '1px 6px', border: '1px solid currentColor' }}>{s.risk}</span>
             </div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', marginBottom: '4px' }}>{s.alias} · PoP {s.pop}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#b8b8b8', marginBottom: '4px' }}>{s.alias} · PoP {s.pop}</div>
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#10b981', marginBottom: '2px' }}>✓ 用: {s.when}</div>
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#ef4444' }}>✗ 避: {s.avoid}</div>
           </div>
@@ -7253,32 +7253,32 @@ function Tb_SellerContent({ data }) {
           <div key={r.id} style={{ border: '1px solid ' + (r.nonNegotiable ? '#ef4444' : '#2a2a2a'), padding: '10px', background: r.nonNegotiable ? '#ef444408' : '#0f0f0f' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4', fontWeight: 600 }}>0{r.id} · {r.rule}</span>
-              {r.nonNegotiable && <span style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#ef4444' }}>★ 強制</span>}
+              {r.nonNegotiable && <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#ef4444' }}>★ 強制</span>}
             </div>
-            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '10px', color: '#888', lineHeight: 1.6 }}>{r.detail}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#b8b8b8', lineHeight: 1.6 }}>{r.detail}</div>
           </div>
         ))}
       </div>
 
       <Tb_SectionHeader kicker="CAUTIONARY · SNDK 賣方災難" title={data.lossCase.title} accent="#ef4444" />
       <div style={{ border: '1px solid #ef4444', background: '#ef444408', padding: '12px' }}>
-        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#888', lineHeight: 1.7, marginBottom: '10px' }}>{data.lossCase.summary}</div>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#b8b8b8', lineHeight: 1.7, marginBottom: '10px' }}>{data.lossCase.summary}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '10px' }}>
           <div style={{ border: '1px solid #2a2a2a', padding: '8px', background: '#0a0a0a' }}>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#EAB308', marginBottom: '4px' }}>進場前看似誘人</div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', lineHeight: 1.7 }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#EAB308', marginBottom: '4px' }}>進場前看似誘人</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#b8b8b8', lineHeight: 1.7 }}>
               Spot ${data.lossCase.pre.spot} · IV {data.lossCase.pre.iv}% (pctl {data.lossCase.pre.ivPctl}) · Implied {data.lossCase.pre.impliedMove}% / Hist {data.lossCase.pre.histMove}% = {data.lossCase.pre.ratio}x
             </div>
           </div>
           <div style={{ border: '1px solid #ef4444', padding: '8px', background: '#0a0a0a' }}>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#ef4444', marginBottom: '4px' }}>18 小時後</div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888', lineHeight: 1.7 }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#ef4444', marginBottom: '4px' }}>18 小時後</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#b8b8b8', lineHeight: 1.7 }}>
               Spot ${data.lossCase.post.spot} (+{data.lossCase.post.actualMove}%) · 平倉 ${data.lossCase.post.costToClose.toLocaleString()} · 損益 <span style={{ color: '#ef4444', fontWeight: 600 }}>${data.lossCase.post.profit.toLocaleString()}</span>
             </div>
           </div>
         </div>
-        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#888', marginBottom: '6px', fontWeight: 600 }}>為什麼炸：</div>
-        <ol style={{ margin: 0, paddingLeft: '20px', fontFamily: 'Noto Sans TC', fontSize: '10px', color: '#888', lineHeight: 1.8 }}>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#b8b8b8', marginBottom: '6px', fontWeight: 600 }}>為什麼炸：</div>
+        <ol style={{ margin: 0, paddingLeft: '20px', fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#b8b8b8', lineHeight: 1.8 }}>
           {data.lossCase.reasons.map((r, i) => <li key={i}>{r}</li>)}
         </ol>
       </div>
@@ -7289,7 +7289,7 @@ function Tb_SellerContent({ data }) {
 function Tb_Cell({ label, value }) {
   return (
     <div>
-      <div style={{ fontFamily: 'DM Mono', fontSize: '9px', color: '#666', letterSpacing: '0.1em' }}>{label}</div>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', letterSpacing: '0.1em' }}>{label}</div>
       <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#f4f4f4', marginTop: '1px' }}>{value}</div>
     </div>
   );
@@ -7303,7 +7303,7 @@ function Tb_LessonColumn({ title, color, items }) {
         {items.map((item, i) => (
           <div key={i} style={{ border: '1px solid #2a2a2a', padding: '8px', background: '#0f0f0f' }}>
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#f4f4f4', fontWeight: 600, marginBottom: '2px' }}>{item.title}</div>
-            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '10px', color: '#888', lineHeight: 1.6 }}>{item.detail}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#b8b8b8', lineHeight: 1.6 }}>{item.detail}</div>
           </div>
         ))}
       </div>
@@ -7335,6 +7335,9 @@ function App() {
   const [collapseScanner, setCollapseScanner] = useState(true);
   const [collapseTextbook, setCollapseTextbook] = useState(true);
   const [collapseBacktest, setCollapseBacktest] = useState(true);
+
+  // Tab navigation — UI organization (home / portfolio / options / textbook / hedge)
+  const [activeTab, setActiveTab] = useState('home');
 
   // AI portfolio summary — auto-triggered on positions change (debounced 30 min)
   const [aiSummary, setAiSummary] = useState(null);
@@ -7482,6 +7485,7 @@ function App() {
   useEffect(() => {
     const handler = () => {
       setCollapseL1(false);
+      setActiveTab('hedge');
       requestAnimationFrame(() => {
         const el = document.getElementById('l1-vix-calculator');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -7657,134 +7661,159 @@ function App() {
           </div>
         )}
 
-        {/* L2 Macro Dashboard */}
-        <CollapsibleSection
-          title="L2 — Macro Regime Dashboard"
-          subtitle="水位 · 週期 · 風險 → 倉位建議"
-          collapsed={collapseL2}
-          setCollapsed={setCollapseL2}
-          icon={Globe}
-        >
-          <L2MacroDashboard onScoreChange={handleMacroChange} portfolioTotal={portfolioTotal} />
-        </CollapsibleSection>
+        {/* TAB NAV — sticky under AppHeader */}
+        <TabNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        {/* Positions CRUD UI — directly above macro context for easy editing */}
-        <PositionsManager
-          positions={positions}
-          supabaseStatus={supabaseStatus}
-          onChange={fetchPositions}
-        />
+        {/* ──────────────────────────────────────────────────── */}
+        {/* TAB: 主頁 (home) — L2 macro + AI summary + bridge   */}
+        {/* ──────────────────────────────────────────────────── */}
+        {activeTab === 'home' && (
+          <>
+            <CollapsibleSection
+              title="L2 — Macro Regime Dashboard"
+              subtitle="水位 · 週期 · 風險 → 倉位建議"
+              collapsed={collapseL2}
+              setCollapsed={setCollapseL2}
+              icon={Globe}
+            >
+              <L2MacroDashboard onScoreChange={handleMacroChange} portfolioTotal={portfolioTotal} />
+            </CollapsibleSection>
 
-        {/* Analyst research notes — feeds into AI summary as context */}
-        <AnalystReportsManager
-          reports={analystReports}
-          supabaseStatus={supabaseStatus}
-          onChange={fetchAnalystReports}
-        />
-
-        {/* AI Portfolio Summary — auto-generated when positions/macro change (debounced 30 min) */}
-        {(aiSummary || aiSummaryLoading || aiSummaryError) && (
-          <div style={{
-            margin: '12px 24px 0',
-            padding: '14px 18px',
-            background: 'rgba(167,139,250,0.06)',
-            border: '1px solid rgba(167,139,250,0.25)',
-            borderRadius: '6px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: aiSummary ? '8px' : '0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '11px', fontFamily: 'DM Mono', color: '#a78bfa', letterSpacing: '0.1em', fontWeight: 600 }}>
-                  ✨ AI 投資組合風險摘要
-                </span>
-                {aiSummaryTime && !aiSummaryLoading && (
-                  <span style={{ fontSize: '10px', color: '#666', fontFamily: 'DM Mono' }}>
-                    · {Math.round((Date.now() - aiSummaryTime.getTime()) / 1000)}s ago · 30min cache
-                  </span>
+            {(aiSummary || aiSummaryLoading || aiSummaryError) && (
+              <div style={{
+                margin: '12px 24px 0',
+                padding: '16px 20px',
+                background: 'rgba(167,139,250,0.06)',
+                border: '1px solid rgba(167,139,250,0.25)',
+                borderRadius: '6px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: aiSummary ? '10px' : '0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '13px', fontFamily: 'DM Mono', color: '#c4b5fd', letterSpacing: '0.1em', fontWeight: 600 }}>
+                      ✨ AI 投資組合風險摘要
+                    </span>
+                    {aiSummaryTime && !aiSummaryLoading && (
+                      <span style={{ fontSize: '11px', color: '#999', fontFamily: 'DM Mono' }}>
+                        · {Math.round((Date.now() - aiSummaryTime.getTime()) / 1000)}s ago · 30min cache
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => generateAiSummary(positions, macroState, analystReports, { force: true })}
+                    disabled={aiSummaryLoading}
+                    style={{
+                      background: 'transparent', border: '1px solid rgba(167,139,250,0.35)',
+                      color: '#c4b5fd', padding: '4px 10px', borderRadius: '3px',
+                      fontSize: '12px', cursor: aiSummaryLoading ? 'wait' : 'pointer', fontFamily: 'DM Mono',
+                    }}
+                  >{aiSummaryLoading ? '⋯' : '↻ refresh'}</button>
+                </div>
+                {aiSummaryLoading && !aiSummary && (
+                  <div style={{ fontSize: '14px', color: '#b8b8b8', fontFamily: 'Noto Sans TC' }}>分析中⋯</div>
+                )}
+                {aiSummary && (
+                  <div style={{ fontSize: '15px', color: '#f0f0f0', fontFamily: 'Noto Sans TC', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>{aiSummary}</div>
+                )}
+                {aiSummaryError && (
+                  <div style={{ fontSize: '13px', color: '#ef4444', fontFamily: 'Noto Sans TC' }}>AI 失敗: {aiSummaryError}</div>
                 )}
               </div>
-              <button
-                onClick={() => generateAiSummary(positions, macroState, analystReports, { force: true })}
-                disabled={aiSummaryLoading}
-                style={{
-                  background: 'transparent', border: '1px solid rgba(167,139,250,0.35)',
-                  color: '#a78bfa', padding: '3px 8px', borderRadius: '3px',
-                  fontSize: '10px', cursor: aiSummaryLoading ? 'wait' : 'pointer', fontFamily: 'DM Mono',
-                }}
-              >{aiSummaryLoading ? '⋯' : '↻ refresh'}</button>
-            </div>
-            {aiSummaryLoading && !aiSummary && (
-              <div style={{ fontSize: '12px', color: '#888', fontFamily: 'Noto Sans TC' }}>分析中⋯</div>
             )}
-            {aiSummary && (
-              <div style={{ fontSize: '13px', color: '#e5e7eb', fontFamily: 'Noto Sans TC', lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{aiSummary}</div>
-            )}
-            {aiSummaryError && (
-              <div style={{ fontSize: '11px', color: '#ef4444', fontFamily: 'Noto Sans TC' }}>AI 失敗: {aiSummaryError}</div>
-            )}
-          </div>
+
+            <CrossLayerBridge
+              macroState={macroState}
+              positions={positions}
+              portfolioTotal={portfolioTotal}
+            />
+          </>
         )}
 
-        {/* ── 選擇權機會掃描器（爆噴 ⊕ IV Crush 雙邊評分）── */}
-        <CollapsibleSection
-          title="選擇權機會掃描器"
-          subtitle="爆噴買方 ⊕ IV Crush 賣方 · 7-signal 雙邊評分"
-          collapsed={collapseScanner}
-          setCollapsed={setCollapseScanner}
-          icon={Target}
-        >
-          <OptionsScanner positions={positions} />
-        </CollapsibleSection>
+        {/* ──────────────────────────────────────────────────── */}
+        {/* TAB: 持倉 (portfolio)                                */}
+        {/* ──────────────────────────────────────────────────── */}
+        {activeTab === 'portfolio' && (
+          <>
+            <PositionsManager
+              positions={positions}
+              supabaseStatus={supabaseStatus}
+              onChange={fetchPositions}
+            />
+            <AnalystReportsManager
+              reports={analystReports}
+              supabaseStatus={supabaseStatus}
+              onChange={fetchAnalystReports}
+            />
+          </>
+        )}
 
-        {/* ── 期權教科書（Buyer / Seller 雙本）── */}
-        <CollapsibleSection
-          title="期權教科書"
-          subtitle="爆噴買方 (CASE 002) ⊕ IV Crush 賣方 (CASE 003)"
-          collapsed={collapseTextbook}
-          setCollapsed={setCollapseTextbook}
-          icon={BookOpen}
-        >
-          <TextbookViewer />
-        </CollapsibleSection>
+        {/* ──────────────────────────────────────────────────── */}
+        {/* TAB: 選擇權 (options) — Scanner + cross-signal       */}
+        {/* ──────────────────────────────────────────────────── */}
+        {activeTab === 'options' && (
+          <>
+            <CollapsibleSection
+              title="選擇權機會掃描器"
+              subtitle="爆噴買方 ⊕ IV Crush 賣方 · 7-signal 雙邊評分"
+              collapsed={collapseScanner}
+              setCollapsed={setCollapseScanner}
+              icon={Target}
+            >
+              <OptionsScanner positions={positions} />
+            </CollapsibleSection>
 
-        {/* ── Scanner Backtest 校準 ── */}
-        <CollapsibleSection
-          title="Scanner Backtest 校準"
-          subtitle="hit rate · signal correlation · weight tuning"
-          collapsed={collapseBacktest}
-          setCollapsed={setCollapseBacktest}
-          icon={Activity}
-        >
-          <BacktestPanel />
-        </CollapsibleSection>
+            <CrossSignalSection positions={positions} />
+          </>
+        )}
 
-        {/* ── 暗池 × 期權流 交叉訊號 ── */}
-        <CrossSignalSection positions={positions} />
+        {/* ──────────────────────────────────────────────────── */}
+        {/* TAB: 教科書 (textbook) — Textbook + backtest         */}
+        {/* ──────────────────────────────────────────────────── */}
+        {activeTab === 'textbook' && (
+          <>
+            <CollapsibleSection
+              title="期權教科書"
+              subtitle="爆噴買方 (CASE 002) ⊕ IV Crush 賣方 (CASE 003)"
+              collapsed={collapseTextbook}
+              setCollapsed={setCollapseTextbook}
+              icon={BookOpen}
+            >
+              <TextbookViewer />
+            </CollapsibleSection>
 
-        {/* Cross-Layer Bridge */}
-        <CrossLayerBridge
-          macroState={macroState}
-          positions={positions}
-          portfolioTotal={portfolioTotal}
-        />
+            <CollapsibleSection
+              title="Scanner Backtest 校準"
+              subtitle="hit rate · signal correlation · weight tuning"
+              collapsed={collapseBacktest}
+              setCollapsed={setCollapseBacktest}
+              icon={Activity}
+            >
+              <BacktestPanel />
+            </CollapsibleSection>
+          </>
+        )}
 
-        {/* L1 VIX Hedge Calculator — id used by L2 "送至 L1 Calculator" button (smooth-scroll target) */}
-        <div id="l1-vix-calculator" style={{ scrollMarginTop: '24px' }}>
-          <CollapsibleSection
-            title="L1 — VIX Hedge Calculator v2"
-            subtitle="Portfolio hedge · IV-aware · Stress test"
-            collapsed={collapseL1}
-            setCollapsed={setCollapseL1}
-            icon={Shield}
-          >
-            <VIXHedgeCalculator {...l1Props} />
-          </CollapsibleSection>
-        </div>
+        {/* ──────────────────────────────────────────────────── */}
+        {/* TAB: 避險 (hedge) — L1 VIX calculator                */}
+        {/* ──────────────────────────────────────────────────── */}
+        {activeTab === 'hedge' && (
+          <div id="l1-vix-calculator" style={{ scrollMarginTop: '24px' }}>
+            <CollapsibleSection
+              title="L1 — VIX Hedge Calculator v2"
+              subtitle="Portfolio hedge · IV-aware · Stress test"
+              collapsed={collapseL1}
+              setCollapsed={setCollapseL1}
+              icon={Shield}
+            >
+              <VIXHedgeCalculator {...l1Props} />
+            </CollapsibleSection>
+          </div>
+        )}
 
         {/* Footer */}
         <div style={{
           padding: '20px 24px',
           borderTop: '1px solid #2a2a2a',
-          color: '#555',
+          color: '#7a7a7a',
           fontSize: '11px',
           fontFamily: 'DM Mono, monospace',
           display: 'flex',
@@ -7803,6 +7832,61 @@ function App() {
 // ============================================================
 // SUB-COMPONENTS
 // ============================================================
+
+// ────────────────────────────── Tab Nav (sticky under AppHeader)
+function TabNav({ activeTab, setActiveTab }) {
+  const tabs = [
+    { id: 'home',      icon: Globe,    label: '主頁',   sub: 'L2 macro · AI summary' },
+    { id: 'portfolio', icon: Database, label: '持倉',   sub: '部位 · 研究筆記' },
+    { id: 'options',   icon: Target,   label: '選擇權', sub: '機會掃描 · 暗池×期權流' },
+    { id: 'textbook',  icon: BookOpen, label: '教科書', sub: '買/賣方 · backtest' },
+    { id: 'hedge',     icon: Shield,   label: '避險',   sub: 'L1 VIX calculator' },
+  ];
+  return (
+    <div style={{
+      position: 'sticky', top: 0, zIndex: 50,
+      background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(8px)',
+      borderBottom: '1px solid #2a2a2a',
+      padding: '10px 24px',
+      display: 'flex', gap: '6px', overflowX: 'auto',
+    }}>
+      {tabs.map(t => {
+        const Icon = t.icon;
+        const isActive = activeTab === t.id;
+        return (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 14px',
+              background: isActive ? 'rgba(234,179,8,0.12)' : 'transparent',
+              border: '1px solid ' + (isActive ? '#EAB308' : '#2a2a2a'),
+              borderRadius: '6px',
+              color: isActive ? '#EAB308' : '#c4c4c4',
+              cursor: 'pointer',
+              fontFamily: 'Noto Sans TC',
+              fontSize: '14px',
+              fontWeight: isActive ? 700 : 500,
+              transition: 'all 0.15s',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {Icon && <Icon size={16} />}
+            <span>{t.label}</span>
+            <span style={{
+              fontFamily: 'DM Mono',
+              fontSize: '12px',
+              color: isActive ? '#EAB30899' : '#777',
+              fontWeight: 400,
+              letterSpacing: '0.05em',
+            }}>{t.sub}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 // ────────────────────────────── App Header
 function AppHeader({
@@ -7848,8 +7932,8 @@ function AppHeader({
           </div>
           <div style={{
             fontFamily: 'DM Mono, monospace',
-            fontSize: '10px',
-            color: '#888',
+            fontSize: '12px',
+            color: '#b8b8b8',
             letterSpacing: '0.1em',
           }}>
             L2 MACRO ⊕ L1 HEDGE ⊕ SUPABASE POSITIONS
@@ -7860,11 +7944,11 @@ function AppHeader({
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         {/* Portfolio summary */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <span style={{ color: '#555', fontSize: '9px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>投資組合</span>
+          <span style={{ color: '#7a7a7a', fontSize: '11px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>投資組合</span>
           <span style={{ color: '#f4f4f4', fontSize: '14px', fontFamily: 'DM Mono', fontWeight: 500 }}>
             {formatMoney(portfolioTotal)}
           </span>
-          <span style={{ color: '#555', fontSize: '10px', fontFamily: 'DM Mono' }}>
+          <span style={{ color: '#7a7a7a', fontSize: '12px', fontFamily: 'DM Mono' }}>
             {positionsCount} pos {optionPositionsCount > 0 ? '(' + optionPositionsCount + ' opt)' : ''}
           </span>
         </div>
@@ -7883,7 +7967,7 @@ function AppHeader({
 
         {/* Auto-refresh toggle */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <span style={{ color: '#555', fontSize: '9px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>自動同步</span>
+          <span style={{ color: '#7a7a7a', fontSize: '11px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>自動同步</span>
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
             style={{
@@ -7894,7 +7978,7 @@ function AppHeader({
               borderRadius: '3px',
               cursor: 'pointer',
               fontFamily: 'DM Mono',
-              fontSize: '10px',
+              fontSize: '12px',
               letterSpacing: '0.08em',
               marginTop: '2px',
             }}
@@ -7909,7 +7993,7 @@ function AppHeader({
           style={{
             background: 'transparent',
             border: '1px solid #2a2a2a',
-            color: '#888',
+            color: '#b8b8b8',
             padding: '6px 8px',
             borderRadius: '3px',
             cursor: 'pointer',
@@ -7967,7 +8051,7 @@ function SupabaseStatusBadge({ status, Icon, lastFetch, onRefresh }) {
         />
         <span style={{
           color: status.color,
-          fontSize: '10px',
+          fontSize: '12px',
           fontFamily: 'DM Mono',
           letterSpacing: '0.08em',
           fontWeight: 600,
@@ -7976,7 +8060,7 @@ function SupabaseStatusBadge({ status, Icon, lastFetch, onRefresh }) {
         </span>
       </div>
       {lastFetch && (
-        <span style={{ color: '#555', fontSize: '10px', fontFamily: 'DM Mono' }}>
+        <span style={{ color: '#7a7a7a', fontSize: '12px', fontFamily: 'DM Mono' }}>
           {formatTimestamp(lastFetch)}
         </span>
       )}
@@ -7985,7 +8069,7 @@ function SupabaseStatusBadge({ status, Icon, lastFetch, onRefresh }) {
         style={{
           background: 'transparent',
           border: '1px solid #2a2a2a',
-          color: '#888',
+          color: '#b8b8b8',
           padding: '4px 6px',
           borderRadius: '3px',
           cursor: 'pointer',
@@ -8023,7 +8107,7 @@ function SetupGuide({ onClose }) {
           <div style={{
             fontFamily: 'Noto Sans TC',
             fontSize: '12px',
-            color: '#888',
+            color: '#b8b8b8',
             lineHeight: 1.6,
           }}>
             要載入 TOYWU 真實持倉，請選擇以下任一方式提供 anon key：
@@ -8061,7 +8145,7 @@ function SetupGuide({ onClose }) {
                 }}>{'<script>window.__SUPABASE_ANON_KEY = "eyJhbG..."<\/script>'}</pre>
               </li>
             </ol>
-            <div style={{ fontSize: '11px', color: '#666', marginTop: '6px' }}>
+            <div style={{ fontSize: '11px', color: '#9a9a9a', marginTop: '6px' }}>
               連線目標：<span style={{ color: '#EAB308', fontFamily: 'DM Mono' }}>{SUPABASE_URL}</span>
               ・User filter：<span style={{ color: '#EAB308', fontFamily: 'DM Mono' }}>{USER_NAME}</span>
             </div>
@@ -8072,7 +8156,7 @@ function SetupGuide({ onClose }) {
           style={{
             background: 'transparent',
             border: '1px solid #555',
-            color: '#888',
+            color: '#b8b8b8',
             padding: '4px 10px',
             borderRadius: '3px',
             cursor: 'pointer',
@@ -8238,13 +8322,13 @@ function CrossSignalSection({ positions }) {
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#f4f4f4', fontFamily: 'DM Mono', letterSpacing: '0.08em' }}>
               暗池 × 期權流 交叉訊號
             </span>
-            <span style={{ fontSize: '10px', color: '#555', marginLeft: '10px', fontFamily: 'DM Mono' }}>
+            <span style={{ fontSize: '12px', color: '#7a7a7a', marginLeft: '10px', fontFamily: 'DM Mono' }}>
               機構同步佈局偵測
             </span>
           </div>
           {signals.length > 0 && (
             <span style={{
-              fontSize: '10px', padding: '1px 7px', borderRadius: '10px',
+              fontSize: '12px', padding: '1px 7px', borderRadius: '10px',
               background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440',
               fontFamily: 'DM Mono', fontWeight: 600,
             }}>
@@ -8254,7 +8338,7 @@ function CrossSignalSection({ positions }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {lastUpdate && (
-            <span style={{ fontSize: '10px', color: '#444', fontFamily: 'DM Mono' }}>
+            <span style={{ fontSize: '12px', color: '#444', fontFamily: 'DM Mono' }}>
               {lastUpdate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
@@ -8262,8 +8346,8 @@ function CrossSignalSection({ positions }) {
             onClick={e => { e.stopPropagation(); refresh(); }}
             disabled={loading}
             style={{
-              background: 'transparent', border: '1px solid #333', color: '#666',
-              padding: '3px 8px', borderRadius: '3px', fontSize: '10px',
+              background: 'transparent', border: '1px solid #333', color: '#9a9a9a',
+              padding: '3px 8px', borderRadius: '3px', fontSize: '12px',
               cursor: loading ? 'wait' : 'pointer', fontFamily: 'DM Mono',
             }}
           >{loading ? '⋯' : '↻'}</button>
@@ -8275,12 +8359,12 @@ function CrossSignalSection({ positions }) {
               background: aiLoading ? 'transparent' : 'rgba(234,179,8,0.1)',
               border: '1px solid ' + (aiLoading ? '#333' : '#EAB30850'),
               color: aiLoading ? '#555' : '#EAB308',
-              padding: '3px 10px', borderRadius: '3px', fontSize: '10px',
+              padding: '3px 10px', borderRadius: '3px', fontSize: '12px',
               cursor: aiLoading ? 'wait' : 'pointer',
               fontFamily: 'DM Mono',
             }}
           >{aiLoading ? '分析中⋯' : '✨ AI 推薦'}</button>
-          <span style={{ color: '#555', fontSize: '12px' }}>{collapsed ? '▸' : '▾'}</span>
+          <span style={{ color: '#7a7a7a', fontSize: '12px' }}>{collapsed ? '▸' : '▾'}</span>
         </div>
       </div>
 
@@ -8299,7 +8383,7 @@ function CrossSignalSection({ positions }) {
               <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '12px' }}>{item.icon}</span>
                 <span style={{ fontSize: '11px', color: '#EAB308', fontFamily: 'DM Mono' }}>{item.label}</span>
-                <span style={{ fontSize: '10px', color: '#555', fontFamily: 'DM Mono' }}>{item.desc}</span>
+                <span style={{ fontSize: '12px', color: '#7a7a7a', fontFamily: 'DM Mono' }}>{item.desc}</span>
               </div>
             ))}
           </div>
@@ -8318,7 +8402,7 @@ function CrossSignalSection({ positions }) {
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '80px 90px 130px 130px 80px 60px 1fr',
-                padding: '8px 16px', fontSize: '10px', color: '#444',
+                padding: '8px 16px', fontSize: '12px', color: '#444',
                 fontFamily: 'DM Mono', letterSpacing: '0.05em',
                 borderBottom: '1px solid #1a1a1a', background: '#111',
               }}>
@@ -8344,7 +8428,7 @@ function CrossSignalSection({ positions }) {
                   <div>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: '#f4f4f4', fontFamily: 'DM Mono' }}>{sig.sym}</div>
                     {sig.inPortfolio && (
-                      <div style={{ fontSize: '9px', color: '#EAB308', fontFamily: 'DM Mono' }}>持倉中</div>
+                      <div style={{ fontSize: '11px', color: '#EAB308', fontFamily: 'DM Mono' }}>持倉中</div>
                     )}
                   </div>
                   <div style={{
@@ -8355,18 +8439,18 @@ function CrossSignalSection({ positions }) {
                   </div>
                   <div>
                     <div style={{ fontSize: '13px', color: '#f4f4f4', fontFamily: 'DM Mono' }}>{fmtM(sig.darkTotal)}</div>
-                    <div style={{ fontSize: '10px', color: '#555' }}>{sig.darkCount} 筆暗池單</div>
+                    <div style={{ fontSize: '12px', color: '#7a7a7a' }}>{sig.darkCount} 筆暗池單</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '13px', color: '#f4f4f4', fontFamily: 'DM Mono' }}>{fmtM(sig.flowTotal)}</div>
-                    <div style={{ fontSize: '10px', color: '#555' }}>{sig.flowCount} 筆期權</div>
+                    <div style={{ fontSize: '12px', color: '#7a7a7a' }}>{sig.flowCount} 筆期權</div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     {sig.hasUnusual && (
-                      <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '2px', background: '#8b5cf620', color: '#8b5cf6', border: '1px solid #8b5cf640' }}>⚡ 異常</span>
+                      <span style={{ fontSize: '11px', padding: '1px 5px', borderRadius: '2px', background: '#8b5cf620', color: '#8b5cf6', border: '1px solid #8b5cf640' }}>⚡ 異常</span>
                     )}
                     {sig.hasSweep && (
-                      <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '2px', background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640' }}>掃單</span>
+                      <span style={{ fontSize: '11px', padding: '1px 5px', borderRadius: '2px', background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640' }}>掃單</span>
                     )}
                   </div>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: sig.score >= 6 ? '#ef4444' : sig.score >= 4 ? '#EAB308' : '#10b981', fontFamily: 'DM Mono' }}>
@@ -8381,7 +8465,7 @@ function CrossSignalSection({ positions }) {
                         transition: 'width .5s ease',
                       }} />
                     </div>
-                    <div style={{ fontSize: '9px', color: '#444', marginTop: '3px', fontFamily: 'DM Mono' }}>
+                    <div style={{ fontSize: '11px', color: '#444', marginTop: '3px', fontFamily: 'DM Mono' }}>
                       {sig.score >= 6 ? '🚨 高確信訊號' : sig.score >= 4 ? '⚠️ 中等訊號' : '📍 低強度訊號'}
                     </div>
                   </div>
@@ -8393,7 +8477,7 @@ function CrossSignalSection({ positions }) {
           {/* 說明 footer */}
           <div style={{
             padding: '10px 16px', borderTop: '1px solid #1a1a1a',
-            fontSize: '10px', color: '#444', fontFamily: 'DM Mono',
+            fontSize: '12px', color: '#444', fontFamily: 'DM Mono',
             display: 'flex', gap: '16px',
           }}>
             <span>🚨 6-8分 = 機構同步佈局，高確信</span>
@@ -8418,7 +8502,7 @@ function CrossSignalSection({ positions }) {
                   fontFamily: 'DM Mono', letterSpacing: '0.08em',
                 }}>AI 主動推薦</span>
                 {aiRecTime && (
-                  <span style={{ fontSize: '10px', color: '#444', fontFamily: 'DM Mono' }}>
+                  <span style={{ fontSize: '12px', color: '#444', fontFamily: 'DM Mono' }}>
                     · {aiRecTime.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 )}
@@ -8428,13 +8512,13 @@ function CrossSignalSection({ positions }) {
                   style={{
                     marginLeft: 'auto', background: 'transparent',
                     border: '1px solid #EAB30840', color: '#EAB30880',
-                    padding: '2px 8px', borderRadius: '3px', fontSize: '10px',
+                    padding: '2px 8px', borderRadius: '3px', fontSize: '12px',
                     cursor: aiLoading ? 'wait' : 'pointer', fontFamily: 'DM Mono',
                   }}
                 >{aiLoading ? '⋯' : '↻ 重新分析'}</button>
               </div>
               {aiLoading ? (
-                <div style={{ fontSize: '12px', color: '#555', fontFamily: 'DM Mono' }}>
+                <div style={{ fontSize: '12px', color: '#7a7a7a', fontFamily: 'DM Mono' }}>
                   正在分析機構意圖⋯
                 </div>
               ) : (
@@ -8461,7 +8545,7 @@ function CrossLayerBridge({ macroState, positions, portfolioTotal }) {
         margin: '0 24px',
         padding: '12px',
         textAlign: 'center',
-        color: '#555',
+        color: '#7a7a7a',
         fontSize: '11px',
         fontFamily: 'DM Mono',
       }}>
@@ -8490,8 +8574,8 @@ function CrossLayerBridge({ macroState, positions, portfolioTotal }) {
       }}>
         <GitBranch size={14} style={{ color: '#EAB308' }} />
         <span style={{
-          color: '#888',
-          fontSize: '10px',
+          color: '#b8b8b8',
+          fontSize: '12px',
           fontFamily: 'DM Mono',
           letterSpacing: '0.15em',
           fontWeight: 600,
@@ -8562,7 +8646,7 @@ function CrossLayerBridge({ macroState, positions, portfolioTotal }) {
           <span style={{ color: '#ef4444', fontSize: '11px', fontFamily: 'DM Mono', letterSpacing: '0.08em' }}>
             {redAlerts.length} L2 RED ALERT{redAlerts.length > 1 ? 'S' : ''} ACTIVE
           </span>
-          <span style={{ color: '#888', fontSize: '11px', fontFamily: 'Noto Sans TC' }}>
+          <span style={{ color: '#b8b8b8', fontSize: '11px', fontFamily: 'Noto Sans TC' }}>
             · L1 hedge 預算已自動加碼 ·  L1 strategy 推薦僅供參考
           </span>
         </div>
@@ -8582,8 +8666,8 @@ function BridgeNode({ tag, mainValue, mainColor, sub, subColor, extra, alerts, s
       position: 'relative',
     }}>
       <div style={{
-        color: '#555',
-        fontSize: '9px',
+        color: '#7a7a7a',
+        fontSize: '11px',
         fontFamily: 'DM Mono',
         letterSpacing: '0.12em',
         marginBottom: '6px',
@@ -8612,8 +8696,8 @@ function BridgeNode({ tag, mainValue, mainColor, sub, subColor, extra, alerts, s
       )}
       {extra && (
         <div style={{
-          color: '#666',
-          fontSize: '10px',
+          color: '#9a9a9a',
+          fontSize: '12px',
           fontFamily: 'DM Mono',
           marginTop: '4px',
         }}>
@@ -8627,7 +8711,7 @@ function BridgeNode({ tag, mainValue, mainColor, sub, subColor, extra, alerts, s
           right: '-6px',
           background: '#ef4444',
           color: '#fff',
-          fontSize: '9px',
+          fontSize: '11px',
           fontWeight: 700,
           padding: '2px 6px',
           borderRadius: '8px',
@@ -8646,7 +8730,7 @@ function BridgeArrow() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      color: '#555',
+      color: '#7a7a7a',
     }}>
       <ArrowRight size={20} />
     </div>
@@ -8955,14 +9039,14 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Database size={14} className="text-accent" />
           <span style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', fontWeight: 700, color: '#f4f4f4' }}>持倉管理</span>
-          <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666', letterSpacing: '0.1em', marginLeft: '4px' }}>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#9a9a9a', letterSpacing: '0.1em', marginLeft: '4px' }}>
             {realPositions.length} POSITIONS · USER: toywu
           </span>
         </div>
         {!editing && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {pricesLastRefresh && (
-              <span style={{ fontSize: '10px', color: '#666', fontFamily: 'DM Mono' }}>
+              <span style={{ fontSize: '12px', color: '#9a9a9a', fontFamily: 'DM Mono' }}>
                 現價 {Math.round((Date.now() - pricesLastRefresh.getTime()) / 1000)}s ago
               </span>
             )}
@@ -9031,7 +9115,7 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
               border: 'none', fontFamily: 'DM Mono', fontSize: '11px', fontWeight: 700, cursor: busy ? 'wait' : 'pointer',
             }}>{busy ? '⋯' : (editing === 'new' ? '✓ 新增' : '✓ 儲存')}</button>
             <button onClick={cancel} disabled={busy} style={{
-              background: 'transparent', color: '#888', padding: '6px 14px', borderRadius: '3px',
+              background: 'transparent', color: '#b8b8b8', padding: '6px 14px', borderRadius: '3px',
               border: '1px solid #2a2a2a', fontFamily: 'DM Mono', fontSize: '11px', cursor: busy ? 'wait' : 'pointer',
             }}>取消</button>
           </div>
@@ -9043,7 +9127,7 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', fontFamily: 'DM Mono' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #2a2a2a', color: '#666', fontSize: '10px', letterSpacing: '0.08em' }}>
+              <tr style={{ borderBottom: '1px solid #2a2a2a', color: '#9a9a9a', fontSize: '12px', letterSpacing: '0.08em' }}>
                 <th style={{ textAlign: 'left', padding: '6px 8px' }}>標的</th>
                 <th style={{ textAlign: 'left', padding: '6px 8px' }}>類型</th>
                 <th style={{ textAlign: 'right', padding: '6px 8px' }}>數量</th>
@@ -9082,7 +9166,7 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
                     <td style={{ padding: '8px', fontWeight: 600, color: '#f4f4f4', lineHeight: 1.2 }}>
                       <div>{p.ticker}</div>
                       {ivrInfo && ivrInfo.ivr != null && (
-                        <div style={{ fontSize: '9px', color: ivrInfo.ivr >= 70 ? '#ef4444' : ivrInfo.ivr >= 40 ? '#EAB308' : '#10b981', marginTop: '2px', fontFamily: 'DM Mono', fontWeight: 400 }}>
+                        <div style={{ fontSize: '11px', color: ivrInfo.ivr >= 70 ? '#ef4444' : ivrInfo.ivr >= 40 ? '#EAB308' : '#10b981', marginTop: '2px', fontFamily: 'DM Mono', fontWeight: 400 }}>
                           IVR {ivrInfo.ivr.toFixed(0)}
                         </div>
                       )}
@@ -9090,7 +9174,7 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
                     <td style={{ padding: '8px', color: p.option_type === 'CALL' ? '#10b981' : p.option_type === 'PUT' ? '#ef4444' : '#888', lineHeight: 1.2 }}>
                       <div>{p.option_type || '股票'}</div>
                       {gk && (gk.delta != null || gk.theta != null) && (
-                        <div style={{ fontSize: '9px', color: '#666', marginTop: '2px', fontWeight: 400 }}>
+                        <div style={{ fontSize: '11px', color: '#9a9a9a', marginTop: '2px', fontWeight: 400 }}>
                           {gk.delta != null ? 'Δ ' + gk.delta.toFixed(2) : ''}
                           {gk.delta != null && gk.theta != null ? ' · ' : ''}
                           {gk.theta != null ? 'Θ ' + gk.theta.toFixed(2) : ''}
@@ -9102,16 +9186,16 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
                     <td style={{ padding: '8px', textAlign: 'right' }}>{p.cost != null ? '$' + Number(p.cost).toFixed(2) : '—'}</td>
                     <td style={{ padding: '8px', textAlign: 'right', color: plColor, lineHeight: 1.2 }}>
                       <div>{plPct == null ? '—' : (plPct >= 0 ? '+' : '') + plPct.toFixed(1) + '%'}</div>
-                      <div style={{ fontSize: '10px', opacity: 0.75 }}>{plDollarStr}</div>
+                      <div style={{ fontSize: '12px', opacity: 0.75 }}>{plDollarStr}</div>
                     </td>
                     <td style={{ padding: '8px', textAlign: 'right' }}>{p.strike != null ? '$' + Number(p.strike).toFixed(0) : '—'}</td>
                     <td style={{ padding: '8px', lineHeight: 1.2 }}>
                       <div>{p.expiry || '—'}</div>
                       {gk && gk.iv != null && (
-                        <div style={{ fontSize: '9px', color: '#666', marginTop: '2px' }}>IV {(gk.iv * 100).toFixed(0)}%</div>
+                        <div style={{ fontSize: '11px', color: '#9a9a9a', marginTop: '2px' }}>IV {(gk.iv * 100).toFixed(0)}%</div>
                       )}
                       {earningsDays != null && earningsDays >= 0 && earningsDays <= 21 && (
-                        <div style={{ fontSize: '9px', color: earningsDays <= 7 ? '#ef4444' : '#EAB308', marginTop: '2px', fontFamily: 'DM Mono' }}>
+                        <div style={{ fontSize: '11px', color: earningsDays <= 7 ? '#ef4444' : '#EAB308', marginTop: '2px', fontFamily: 'DM Mono' }}>
                           ⚠ Earnings {earnings.date.slice(5)} (D-{earningsDays})
                           {earnings.expectedMovePct != null && ' · ±' + earnings.expectedMovePct.toFixed(1) + '%'}
                         </div>
@@ -9120,12 +9204,12 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
                     <td style={{ padding: '8px', textAlign: 'right', color: '#EAB308' }}>${(p.value || 0).toLocaleString()}</td>
                     <td style={{ padding: '8px', textAlign: 'right' }}>
                       <button onClick={() => startEdit(p)} disabled={busy || editing} style={{
-                        background: 'transparent', border: '1px solid #2a2a2a', color: '#888',
-                        padding: '3px 8px', borderRadius: '3px', fontSize: '10px', cursor: 'pointer', marginRight: '4px',
+                        background: 'transparent', border: '1px solid #2a2a2a', color: '#b8b8b8',
+                        padding: '3px 8px', borderRadius: '3px', fontSize: '12px', cursor: 'pointer', marginRight: '4px',
                       }}>✎</button>
                       <button onClick={() => remove(p.id, p.ticker)} disabled={busy || editing} style={{
                         background: 'transparent', border: '1px solid #ef444450', color: '#ef4444',
-                        padding: '3px 8px', borderRadius: '3px', fontSize: '10px', cursor: 'pointer',
+                        padding: '3px 8px', borderRadius: '3px', fontSize: '12px', cursor: 'pointer',
                       }}>✕</button>
                     </td>
                   </tr>
@@ -9150,12 +9234,12 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
                 const fmt = (n) => (n >= 0 ? '+$' : '-$') + Math.abs(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
                 return (
                   <tr style={{ borderTop: '2px solid #2a2a2a', color: '#f4f4f4', fontWeight: 600 }}>
-                    <td style={{ padding: '10px 8px', fontSize: '10px', letterSpacing: '0.08em', color: '#666' }} colSpan={5}>合計 · {realPositions.length} 筆持倉</td>
+                    <td style={{ padding: '10px 8px', fontSize: '12px', letterSpacing: '0.08em', color: '#9a9a9a' }} colSpan={5}>合計 · {realPositions.length} 筆持倉</td>
                     <td style={{ padding: '10px 8px', textAlign: 'right', color: plColor, lineHeight: 1.2 }}>
                       <div>{(plPct >= 0 ? '+' : '') + plPct.toFixed(1) + '%'}</div>
-                      <div style={{ fontSize: '10px', opacity: 0.75 }}>{fmt(tot.pl)}</div>
+                      <div style={{ fontSize: '12px', opacity: 0.75 }}>{fmt(tot.pl)}</div>
                     </td>
-                    <td colSpan={2} style={{ padding: '10px 8px', textAlign: 'right', fontSize: '10px', color: '#666' }}>cost ${tot.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                    <td colSpan={2} style={{ padding: '10px 8px', textAlign: 'right', fontSize: '12px', color: '#9a9a9a' }}>cost ${tot.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                     <td style={{ padding: '10px 8px', textAlign: 'right', color: '#EAB308' }}>${tot.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                     <td></td>
                   </tr>
@@ -9255,7 +9339,7 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <BookOpen size={14} className="text-accent" />
           <span style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', fontWeight: 700, color: '#f4f4f4' }}>分析師備忘</span>
-          <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#666', letterSpacing: '0.1em', marginLeft: '4px' }}>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#9a9a9a', letterSpacing: '0.1em', marginLeft: '4px' }}>
             {items.length} REPORTS · 自動納入 AI 摘要 context
           </span>
         </div>
@@ -9286,7 +9370,7 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
             <FormField label="來源" value={form.source} onChange={(v) => setForm({ ...form, source: v })} placeholder="Goldman Sachs" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-            <label style={{ fontSize: '10px', color: '#888', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>內容 * (貼上報告重點 / 摘要)</label>
+            <label style={{ fontSize: '12px', color: '#b8b8b8', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>內容 * (貼上報告重點 / 摘要)</label>
             <textarea
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
@@ -9308,7 +9392,7 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
               border: 'none', fontFamily: 'DM Mono', fontSize: '11px', fontWeight: 700, cursor: busy ? 'wait' : 'pointer',
             }}>{busy ? '⋯' : (editing === 'new' ? '✓ 新增' : '✓ 儲存')}</button>
             <button onClick={cancel} disabled={busy} style={{
-              background: 'transparent', color: '#888', padding: '6px 14px', borderRadius: '3px',
+              background: 'transparent', color: '#b8b8b8', padding: '6px 14px', borderRadius: '3px',
               border: '1px solid #2a2a2a', fontFamily: 'DM Mono', fontSize: '11px', cursor: busy ? 'wait' : 'pointer',
             }}>取消</button>
           </div>
@@ -9316,7 +9400,7 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
       )}
 
       {items.length === 0 && !editing && (
-        <div style={{ fontSize: '11px', color: '#666', fontFamily: 'Noto Sans TC', padding: '12px 0', textAlign: 'center' }}>
+        <div style={{ fontSize: '11px', color: '#9a9a9a', fontFamily: 'Noto Sans TC', padding: '12px 0', textAlign: 'center' }}>
           還沒有分析師備忘。按「+ 新增備忘」貼上報告重點，AI 摘要會自動參考這些內容。
         </div>
       )}
@@ -9335,25 +9419,25 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
                     <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', fontWeight: 600, color: '#f4f4f4' }}>{r.title}</span>
                     {r.ticker && (
-                      <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#a78bfa', padding: '1px 5px', background: 'rgba(167,139,250,0.12)', borderRadius: '2px' }}>{r.ticker}</span>
+                      <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a78bfa', padding: '1px 5px', background: 'rgba(167,139,250,0.12)', borderRadius: '2px' }}>{r.ticker}</span>
                     )}
                     {r.source && (
-                      <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#888' }}>· {r.source}</span>
+                      <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#b8b8b8' }}>· {r.source}</span>
                     )}
-                    <span style={{ fontFamily: 'DM Mono', fontSize: '10px', color: '#555', marginLeft: 'auto' }}>{agoStr}</span>
+                    <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#7a7a7a', marginLeft: 'auto' }}>{agoStr}</span>
                   </div>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     <button onClick={() => setExpanded({ ...expanded, [r.id]: !isExp })} disabled={busy} style={{
-                      background: 'transparent', border: '1px solid #2a2a2a', color: '#888',
-                      padding: '2px 7px', borderRadius: '3px', fontSize: '10px', cursor: 'pointer', fontFamily: 'DM Mono',
+                      background: 'transparent', border: '1px solid #2a2a2a', color: '#b8b8b8',
+                      padding: '2px 7px', borderRadius: '3px', fontSize: '12px', cursor: 'pointer', fontFamily: 'DM Mono',
                     }}>{isExp ? '▲' : '▼'}</button>
                     <button onClick={() => startEdit(r)} disabled={isReadOnly || busy || editing} style={{
-                      background: 'transparent', border: '1px solid #2a2a2a', color: '#888',
-                      padding: '2px 7px', borderRadius: '3px', fontSize: '10px', cursor: 'pointer',
+                      background: 'transparent', border: '1px solid #2a2a2a', color: '#b8b8b8',
+                      padding: '2px 7px', borderRadius: '3px', fontSize: '12px', cursor: 'pointer',
                     }}>✎</button>
                     <button onClick={() => remove(r.id, r.title)} disabled={isReadOnly || busy || editing} style={{
                       background: 'transparent', border: '1px solid #ef444450', color: '#ef4444',
-                      padding: '2px 7px', borderRadius: '3px', fontSize: '10px', cursor: 'pointer',
+                      padding: '2px 7px', borderRadius: '3px', fontSize: '12px', cursor: 'pointer',
                     }}>✕</button>
                   </div>
                 </div>
@@ -9373,7 +9457,7 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
 function FormField({ label, value, onChange, placeholder, type, options, disabled, wide }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: wide ? 'span 4' : 'auto' }}>
-      <label style={{ fontSize: '10px', color: '#888', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>{label}</label>
+      <label style={{ fontSize: '12px', color: '#b8b8b8', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>{label}</label>
       {type === 'select' ? (
         <select value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} style={{
           background: '#0a0a0a', border: '1px solid #2a2a2a', color: '#f4f4f4',
@@ -9423,12 +9507,12 @@ function CollapsibleSection({ title, subtitle, icon: Icon, collapsed, setCollaps
           <span style={{
             fontFamily: 'DM Mono',
             fontSize: '11px',
-            color: '#666',
+            color: '#9a9a9a',
           }}>
             {subtitle}
           </span>
         </div>
-        {collapsed ? <ChevronDown size={14} style={{ color: '#888' }} /> : <ChevronUp size={14} style={{ color: '#888' }} />}
+        {collapsed ? <ChevronDown size={14} style={{ color: '#b8b8b8' }} /> : <ChevronUp size={14} style={{ color: '#b8b8b8' }} />}
       </div>
       {!collapsed && <div>{children}</div>}
     </div>
@@ -9441,7 +9525,18 @@ const APP_STYLES = [
 '  @import url(\'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700;900&display=swap\');',
 '',
 '  * { box-sizing: border-box; }',
-'  body { margin: 0; padding: 0; background: #0a0a0a; }',
+'  body {',
+'    margin: 0; padding: 0; background: #0a0a0a;',
+'    font-size: 15px;',
+'    color: #fafafa;',
+'    -webkit-font-smoothing: antialiased;',
+'    -moz-osx-font-smoothing: grayscale;',
+'  }',
+'',
+'  /* Tab nav scrollbar */',
+'  ::-webkit-scrollbar { height: 6px; width: 6px; }',
+'  ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }',
+'  ::-webkit-scrollbar-track { background: transparent; }',
 '',
 '  @keyframes spin {',
 '    from { transform: rotate(0deg); }',
