@@ -6172,6 +6172,290 @@ function computeScannerScores(ticker, opts) {
 }
 
 // ============================================================
+// Black-Scholes Greeks (approximation — for portfolio risk dashboard)
+// ============================================================
+// Standard Hull formulas. r = 5% risk-free (US Treasury 1y),
+// q = 0 dividend yield (close enough for options held weeks-months).
+// Returns per-contract Greeks; multiply by qty × 100 for position dollar impact.
+// ============================================================
+function bsNormCDF(x) {
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x) / Math.SQRT2;
+  const t = 1 / (1 + p * x);
+  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+  return 0.5 * (1 + sign * y);
+}
+function bsNormPDF(x) { return Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI); }
+
+function bsGreeks(opts) {
+  const { spot, strike, dte, iv, type } = opts;
+  const r = 0.05;
+  if (!isFinite(spot) || !isFinite(strike) || !isFinite(dte) || !isFinite(iv) ||
+      spot <= 0 || strike <= 0 || iv <= 0 || dte <= 0) {
+    return { delta: null, gamma: null, vega: null, theta: null, price: null };
+  }
+  const T = dte / 365;
+  const sqrtT = Math.sqrt(T);
+  const d1 = (Math.log(spot / strike) + (r + iv * iv / 2) * T) / (iv * sqrtT);
+  const d2 = d1 - iv * sqrtT;
+  const Nd1 = bsNormCDF(d1), Nd2 = bsNormCDF(d2);
+  const nd1 = bsNormPDF(d1);
+  const isCall = (type || '').toUpperCase().startsWith('C');
+
+  const delta = isCall ? Nd1 : Nd1 - 1;
+  const gamma = nd1 / (spot * iv * sqrtT);
+  const vega = spot * nd1 * sqrtT * 0.01;  // per 1% IV (vol point)
+  const thetaAnnual = isCall
+    ? -(spot * nd1 * iv) / (2 * sqrtT) - r * strike * Math.exp(-r * T) * Nd2
+    : -(spot * nd1 * iv) / (2 * sqrtT) + r * strike * Math.exp(-r * T) * (1 - Nd2);
+  const theta = thetaAnnual / 365;
+
+  // Theoretical option price (Black-Scholes)
+  const price = isCall
+    ? spot * Nd1 - strike * Math.exp(-r * T) * Nd2
+    : strike * Math.exp(-r * T) * (1 - Nd2) - spot * (1 - Nd1);
+
+  return { delta, gamma, vega, theta, price };
+}
+
+// Spot price cache — populated by RiskDashboard (one Polygon quote per ticker)
+if (typeof window !== 'undefined' && !window.__SPOT_CACHE) window.__SPOT_CACHE = {};
+async function fetchSpotPrice(ticker) {
+  const t = (ticker || '').toUpperCase().trim();
+  if (!t) return null;
+  try {
+    const r = await fetch(WORKER_URL + '/api/polygon/quote?ticker=' + encodeURIComponent(t));
+    if (!r.ok) { recordSourceHealth('spot', false, 'HTTP ' + r.status); return null; }
+    const d = await r.json();
+    if (d && d.price != null) {
+      window.__SPOT_CACHE = window.__SPOT_CACHE || {};
+      window.__SPOT_CACHE[t] = d.price;
+      recordSourceHealth('spot', true);
+      return d.price;
+    }
+    recordSourceHealth('spot', false, 'no price field');
+    return null;
+  } catch (e) { recordSourceHealth('spot', false, e.message); return null; }
+}
+
+// ============================================================
+// Risk Dashboard — net Greeks + sector concentration + stress test
+// ============================================================
+function RiskDashboard({ positions, portfolioTotal }) {
+  const [tick, setTick] = useState(0);
+
+  // Pre-fetch spot prices for all unique option underlyings
+  useEffect(() => {
+    const uniqueTickers = [...new Set(positions
+      .filter(p => p._meta?.isOption || p.option_type)
+      .map(p => (p.ticker || '').toUpperCase())
+      .filter(Boolean))];
+    const spotCache = window.__SPOT_CACHE || {};
+    const missing = uniqueTickers.filter(t => spotCache[t] == null);
+    if (missing.length === 0) return;
+    Promise.all(missing.map(fetchSpotPrice)).finally(() => setTick(x => x + 1));
+  }, [positions]);
+
+  // Auto-refresh every 5 min
+  useEffect(() => {
+    const id = setInterval(() => setTick(x => x + 1), 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Compute per-position Greeks
+  const enriched = useMemo(() => {
+    const ivrCache = window.__IVR_CACHE || {};
+    const spotCache = window.__SPOT_CACHE || {};
+
+    return positions.map(p => {
+      const t = (p.ticker || '').toUpperCase();
+      const isOpt = p._meta?.isOption || (p.option_type && p.strike);
+
+      if (!isOpt) {
+        // Stock position — delta = qty, no gamma/vega/theta
+        const qty = p.qty || 0;
+        const spot = spotCache[t] || p.current_price || 0;
+        return {
+          ...p, t, isOpt: false,
+          deltaShares: qty, deltaDollars: qty * spot,
+          gammaShares: 0, vega: 0, theta: 0,
+          marketValue: qty * spot,
+        };
+      }
+
+      // Option position
+      const strike = parseFloat(p.strike) || 0;
+      const expiryDate = p.expiry ? new Date(typeof p.expiry === 'string' && p.expiry.includes('/') ? p.expiry.split('/').reverse().join('-') : p.expiry) : null;
+      const dte = expiryDate ? Math.max(1, Math.round((expiryDate.getTime() - Date.now()) / 86400000)) : 30;
+      const spot = spotCache[t] || 0;
+      const ivData = ivrCache[t];
+      const iv = ivData && ivData.iv ? ivData.iv / 100 : 0.30;  // fallback 30%
+      const optType = (p.option_type || 'CALL').toUpperCase();
+      const qty = p.qty || 0;
+      const sideMul = qty >= 0 ? 1 : -1;  // long vs short
+      const absQty = Math.abs(qty);
+
+      const greeks = bsGreeks({ spot, strike, dte, iv, type: optType });
+
+      // Position-level (per contract = ×100 shares)
+      const deltaShares = (greeks.delta || 0) * absQty * 100 * sideMul;
+      const deltaDollars = deltaShares * spot;
+      const gammaShares = (greeks.gamma || 0) * absQty * 100 * sideMul * spot * 0.01;  // gamma × 1% spot move
+      const vegaPos = (greeks.vega || 0) * absQty * 100 * sideMul;
+      const thetaPos = (greeks.theta || 0) * absQty * 100 * sideMul;
+      const marketValue = (p.current_price || 0) * absQty * 100 * (sideMul > 0 ? 1 : -1);
+
+      return {
+        ...p, t, isOpt: true,
+        spot, dte, iv, strike, optType, qty, sideMul,
+        delta: greeks.delta, gamma: greeks.gamma, vega: greeks.vega, theta: greeks.theta,
+        deltaShares, deltaDollars, gammaShares, vega: vegaPos, theta: thetaPos,
+        marketValue,
+      };
+    });
+  }, [positions, tick]);
+
+  // Aggregate
+  const agg = useMemo(() => {
+    let netDelta = 0, netDeltaShares = 0, netGammaPer1Pct = 0, netVega = 0, netTheta = 0;
+    enriched.forEach(p => {
+      if (p.deltaDollars != null) netDelta += p.deltaDollars;
+      if (p.deltaShares != null) netDeltaShares += p.deltaShares;
+      if (p.gammaShares != null) netGammaPer1Pct += p.gammaShares;
+      if (p.vega != null) netVega += p.vega;
+      if (p.theta != null) netTheta += p.theta;
+    });
+    return { netDelta, netDeltaShares, netGammaPer1Pct, netVega, netTheta };
+  }, [enriched]);
+
+  // Sector concentration (uses __TICKER_PROFILES if seeded)
+  const sectorBreakdown = useMemo(() => {
+    const profiles = window.__TICKER_PROFILES || {};
+    const bucket = {};
+    enriched.forEach(p => {
+      const profile = profiles[p.t];
+      const sec = (profile && profile.sector) ? profile.sector : '未分類';
+      if (!bucket[sec]) bucket[sec] = { delta: 0, mv: 0, tickers: new Set() };
+      bucket[sec].delta += p.deltaDollars || 0;
+      bucket[sec].mv += p.marketValue || 0;
+      bucket[sec].tickers.add(p.t);
+    });
+    return Object.entries(bucket)
+      .map(([sec, v]) => ({ sector: sec, delta: v.delta, mv: v.mv, tickers: [...v.tickers] }))
+      .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  }, [enriched]);
+
+  // Stress test scenarios
+  const scenarios = useMemo(() => {
+    const scenarios = [
+      { name: 'SPY −3% / VIX +30%', spotMult: -0.03, ivAdd: 0.30, label: '溫和回檔', color: '#EAB308' },
+      { name: 'SPY −5% / VIX +50%', spotMult: -0.05, ivAdd: 0.50, label: '中度修正', color: '#f59e0b' },
+      { name: 'SPY −10% / VIX +100%', spotMult: -0.10, ivAdd: 1.00, label: '崩盤', color: '#ef4444' },
+      { name: 'SPY +3% (rally)', spotMult: 0.03, ivAdd: -0.10, label: '反彈', color: '#10b981' },
+    ];
+    return scenarios.map(s => {
+      // Simplified: P&L ≈ delta × spot move + gamma × spot²/2 + vega × IV move
+      const spotMoveDollar = agg.netDelta * s.spotMult;
+      const gammaPnL = agg.netGammaPer1Pct * (s.spotMult * 100) * (s.spotMult * 100) / 2;  // gamma is per 1% move; scenario in %
+      const vegaPnL = agg.netVega * s.ivAdd * 100;  // vega is per 1pt; ivAdd in decimal converted to %
+      const total = spotMoveDollar + gammaPnL + vegaPnL;
+      return { ...s, pnl: total };
+    });
+  }, [agg]);
+
+  const fmt = (v, prefix = '$') => {
+    if (v == null || !isFinite(v)) return '—';
+    const sign = v < 0 ? '−' : (v > 0 ? '+' : '');
+    const abs = Math.abs(v);
+    if (abs >= 1e6) return sign + prefix + (abs / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return sign + prefix + (abs / 1e3).toFixed(1) + 'K';
+    return sign + prefix + abs.toFixed(0);
+  };
+
+  const concentrationWarning = sectorBreakdown.length > 0 && sectorBreakdown[0].mv / Math.max(portfolioTotal, 1) > 0.4;
+
+  return (
+    <div style={{ padding: '16px 24px', background: '#0a0a0a' }}>
+      {/* Greeks summary grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
+        {[
+          { label: 'Net Δ (delta-equiv stock)', value: fmt(agg.netDelta), sub: `${agg.netDeltaShares >= 0 ? '+' : ''}${agg.netDeltaShares.toFixed(0)} shares 等同`, color: agg.netDelta >= 0 ? '#10b981' : '#ef4444' },
+          { label: 'Net Γ (per 1% spot)', value: fmt(agg.netGammaPer1Pct), sub: '組合 P&L per 1% 大盤動', color: '#a78bfa' },
+          { label: 'Net V (per 1pt IV)', value: fmt(agg.netVega), sub: agg.netVega >= 0 ? 'long vega — IV ↑ 賺' : 'short vega — IV ↑ 虧', color: '#14b8a6' },
+          { label: 'Net Θ (per day)', value: fmt(agg.netTheta), sub: agg.netTheta >= 0 ? 'theta 順風（收 premium）' : 'theta 逆風（時間虧）', color: agg.netTheta >= 0 ? '#10b981' : '#EAB308' },
+        ].map((m, i) => (
+          <div key={i} style={{
+            padding: '14px', background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: '6px',
+          }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', letterSpacing: '0.05em', marginBottom: '4px' }}>{m.label}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '22px', color: m.color, fontWeight: 700, marginBottom: '2px' }}>{m.value}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#7a7a7a' }}>{m.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Sector concentration */}
+      <div style={{ background: '#0f0f0f', border: '1px solid ' + (concentrationWarning ? '#ef4444' : '#2a2a2a'), borderRadius: '6px', padding: '14px', marginBottom: '16px' }}>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#f4f4f4', fontWeight: 700, marginBottom: '10px' }}>
+          {concentrationWarning ? '⚠️ ' : ''}產業集中度（按 delta 曝險排序）
+        </div>
+        {sectorBreakdown.length === 0 ? (
+          <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#7a7a7a' }}>
+            (尚未取得 ticker profiles — 進選擇權掃描器後 30s 內會載入)
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {sectorBreakdown.slice(0, 6).map(s => {
+              const pct = portfolioTotal > 0 ? (s.mv / portfolioTotal) * 100 : 0;
+              const tooHigh = pct > 40;
+              return (
+                <div key={s.sector} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 100px 100px', gap: '10px', alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4' }}>{s.sector}</span>
+                  <div style={{ background: '#1a1a1a', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: Math.min(100, pct) + '%', height: '100%', background: tooHigh ? '#ef4444' : '#a78bfa' }} />
+                  </div>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: tooHigh ? '#ef4444' : '#b8b8b8' }}>{pct.toFixed(1)}% 帳戶</span>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#7a7a7a' }}>{s.tickers.slice(0, 3).join(', ')}{s.tickers.length > 3 ? '...' : ''}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Stress test */}
+      <div style={{ background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '14px' }}>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#f4f4f4', fontWeight: 700, marginBottom: '10px' }}>
+          壓力測試 · 情境 P&L (delta + gamma + vega 一階近似)
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+          {scenarios.map(s => {
+            const pctOfAccount = portfolioTotal > 0 ? (s.pnl / portfolioTotal) * 100 : 0;
+            const sevColor = s.pnl >= 0 ? '#10b981' : (Math.abs(pctOfAccount) > 5 ? '#ef4444' : '#EAB308');
+            return (
+              <div key={s.name} style={{ padding: '12px', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '4px', borderLeft: '3px solid ' + s.color }}>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', marginBottom: '4px' }}>{s.label}</div>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#7a7a7a', marginBottom: '6px' }}>{s.name}</div>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '18px', color: sevColor, fontWeight: 700 }}>{fmt(s.pnl)}</div>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: sevColor }}>
+                  {pctOfAccount >= 0 ? '+' : ''}{pctOfAccount.toFixed(2)}% 帳戶
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: '10px', fontFamily: 'DM Mono', fontSize: '10px', color: '#7a7a7a', lineHeight: 1.6 }}>
+          ⚠️ 一階近似 — 用 BS Greeks。實際非線性 (gamma scalping、IV smile、early exercise) 會偏差 10-20%。
+          IV 用 UW IVR 30 天年化值；缺資料 fallback 30%。
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // Pre-Trade Checklist — discipline gate for million-dollar trades
 // ============================================================
 // Forces a structured review before entering a position. Auto-pulls
@@ -7964,6 +8248,7 @@ function App() {
   const [collapseTextbook, setCollapseTextbook] = useState(true);
   const [collapseBacktest, setCollapseBacktest] = useState(true);
   const [collapsePretrade, setCollapsePretrade] = useState(true);
+  const [collapseRisk, setCollapseRisk] = useState(false);  // open by default — most important info
 
   // Tab navigation — UI organization (home / portfolio / options / textbook / hedge)
   const [activeTab, setActiveTab] = useState('home');
@@ -8298,6 +8583,17 @@ function App() {
         {/* ──────────────────────────────────────────────────── */}
         {activeTab === 'home' && (
           <>
+            {/* Real-time risk dashboard — net Greeks + sector + stress */}
+            <CollapsibleSection
+              title="📊 即時曝險儀表板 (Real-time Risk)"
+              subtitle="Net Δ/Γ/V/Θ · 產業集中度 · 4 種壓力情境"
+              collapsed={collapseRisk}
+              setCollapsed={setCollapseRisk}
+              icon={Gauge}
+            >
+              <RiskDashboard positions={positions} portfolioTotal={portfolioTotal} />
+            </CollapsibleSection>
+
             <CollapsibleSection
               title="L2 — Macro Regime Dashboard"
               subtitle="水位 · 週期 · 風險 → 倉位建議"
