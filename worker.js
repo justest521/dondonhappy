@@ -57,7 +57,7 @@ export default {
         return await handlePolygon(request, env, path);
       }
 
-      // ── Health check
+      // ── Health check (basic — just confirms worker is alive)
       if (path === '/' || path === '/health') {
         return jsonResponse({
           ok: true,
@@ -70,9 +70,17 @@ export default {
             '/api/polygon/quote', '/api/polygon/sma',
             '/api/polygon/option-chain', '/api/polygon/option-snapshot',
             '/api/polygon/atm-straddle',
+            '/api/health/integrations',
           ],
           time: new Date().toISOString(),
         });
+      }
+
+      // ── Aggregated integration health (FRED / UW / Polygon / Yahoo)
+      // Single endpoint that proxies the 4 representative pings server-side.
+      // Frontend just calls this once → no flaky 4-way browser fetch fan-out.
+      if (path === '/api/health/integrations') {
+        return await handleHealthIntegrations(request, env);
       }
 
       return new Response('Not Found', { status: 404, headers: corsHeaders() });
@@ -814,5 +822,75 @@ async function polygonATMStraddle(url, env) {
       asOf: new Date().toISOString(),
       source: 'polygon-atm-straddle',
     });
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// Aggregated integration health check
+// ════════════════════════════════════════════════════════════
+// Server-side parallel ping of FRED / UW / Polygon / Yahoo.
+// Returns a single JSON the frontend can consume without making
+// 4 cross-origin fetches (which can be flaky due to extensions/SW).
+async function handleHealthIntegrations(request, env) {
+  const url = new URL(request.url);
+  const origin = url.origin;
+
+  // Each probe: hit our own worker route to validate end-to-end (key + upstream)
+  const probes = [
+    { key: 'fred',    path: '/api/fred/batch?series=WALCL&limit=1', validate: (j) => Array.isArray(j.series) && j.series.length > 0 },
+    { key: 'uw',      path: '/api/uw/api/stock/SPY/iv-rank?timespan=1m', validate: (j) => Array.isArray(j.data) },
+    { key: 'polygon', path: '/api/polygon/quote?ticker=SPY', validate: (j) => j.price != null },
+    { key: 'yahoo',   path: '/api/yahoo?symbol=%5EMOVE', validate: (j) => j.price != null || j.regularMarketPrice != null },
+  ];
+
+  const results = await Promise.all(probes.map(async (p) => {
+    const t0 = Date.now();
+    try {
+      const r = await fetch(origin + p.path, { headers: { 'Accept': 'application/json' } });
+      const txt = await r.text();
+      let json = null;
+      let parseErr = null;
+      try { json = JSON.parse(txt); } catch (e) { parseErr = e.message; }
+      const elapsed = Date.now() - t0;
+      let status = 'ok';
+      let reason = 'OK';
+      if (!r.ok) { status = 'error'; reason = 'HTTP ' + r.status; }
+      else if (parseErr) { status = 'error'; reason = 'JSON parse: ' + parseErr; }
+      else if (!json) { status = 'error'; reason = 'Empty response'; }
+      else if (json.error) { status = 'error'; reason = 'API error: ' + json.error; }
+      else if (!p.validate(json)) { status = 'error'; reason = 'Validator failed (shape mismatch)'; }
+      return {
+        provider: p.key,
+        path: p.path,
+        status,
+        httpStatus: r.status,
+        reason,
+        elapsedMs: elapsed,
+        sample: json ? JSON.stringify(json).slice(0, 200) : (txt || '').slice(0, 200),
+      };
+    } catch (e) {
+      return {
+        provider: p.key,
+        path: p.path,
+        status: 'error',
+        httpStatus: 0,
+        reason: 'NETWORK: ' + (e.message || 'fetch threw'),
+        elapsedMs: Date.now() - t0,
+        sample: '',
+      };
+    }
+  }));
+
+  const okCount = results.filter(r => r.status === 'ok').length;
+  const overall = okCount === results.length ? 'ok' : (okCount === 0 ? 'down' : 'degraded');
+
+  return jsonResponse({
+    ok: overall === 'ok',
+    overall,
+    okCount,
+    total: results.length,
+    checks: results,
+    time: new Date().toISOString(),
+    worker: 'solitary-wood-898d',
   });
 }

@@ -8119,57 +8119,61 @@ function HealthIndicator() {
   });
   const [open, setOpen] = useState(false);
 
-  const runCheck = async (key, path, validate) => {
-    const fullUrl = WORKER_URL + path;
+  // Single aggregated call to worker (avoids 4-way fan-out flakiness from
+  // browser extensions / Service Workers / network jitter). Worker pings
+  // upstream APIs server-side and returns the consolidated result.
+  const runAll = useCallback(async () => {
+    const aggUrl = WORKER_URL + '/api/health/integrations';
     try {
-      const r = await fetch(fullUrl);
+      // 8s timeout to avoid hanging forever if blocked
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 8000);
+      const r = await fetch(aggUrl, { signal: ctrl.signal });
+      clearTimeout(timer);
       const txt = await r.text();
       let json = null;
-      let parseErr = null;
-      try { json = JSON.parse(txt); } catch (e) { parseErr = e.message; }
+      try { json = JSON.parse(txt); } catch (_) {}
 
-      let ok = false;
-      let reason = '';
-      if (!r.ok) {
-        reason = 'HTTP ' + r.status;
-      } else if (parseErr) {
-        reason = 'JSON parse: ' + parseErr;
-      } else if (!json) {
-        reason = 'Empty response';
-      } else if (json.error) {
-        reason = 'API error: ' + json.error;
-      } else if (validate && !validate(json)) {
-        reason = 'Validator failed (shape mismatch)';
-      } else {
-        ok = true;
+      if (!r.ok || !json || !Array.isArray(json.checks)) {
+        // Aggregator endpoint failed — likely worker not yet redeployed.
+        // Fall back: mark all 4 as error with a clear message so user knows what to do.
+        const reason = !r.ok ? ('Aggregator HTTP ' + r.status) : 'Aggregator response invalid';
+        const fallbackSample = reason + '. Worker may need redeploy: wrangler deploy. Body: ' + (txt || '').slice(0, 120);
+        try { console.warn('[health] aggregator failed', { httpStatus: r.status, body: txt.slice(0, 200) }); } catch (_) {}
+        setChecks(prev => Object.fromEntries(Object.entries(prev).map(([k, v]) => [k, {
+          ...v, status: 'error', sample: fallbackSample, t: new Date(), httpStatus: r.status, path: '/api/health/integrations'
+        }])));
+        return;
       }
 
-      const sample = ok
-        ? (typeof json === 'object' ? JSON.stringify(json).slice(0, 240) : String(txt).slice(0, 240))
-        : (reason + ' · body: ' + (txt || '(empty)').slice(0, 200));
+      // Map aggregator results into per-provider state
+      const byKey = {};
+      json.checks.forEach(c => { byKey[c.provider] = c; });
 
-      // eslint-disable-next-line no-console
-      try { console.log('[health:' + key + ']', ok ? 'OK' : 'FAIL', { path, status: r.status, reason, sample: sample.slice(0, 120) }); } catch (_) {}
+      try { console.log('[health] aggregator', { overall: json.overall, ok: json.okCount + '/' + json.total }); } catch (_) {}
 
-      setChecks(prev => ({
-        ...prev,
-        [key]: { ...prev[key], status: ok ? 'ok' : 'error', sample, t: new Date(), httpStatus: r.status, path }
-      }));
+      setChecks(prev => Object.fromEntries(Object.entries(prev).map(([k, v]) => {
+        const c = byKey[k];
+        if (!c) return [k, { ...v, status: 'error', sample: 'Provider missing in aggregator response', t: new Date() }];
+        return [k, {
+          ...v,
+          status: c.status === 'ok' ? 'ok' : 'error',
+          httpStatus: c.httpStatus,
+          path: c.path,
+          sample: c.status === 'ok'
+            ? c.sample
+            : (c.reason + ' · ' + (c.elapsedMs || 0) + 'ms · body: ' + (c.sample || '(empty)')),
+          t: new Date(),
+        }];
+      })));
     } catch (e) {
-      // eslint-disable-next-line no-console
-      try { console.warn('[health:' + key + '] network error', e); } catch (_) {}
-      setChecks(prev => ({
-        ...prev,
-        [key]: { ...prev[key], status: 'error', sample: 'NETWORK: ' + (e.message || 'fetch threw'), t: new Date(), httpStatus: 0, path }
-      }));
+      try { console.warn('[health] aggregator error', e); } catch (_) {}
+      const isAbort = e.name === 'AbortError';
+      const reason = isAbort ? 'Timeout (8s)' : ('NETWORK: ' + (e.message || 'fetch threw'));
+      setChecks(prev => Object.fromEntries(Object.entries(prev).map(([k, v]) => [k, {
+        ...v, status: 'error', sample: reason, t: new Date(), httpStatus: 0, path: '/api/health/integrations'
+      }])));
     }
-  };
-
-  const runAll = useCallback(() => {
-    runCheck('fred',    '/api/fred/batch?series=WALCL&limit=1', d => Array.isArray(d.series) && d.series.length > 0);
-    runCheck('uw',      '/api/uw/api/stock/SPY/iv-rank?timespan=1m', d => Array.isArray(d.data));
-    runCheck('polygon', '/api/polygon/quote?ticker=SPY', d => d.price != null);
-    runCheck('yahoo',   '/api/yahoo?symbol=%5EMOVE', d => d.price != null || d.regularMarketPrice != null);
   }, []);
 
   useEffect(() => {
