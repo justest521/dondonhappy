@@ -3731,6 +3731,46 @@ async function fetchEarnings(ticker) {
   } catch (e) { recordSourceHealth('earnings', false, e.message); return null; }
 }
 
+// ── Scanner batch (worker server-side aggregator) ──
+// One fetch instead of N×2. Caches IVR + earnings into window globals.
+// Falls back gracefully if endpoint missing.
+async function fetchScannerBatchAndCache(tickers) {
+  if (!Array.isArray(tickers) || tickers.length === 0) return { ok: false };
+  try {
+    const r = await fetch(WORKER_URL + '/api/scanner/batch?tickers=' + tickers.map(encodeURIComponent).join(','));
+    if (!r.ok) {
+      recordSourceHealth('ivr', false, 'batch HTTP ' + r.status);
+      recordSourceHealth('earnings', false, 'batch HTTP ' + r.status);
+      return { ok: false, reason: 'HTTP ' + r.status };
+    }
+    const d = await r.json();
+    if (!d || !Array.isArray(d.tickers)) {
+      return { ok: false, reason: 'invalid shape' };
+    }
+    let ivrSeen = 0, earnSeen = 0;
+    d.tickers.forEach(item => {
+      const t = (item.ticker || '').toUpperCase();
+      if (item.ivr) {
+        window.__IVR_CACHE = window.__IVR_CACHE || {};
+        window.__IVR_CACHE[t] = item.ivr;
+        ivrSeen++;
+      }
+      if (item.earnings) {
+        window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {};
+        window.__EARNINGS_CACHE[t] = item.earnings;
+        earnSeen++;
+      }
+    });
+    if (ivrSeen > 0) recordSourceHealth('ivr', true);
+    if (earnSeen > 0) recordSourceHealth('earnings', true);
+    return { ok: true, count: d.tickers.length, ivrSeen, earnSeen };
+  } catch (e) {
+    recordSourceHealth('ivr', false, 'batch: ' + e.message);
+    recordSourceHealth('earnings', false, 'batch: ' + e.message);
+    return { ok: false, reason: e.message };
+  }
+}
+
 // ── UW: Options Flow (異常期權流) ──
 async function fetchUWFlow(limit = 100) {
   try {
@@ -6818,6 +6858,21 @@ function OptionsScanner({ positions }) {
     return Array.from(set);
   }, [positions, watchlist]);
 
+  // Auto-warm caches on mount via worker server-side batch (1 fetch vs N×2)
+  // — bypasses browser-side flakiness from extensions / SW
+  useEffect(() => {
+    if (allTickers.length === 0) return;
+    const ivrCache = window.__IVR_CACHE || {};
+    const earnCache = window.__EARNINGS_CACHE || {};
+    const missing = allTickers.filter(t => !ivrCache[t] && !earnCache[t]);
+    if (missing.length === 0) return;
+    setLoading(true);
+    fetchScannerBatchAndCache(allTickers).finally(() => {
+      setRefreshTick(x => x + 1);
+      setLoading(false);
+    });
+  }, [allTickers]);
+
   // Score every ticker (recomputes when refreshTick changes)
   const scoredList = useMemo(() => {
     return allTickers.map(t => {
@@ -6859,11 +6914,8 @@ function OptionsScanner({ positions }) {
   const handleRefreshAll = async () => {
     setLoading(true);
     try {
-      await Promise.all(allTickers.map(async t => {
-        const [ivr, earn] = await Promise.all([fetchIVR(t), fetchEarnings(t)]);
-        if (ivr && ivr.ivr != null) { window.__IVR_CACHE = window.__IVR_CACHE || {}; window.__IVR_CACHE[t] = ivr; }
-        if (earn && earn.date) { window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {}; window.__EARNINGS_CACHE[t] = earn; }
-      }));
+      // Use server-side batch — 1 fetch instead of N×2
+      await fetchScannerBatchAndCache(allTickers);
       setRefreshTick(x => x + 1);
     } finally {
       setLoading(false);
@@ -7781,20 +7833,14 @@ function TextbookLiveMatches({ onJumpToScanner }) {
     return () => clearInterval(id);
   }, [watchlist]);
 
-  // Cold-start cache warm: if IVR/earnings empty, fetch for watchlist
+  // Cold-start cache warm via worker server-side batch (1 fetch)
   useEffect(() => {
     const ivrCache = window.__IVR_CACHE || {};
     const earnCache = window.__EARNINGS_CACHE || {};
     const needsWarm = watchlist.filter(t => !ivrCache[t] && !earnCache[t]);
     if (needsWarm.length === 0) return;
     setLoading(true);
-    Promise.all(needsWarm.map(async t => {
-      try {
-        const [ivr, earn] = await Promise.all([fetchIVR(t), fetchEarnings(t)]);
-        if (ivr && ivr.ivr != null) { window.__IVR_CACHE = window.__IVR_CACHE || {}; window.__IVR_CACHE[t] = ivr; }
-        if (earn && earn.date) { window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {}; window.__EARNINGS_CACHE[t] = earn; }
-      } catch (_) {}
-    })).finally(() => {
+    fetchScannerBatchAndCache(watchlist).finally(() => {
       setRefreshTick(x => x + 1);
       setLastUpdate(new Date());
       setLoading(false);
@@ -7847,12 +7893,9 @@ function TextbookLiveMatches({ onJumpToScanner }) {
   const manualRefresh = async () => {
     setLoading(true);
     try {
-      await Promise.all(watchlist.map(async t => {
-        const [ivr, earn] = await Promise.all([fetchIVR(t), fetchEarnings(t)]);
-        if (ivr && ivr.ivr != null) { window.__IVR_CACHE = window.__IVR_CACHE || {}; window.__IVR_CACHE[t] = ivr; }
-        if (earn && earn.date) { window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {}; window.__EARNINGS_CACHE[t] = earn; }
-      }));
-      // Force UW refresh too
+      // Use server-side batch — 1 fetch for all tickers' IVR + earnings
+      await fetchScannerBatchAndCache(watchlist);
+      // UW flow + dark are still individual (small payload, 1 call each)
       const [flow, dark] = await Promise.all([fetchUWFlow(100), fetchUWDark(50)]);
       if (flow) window.__UW_FLOW_CACHE = flow;
       if (dark) window.__UW_DARK_CACHE = dark;
