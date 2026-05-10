@@ -6,7 +6,7 @@
   <title>MEP Trading System · L2+L1+Supabase</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- React 18 UMD -->
   <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
@@ -28,8 +28,91 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
   <style>
+    /* ============================================================
+       V2 THEME OVERRIDE — Linear-style sidebar palette w/ lavender accent
+       Cool graphite base + #a78bfa accent. Signal colors (red/green) preserved.
+       ============================================================ */
+    :root {
+      --v2-bg: #0a0d12;
+      --v2-panel: #0f131a;
+      --v2-panel-2: #141923;
+      --v2-line: #1c2230;
+      --v2-line-2: #28304a;
+      --v2-fg: #e8ecf2;
+      --v2-fg-mute: #7a8499;
+      --v2-fg-dim: #4d5468;
+      --v2-accent: #a78bfa;
+      --v2-accent-2: #c4b5fd;
+    }
+    /* Base + font swap */
+    html, body {
+      background: var(--v2-bg) !important;
+      color: var(--v2-fg) !important;
+      font-family: 'Geist', 'Noto Sans TC', -apple-system, sans-serif !important;
+    }
+    /* Backgrounds — original yellow-accent dark → cool graphite */
+    .bg-app      { background: var(--v2-bg) !important; }
+    .bg-card     { background: var(--v2-panel) !important; }
+    .bg-subcard  { background: var(--v2-panel-2) !important; }
+    .bg-deepcard { background: var(--v2-bg) !important; }
+    /* Text — yellow accent → lavender; muted greys → cooler greys */
+    .text-accent   { color: var(--v2-accent) !important; }
+    .text-primary  { color: var(--v2-fg) !important; }
+    .text-muted    { color: var(--v2-fg-mute) !important; }
+    .text-muted-2  { color: var(--v2-fg-dim) !important; }
+    /* Hairline borders → cooler */
+    .hair-border { border-color: var(--v2-line) !important; }
+    [class*="border"] { border-color: var(--v2-line); }
+    /* Form & toggle accents */
+    .toggle-pill { border-color: var(--v2-line) !important; }
+    .toggle-pill button { color: var(--v2-fg-mute) !important; }
+    .toggle-pill button.active {
+      background: var(--v2-accent) !important;
+      color: #0a0d12 !important;
+    }
+    .num-input, .text-input, select.num-input {
+      border-color: var(--v2-line) !important;
+      color: var(--v2-fg) !important;
+    }
+    .num-input:focus, .text-input:focus { border-color: var(--v2-accent) !important; }
+    .icon-btn { border-color: var(--v2-line) !important; color: var(--v2-fg-mute) !important; }
+    .icon-btn:hover { border-color: var(--v2-accent) !important; color: var(--v2-accent) !important; }
+    /* Slider thumb */
+    input[type="range"]::-webkit-slider-thumb { background: var(--v2-accent) !important; }
+    input[type="range"]::-moz-range-thumb { background: var(--v2-accent) !important; }
+    input[type="range"] { background: var(--v2-line) !important; }
+    /* Pulse dot — keep red/green/amber semantics for signals; amber → accent for non-signal use */
+    .pulse-dot.amber { background: var(--v2-accent) !important; }
+    /* Quadrant active state */
+    .quadrant-cell:hover { background: color-mix(in oklab, var(--v2-accent) 6%, transparent) !important; }
+    .quadrant-cell.active {
+      background: color-mix(in oklab, var(--v2-accent) 12%, transparent) !important;
+      border-color: var(--v2-accent) !important;
+    }
+    /* Signal-light: keep semantic colors but make amber → accent */
+    .signal-light.amber { background: color-mix(in oklab, var(--v2-accent) 22%, transparent) !important; border-color: var(--v2-accent) !important; }
+    /* Gauge bar background */
+    .gauge-bar { background: var(--v2-line) !important; }
+    /* Help-circle tooltip box */
+    [style*="background: rgb(26, 26, 26)"], [style*="background:#1a1a1a"] { background: var(--v2-panel) !important; }
+    /* Sector chip — improving (was blue) → accent for visual unity */
+    .sector-chip.improving {
+      background: color-mix(in oklab, var(--v2-accent) 16%, transparent) !important;
+      color: var(--v2-accent) !important;
+      border-color: color-mix(in oklab, var(--v2-accent) 40%, transparent) !important;
+    }
+    /* Mono numerics — use JetBrains Mono everywhere DM Mono was used */
+    [style*="DM Mono"] { font-family: 'JetBrains Mono', ui-monospace, monospace !important; }
+    /* Subtle card border */
+    .bg-card, .bg-subcard, .bg-deepcard {
+      border: 1px solid var(--v2-line);
+    }
+    /* Splash dot */
+    .splash-dot { background: var(--v2-accent) !important; }
+    /* ============================================================ */
+
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: #0a0a0a; color: #f4f4f4; font-family: 'Noto Sans TC', -apple-system, sans-serif; }
+    html, body { margin: 0; padding: 0; background: #0a0d12; color: #e8ecf2; font-family: 'Geist', 'Noto Sans TC', -apple-system, sans-serif; }
     #root { min-height: 100vh; }
 
     /* Loading splash before Babel finishes transpiling */
