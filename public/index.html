@@ -6626,6 +6626,158 @@ function RiskDashboard({ positions, portfolioTotal }) {
 }
 
 // ============================================================
+// Alerts Panel — Telegram push monitoring
+// ============================================================
+// Frontend mini-control for the worker's /api/alerts/* endpoints.
+// Shows whether bot is configured, lets you fire test message + manual
+// condition check.
+// ============================================================
+function AlertsPanel() {
+  const [status, setStatus] = useState(null);
+  const [testResult, setTestResult] = useState(null);
+  const [checkResult, setCheckResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const refreshStatus = async () => {
+    try {
+      const r = await fetch(WORKER_URL + '/api/alerts/status');
+      const j = await r.json();
+      setStatus(j);
+    } catch (e) {
+      setStatus({ error: e.message });
+    }
+  };
+
+  useEffect(() => { refreshStatus(); }, []);
+
+  const sendTest = async () => {
+    setLoading(true); setTestResult(null);
+    try {
+      const r = await fetch(WORKER_URL + '/api/alerts/test');
+      const j = await r.json();
+      setTestResult(j);
+    } catch (e) { setTestResult({ ok: false, error: e.message }); }
+    finally { setLoading(false); }
+  };
+
+  const runCheck = async () => {
+    setLoading(true); setCheckResult(null);
+    try {
+      const r = await fetch(WORKER_URL + '/api/alerts/check');
+      const j = await r.json();
+      setCheckResult(j);
+    } catch (e) { setCheckResult({ error: e.message }); }
+    finally { setLoading(false); }
+  };
+
+  const cardStyle = { padding: '12px 14px', background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: '6px' };
+  const btnStyle = (color, dis) => ({
+    background: dis ? '#2a2a2a' : color + '14',
+    border: '1px solid ' + (dis ? '#3a3a3a' : color),
+    color: dis ? '#7a7a7a' : color,
+    padding: '8px 16px', borderRadius: '4px',
+    fontFamily: 'DM Mono', fontSize: '12px', fontWeight: 600,
+    cursor: dis ? 'not-allowed' : 'pointer',
+  });
+
+  return (
+    <div style={{ padding: '16px 24px', background: '#0a0a0a' }}>
+      {/* Status */}
+      <div style={{ ...cardStyle, marginBottom: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#f4f4f4', fontWeight: 700 }}>
+            🔔 Telegram Push 設定狀態
+          </div>
+          <button onClick={refreshStatus} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#b8b8b8', padding: '4px 10px', borderRadius: '3px', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '11px' }}>↻</button>
+        </div>
+        {status == null ? (
+          <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#7a7a7a' }}>檢查中⋯</div>
+        ) : status.error ? (
+          <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#ef4444' }}>❌ {status.error}</div>
+        ) : (
+          <div style={{ display: 'flex', gap: '20px', fontFamily: 'DM Mono', fontSize: '12px' }}>
+            <span style={{ color: status.hasBotToken ? '#10b981' : '#ef4444' }}>
+              {status.hasBotToken ? '✅' : '❌'} TELEGRAM_BOT_TOKEN
+            </span>
+            <span style={{ color: status.hasChatId ? '#10b981' : '#ef4444' }}>
+              {status.hasChatId ? '✅' : '❌'} TELEGRAM_CHAT_ID
+            </span>
+            <span style={{ color: status.configured ? '#10b981' : '#EAB308', fontWeight: 700 }}>
+              {status.configured ? '✓ 已設定' : '⚠ 未完成'}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Action buttons */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
+        <button onClick={sendTest} disabled={loading || !(status && status.configured)} style={btnStyle('#14b8a6', loading || !(status && status.configured))}>
+          🧪 發送測試訊息
+        </button>
+        <button onClick={runCheck} disabled={loading} style={btnStyle('#EAB308', loading)}>
+          🔍 立即跑條件檢查 (VIX/MOVE/SPY)
+        </button>
+      </div>
+
+      {/* Test result */}
+      {testResult && (
+        <div style={{ ...cardStyle, marginBottom: '10px', borderColor: testResult.ok ? '#10b981' : '#ef4444' }}>
+          <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: testResult.ok ? '#10b981' : '#ef4444', fontWeight: 700, marginBottom: '4px' }}>
+            {testResult.ok ? '✅ 測試訊息已送' : '❌ 失敗'}
+          </div>
+          <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#b8b8b8', wordBreak: 'break-all' }}>
+            {testResult.ok ? '檢查你的 Telegram，應該收到 "🧪 MEP Trading System · 測試訊息"' : (testResult.error || JSON.stringify(testResult.response || testResult))}
+          </div>
+        </div>
+      )}
+
+      {/* Check result */}
+      {checkResult && (
+        <div style={cardStyle}>
+          <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#f4f4f4', fontWeight: 700, marginBottom: '6px' }}>
+            🔍 條件檢查結果 · {checkResult.triggeredCount || 0} 觸發
+          </div>
+          {(!checkResult.triggered || checkResult.triggered.length === 0) ? (
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#10b981' }}>
+              ✓ 沒有警報條件觸發 (VIX 安全 / MOVE 安全 / SPY 平穩)
+            </div>
+          ) : (
+            <div>
+              {checkResult.triggered.map((t, i) => (
+                <div key={i} style={{ fontFamily: 'DM Mono', fontSize: '12px', color: t.severity === 'critical' ? '#ef4444' : t.severity === 'warning' ? '#EAB308' : '#10b981', marginBottom: '4px' }}>
+                  {t.text.replace(/<[^>]+>/g, '')}
+                </div>
+              ))}
+              {checkResult.sent && (
+                <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: checkResult.sent.ok ? '#10b981' : '#ef4444', marginTop: '6px' }}>
+                  Telegram: {checkResult.sent.ok ? '✓ 已送' : '✗ ' + (checkResult.sent.error || JSON.stringify(checkResult.sent))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Setup instructions */}
+      <div style={{ ...cardStyle, marginTop: '14px', background: '#0a0a0a', borderColor: '#1a1a1a' }}>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#b8b8b8', fontWeight: 600, marginBottom: '6px' }}>
+          📖 首次設定（5 分鐘）
+        </div>
+        <ol style={{ margin: 0, paddingLeft: '20px', fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', lineHeight: 1.8 }}>
+          <li>Telegram 找 <b style={{ color: '#14b8a6' }}>@BotFather</b> → 輸入 <code>/newbot</code> → 取得 HTTP API token</li>
+          <li>傳任何訊息給你的新 bot（例如 "hi"）</li>
+          <li>瀏覽器打開：<code style={{ color: '#a78bfa' }}>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> → 找到 <code>chat.id</code></li>
+          <li>Terminal 跑：<code>npx wrangler secret put TELEGRAM_BOT_TOKEN</code> → 貼 token</li>
+          <li><code>npx wrangler secret put TELEGRAM_CHAT_ID</code> → 貼 chat id</li>
+          <li><code>npx wrangler deploy</code></li>
+          <li>點上面 🧪 發送測試訊息 — 應收到 Telegram 通知</li>
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // Pre-Trade Checklist — discipline gate for million-dollar trades
 // ============================================================
 // Forces a structured review before entering a position. Auto-pulls
@@ -8422,6 +8574,7 @@ function App() {
   const [collapseBacktest, setCollapseBacktest] = useState(true);
   const [collapsePretrade, setCollapsePretrade] = useState(true);
   const [collapseRisk, setCollapseRisk] = useState(false);  // open by default — most important info
+  const [collapseAlerts, setCollapseAlerts] = useState(true);
 
   // Tab navigation — UI organization (home / portfolio / options / textbook / hedge)
   const [activeTab, setActiveTab] = useState('home');
@@ -8823,6 +8976,17 @@ function App() {
               positions={positions}
               portfolioTotal={portfolioTotal}
             />
+
+            {/* Telegram push alert settings */}
+            <CollapsibleSection
+              title="🔔 Push Alert (Telegram)"
+              subtitle="VIX > 25 / MOVE > 130 / SPY 大跌等條件觸發推播"
+              collapsed={collapseAlerts}
+              setCollapsed={setCollapseAlerts}
+              icon={Bell}
+            >
+              <AlertsPanel />
+            </CollapsibleSection>
           </>
         )}
 

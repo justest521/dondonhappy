@@ -90,6 +90,17 @@ export default {
         return await handleScannerBatch(request, env);
       }
 
+      // ── Telegram push alerts
+      if (path === '/api/alerts/test') {
+        return await handleAlertTest(request, env);
+      }
+      if (path === '/api/alerts/check') {
+        return await handleAlertCheck(request, env);
+      }
+      if (path === '/api/alerts/status') {
+        return await handleAlertStatus(request, env);
+      }
+
       return new Response('Not Found', { status: 404, headers: corsHeaders() });
     } catch (err) {
       return jsonResponse({ error: 'Worker error', message: err.message }, 500);
@@ -1053,4 +1064,131 @@ async function handleScannerBatch(request, env) {
   });
   response.headers.set('Cache-Control', 's-maxage=300');  // 5min server cache
   return response;
+}
+
+// ════════════════════════════════════════════════════════════
+// Telegram push alerts
+// ════════════════════════════════════════════════════════════
+// Setup steps for user:
+//   1. Open Telegram, talk to @BotFather, /newbot, get HTTP API token
+//   2. Send any message to your new bot (e.g., "hi")
+//   3. curl https://api.telegram.org/bot<TOKEN>/getUpdates | jq
+//      → find chat.id in the response
+//   4. wrangler secret put TELEGRAM_BOT_TOKEN
+//   5. wrangler secret put TELEGRAM_CHAT_ID
+//   6. wrangler deploy
+// ════════════════════════════════════════════════════════════
+
+function alertsConfigured(env) {
+  return !!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID);
+}
+
+async function sendTelegram(env, text) {
+  if (!alertsConfigured(env)) {
+    return { ok: false, error: 'Telegram secrets not set (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID)' };
+  }
+  const url = 'https://api.telegram.org/bot' + env.TELEGRAM_BOT_TOKEN + '/sendMessage';
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: env.TELEGRAM_CHAT_ID,
+        text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+      }),
+    });
+    const j = await r.json();
+    return { ok: r.ok && j.ok, status: r.status, response: j };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+async function handleAlertStatus(request, env) {
+  return jsonResponse({
+    configured: alertsConfigured(env),
+    hasBotToken: !!env.TELEGRAM_BOT_TOKEN,
+    hasChatId: !!env.TELEGRAM_CHAT_ID,
+    workerTime: new Date().toISOString(),
+  });
+}
+
+async function handleAlertTest(request, env) {
+  const result = await sendTelegram(env,
+    '🧪 <b>MEP Trading System · 測試訊息</b>\n\n' +
+    '如果你收到這則訊息，Telegram alerts 已正確設定 ✓\n' +
+    '時間: ' + new Date().toISOString() + '\n' +
+    'Worker: solitary-wood-898d');
+  return jsonResponse(result, result.ok ? 200 : 500);
+}
+
+// Conditions checked: VIX, MOVE, SPY %change. Returns array of triggered alerts.
+async function handleAlertCheck(request, env) {
+  const triggered = [];
+
+  // VIX
+  if (env.POLYGON_API_KEY) {
+    try {
+      const r = await fetch('https://api.polygon.io/v3/snapshot/indices?ticker.any_of=I:VIX&apiKey=' + env.POLYGON_API_KEY);
+      if (r.ok) {
+        const j = await r.json();
+        const vix = j.results && j.results[0] && j.results[0].value;
+        if (isFinite(vix)) {
+          if (vix > 30) triggered.push({ key: 'vix-30', severity: 'critical', text: '🔴 <b>VIX = ' + vix.toFixed(2) + '</b> · 突破 30 (恐慌區)' });
+          else if (vix > 25) triggered.push({ key: 'vix-25', severity: 'warning', text: '🟡 <b>VIX = ' + vix.toFixed(2) + '</b> · 突破 25 (警戒區)' });
+        }
+      }
+    } catch (_) {}
+  }
+
+  // MOVE
+  try {
+    const r = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/%5EMOVE?interval=1d&range=1d', {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    if (r.ok) {
+      const j = await r.json();
+      const move = j.chart && j.chart.result && j.chart.result[0] && j.chart.result[0].meta && j.chart.result[0].meta.regularMarketPrice;
+      if (isFinite(move)) {
+        if (move > 130) triggered.push({ key: 'move-130', severity: 'critical', text: '🔴 <b>MOVE = ' + move.toFixed(1) + '</b> · 債市波動爆炸 (>130)' });
+        else if (move > 110) triggered.push({ key: 'move-110', severity: 'warning', text: '🟡 <b>MOVE = ' + move.toFixed(1) + '</b> · 債市波動升高 (>110)' });
+      }
+    }
+  } catch (_) {}
+
+  // SPY intraday %change
+  if (env.POLYGON_API_KEY) {
+    try {
+      const r = await fetch('https://api.polygon.io/v2/aggs/ticker/SPY/prev?adjusted=true&apiKey=' + env.POLYGON_API_KEY);
+      if (r.ok) {
+        const j = await r.json();
+        const result = Array.isArray(j.results) && j.results[0];
+        if (result) {
+          const close = result.c, open = result.o;
+          const pct = ((close - open) / open) * 100;
+          if (pct < -3) triggered.push({ key: 'spy-down-3', severity: 'critical', text: '🔴 <b>SPY 當日 ' + pct.toFixed(2) + '%</b> · 大跌警報' });
+          else if (pct < -2) triggered.push({ key: 'spy-down-2', severity: 'warning', text: '🟡 <b>SPY 當日 ' + pct.toFixed(2) + '%</b> · 中跌警戒' });
+          else if (pct > 3) triggered.push({ key: 'spy-up-3', severity: 'info', text: '🟢 <b>SPY 當日 +' + pct.toFixed(2) + '%</b> · 大漲，FOMO 警告' });
+        }
+      }
+    } catch (_) {}
+  }
+
+  // If any conditions triggered AND Telegram configured, send a single combined message
+  let sent = null;
+  if (triggered.length > 0 && alertsConfigured(env)) {
+    const msg = '⚠️ <b>MEP Alert · ' + new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) + '</b>\n\n' +
+                triggered.map(a => a.text).join('\n');
+    sent = await sendTelegram(env, msg);
+  }
+
+  return jsonResponse({
+    triggered,
+    triggeredCount: triggered.length,
+    telegramConfigured: alertsConfigured(env),
+    sent,
+    time: new Date().toISOString(),
+  });
 }
