@@ -7102,6 +7102,266 @@ const TB_SELLER_DATA = {
   },
 };
 
+// ============================================================
+// TextbookLiveMatches — 即時掃 watchlist，挑出符合教科書 PRIME/STRONG 的標的
+// 共享 OptionsScanner 的 watchlist (localStorage 'ddh_scanner_watchlist')
+// 共享 caches (__IVR_CACHE / __EARNINGS_CACHE / __BETA_CACHE / __UW_FLOW_CACHE)
+// 60 秒自動 refresh tick；首次掛載時若 cache 空就主動 fetch
+// ============================================================
+function TextbookLiveMatches({ onJumpToScanner }) {
+  const [watchlist, setWatchlist] = useState(() => {
+    try {
+      const raw = localStorage.getItem('ddh_scanner_watchlist');
+      if (raw) return JSON.parse(raw);
+    } catch (_) {}
+    return ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'META', 'TSLA', 'AMZN', 'AVGO', 'KO', 'JNJ'];
+  });
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState(null);
+
+  // Sync watchlist if OptionsScanner edited it (poll localStorage every 10s)
+  useEffect(() => {
+    const id = setInterval(() => {
+      try {
+        const raw = localStorage.getItem('ddh_scanner_watchlist');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && JSON.stringify(parsed) !== JSON.stringify(watchlist)) {
+            setWatchlist(parsed);
+          }
+        }
+      } catch (_) {}
+    }, 10000);
+    return () => clearInterval(id);
+  }, [watchlist]);
+
+  // Cold-start cache warm: if IVR/earnings empty, fetch for watchlist
+  useEffect(() => {
+    const ivrCache = window.__IVR_CACHE || {};
+    const earnCache = window.__EARNINGS_CACHE || {};
+    const needsWarm = watchlist.filter(t => !ivrCache[t] && !earnCache[t]);
+    if (needsWarm.length === 0) return;
+    setLoading(true);
+    Promise.all(needsWarm.map(async t => {
+      try {
+        const [ivr, earn] = await Promise.all([fetchIVR(t), fetchEarnings(t)]);
+        if (ivr && ivr.ivr != null) { window.__IVR_CACHE = window.__IVR_CACHE || {}; window.__IVR_CACHE[t] = ivr; }
+        if (earn && earn.date) { window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {}; window.__EARNINGS_CACHE[t] = earn; }
+      } catch (_) {}
+    })).finally(() => {
+      setRefreshTick(x => x + 1);
+      setLastUpdate(new Date());
+      setLoading(false);
+    });
+  }, [watchlist]);
+
+  // Auto-refresh tick every 60s (re-reads caches that may have been updated by other components / global UW polling)
+  useEffect(() => {
+    const id = setInterval(() => { setRefreshTick(x => x + 1); setLastUpdate(new Date()); }, 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Score everything
+  const scored = useMemo(() => {
+    return watchlist
+      .map(t => computeScannerScores(t, {}))
+      .filter(s => s && s.hasData);
+  }, [watchlist, refreshTick]);
+
+  const buyers = useMemo(() => scored
+    .filter(s => s.buyer && s.buyer.score != null && s.buyer.score >= 70)
+    .sort((a, b) => b.buyer.score - a.buyer.score)
+    .slice(0, 5), [scored]);
+
+  const sellers = useMemo(() => scored
+    .filter(s => s.seller && s.seller.score != null && s.seller.score >= 70)
+    .sort((a, b) => b.seller.score - a.seller.score)
+    .slice(0, 5), [scored]);
+
+  // UW unusual flow detection per ticker
+  const unusualFlowSet = useMemo(() => {
+    const flow = window.__UW_FLOW_CACHE || [];
+    const set = new Set();
+    flow.forEach(f => {
+      const t = (f.ticker || f.sym || '').toUpperCase();
+      const isUnusual = f.unusual === true || f.has_sweep === true || f.is_sweep === true ||
+                        (f.iv_rank != null && f.iv_rank > 80) ||
+                        (parseFloat(f.premium || f.total_premium || 0) > 1_000_000);
+      if (t && isUnusual) set.add(t);
+    });
+    return set;
+  }, [refreshTick]);
+
+  const manualRefresh = async () => {
+    setLoading(true);
+    try {
+      await Promise.all(watchlist.map(async t => {
+        const [ivr, earn] = await Promise.all([fetchIVR(t), fetchEarnings(t)]);
+        if (ivr && ivr.ivr != null) { window.__IVR_CACHE = window.__IVR_CACHE || {}; window.__IVR_CACHE[t] = ivr; }
+        if (earn && earn.date) { window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {}; window.__EARNINGS_CACHE[t] = earn; }
+      }));
+      // Force UW refresh too
+      const [flow, dark] = await Promise.all([fetchUWFlow(100), fetchUWDark(50)]);
+      if (flow) window.__UW_FLOW_CACHE = flow;
+      if (dark) window.__UW_DARK_CACHE = dark;
+      setRefreshTick(x => x + 1);
+      setLastUpdate(new Date());
+    } finally { setLoading(false); }
+  };
+
+  const ageStr = lastUpdate ? Math.round((Date.now() - lastUpdate.getTime()) / 1000) + 's ago' : '—';
+
+  return (
+    <div style={{
+      margin: '12px 24px 16px',
+      padding: '16px 20px',
+      background: 'linear-gradient(135deg, rgba(20,184,166,0.06) 0%, rgba(234,179,8,0.06) 100%)',
+      border: '1px solid #2a2a2a',
+      borderRadius: '8px',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', borderBottom: '1px solid #2a2a2a', paddingBottom: '10px' }}>
+        <div>
+          <div style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', fontWeight: 700, color: '#f4f4f4' }}>
+            🎯 即時符合教科書條件的標的 · LIVE
+          </div>
+          <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', marginTop: '3px', letterSpacing: '0.05em' }}>
+            掃 {watchlist.length} 檔 watchlist · IVR + earnings + β + UW flow · {ageStr} · auto 60s
+          </div>
+        </div>
+        <button
+          onClick={manualRefresh}
+          disabled={loading}
+          style={{
+            background: 'transparent',
+            border: '1px solid #14b8a6',
+            color: '#14b8a6',
+            padding: '6px 12px',
+            borderRadius: '4px',
+            fontFamily: 'DM Mono',
+            fontSize: '12px',
+            cursor: loading ? 'wait' : 'pointer',
+          }}
+        >{loading ? '⋯' : '↻ 立即刷新'}</button>
+      </div>
+
+      {/* Two columns: buyer / seller */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+        {/* BUYER COLUMN */}
+        <div>
+          <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', fontWeight: 700, color: '#EAB308', marginBottom: '8px', borderLeft: '3px solid #EAB308', paddingLeft: '8px' }}>
+            🚀 爆噴買方 · STRONG+ ({buyers.length})
+          </div>
+          {buyers.length === 0 ? (
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#7a7a7a', padding: '12px', border: '1px dashed #2a2a2a', borderRadius: '4px', textAlign: 'center' }}>
+              {loading ? '掃描中⋯' : '目前沒有 STRONG+ 標的（IVR/earnings 數據可能還沒到位）'}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {buyers.map(s => (
+                <TbLiveRow
+                  key={s.ticker}
+                  ticker={s.ticker}
+                  score={s.buyer.score}
+                  grade={s.buyer.grade}
+                  ivr={s.ivr}
+                  beta={s.beta}
+                  daysToEarnings={s.daysToEarnings}
+                  expectedMove={s.expectedMove}
+                  hasUnusualFlow={unusualFlowSet.has(s.ticker)}
+                  side="buyer"
+                  onClick={onJumpToScanner}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* SELLER COLUMN */}
+        <div>
+          <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', fontWeight: 700, color: '#14b8a6', marginBottom: '8px', borderLeft: '3px solid #14b8a6', paddingLeft: '8px' }}>
+            💰 IV Crush 賣方 · STRONG+ ({sellers.length})
+          </div>
+          {sellers.length === 0 ? (
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#7a7a7a', padding: '12px', border: '1px dashed #2a2a2a', borderRadius: '4px', textAlign: 'center' }}>
+              {loading ? '掃描中⋯' : '目前沒有 STRONG+ 標的'}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {sellers.map(s => (
+                <TbLiveRow
+                  key={s.ticker}
+                  ticker={s.ticker}
+                  score={s.seller.score}
+                  grade={s.seller.grade}
+                  ivr={s.ivr}
+                  beta={s.beta}
+                  daysToEarnings={s.daysToEarnings}
+                  expectedMove={s.expectedMove}
+                  hasUnusualFlow={unusualFlowSet.has(s.ticker)}
+                  side="seller"
+                  onClick={onJumpToScanner}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer hint */}
+      <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #2a2a2a', fontFamily: 'DM Mono', fontSize: '11px', color: '#7a7a7a', display: 'flex', justifyContent: 'space-between' }}>
+        <span>⚡ 標記 = UW 異常流 / sweep / IV rank > 80 / premium > $1M</span>
+        <span>watchlist 從「選擇權」tab 編輯，這邊自動同步</span>
+      </div>
+    </div>
+  );
+}
+
+function TbLiveRow({ ticker, score, grade, ivr, beta, daysToEarnings, expectedMove, hasUnusualFlow, side, onClick }) {
+  const accent = side === 'buyer' ? '#EAB308' : '#14b8a6';
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '8px 10px',
+        background: '#0f0f0f',
+        border: '1px solid ' + (hasUnusualFlow ? accent + '60' : '#2a2a2a'),
+        borderRadius: '4px',
+        cursor: onClick ? 'pointer' : 'default',
+      }}
+    >
+      <div style={{ minWidth: '60px', fontFamily: 'DM Mono', fontSize: '14px', fontWeight: 700, color: '#f4f4f4' }}>
+        {ticker}
+        {hasUnusualFlow && <span style={{ marginLeft: '4px', color: accent }}>⚡</span>}
+      </div>
+      <div style={{
+        padding: '2px 8px',
+        background: (grade ? grade.color : '#666') + '22',
+        border: '1px solid ' + (grade ? grade.color : '#666'),
+        color: grade ? grade.color : '#999',
+        fontFamily: 'DM Mono',
+        fontSize: '11px',
+        fontWeight: 700,
+        borderRadius: '3px',
+        minWidth: '60px',
+        textAlign: 'center',
+      }}>
+        {score} {grade ? grade.label : ''}
+      </div>
+      <div style={{ flex: 1, display: 'flex', gap: '10px', fontFamily: 'DM Mono', fontSize: '11px', color: '#b8b8b8' }}>
+        <span>IVR <b style={{ color: '#f4f4f4' }}>{ivr != null ? ivr.toFixed(0) : '—'}</b></span>
+        <span>β <b style={{ color: '#f4f4f4' }}>{beta != null ? beta.toFixed(2) : '—'}</b></span>
+        <span>T{daysToEarnings != null ? (daysToEarnings >= 0 ? '−' + daysToEarnings : '+' + Math.abs(daysToEarnings)) : '—'}</span>
+        {expectedMove != null && <span>±{expectedMove.toFixed(1)}%</span>}
+      </div>
+    </div>
+  );
+}
+
 function TextbookViewer() {
   const [tab, setTab] = useState('buyer');
   const data = tab === 'buyer' ? TB_BUYER_DATA : TB_SELLER_DATA;
@@ -7766,10 +8026,13 @@ function App() {
         )}
 
         {/* ──────────────────────────────────────────────────── */}
-        {/* TAB: 教科書 (textbook) — Textbook + backtest         */}
+        {/* TAB: 教科書 (textbook) — LIVE matches + Textbook + backtest */}
         {/* ──────────────────────────────────────────────────── */}
         {activeTab === 'textbook' && (
           <>
+            {/* LIVE matches against textbook criteria — uses watchlist + UW caches */}
+            <TextbookLiveMatches onJumpToScanner={() => setActiveTab('options')} />
+
             <CollapsibleSection
               title="期權教科書"
               subtitle="爆噴買方 (CASE 002) ⊕ IV Crush 賣方 (CASE 003)"
