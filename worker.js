@@ -828,25 +828,74 @@ async function polygonATMStraddle(url, env) {
 // ════════════════════════════════════════════════════════════
 // Aggregated integration health check
 // ════════════════════════════════════════════════════════════
-// Server-side parallel ping of FRED / UW / Polygon / Yahoo.
-// Returns a single JSON the frontend can consume without making
-// 4 cross-origin fetches (which can be flaky due to extensions/SW).
+// Direct upstream pings (NOT via self-fetch — Cloudflare blocks
+// same-zone subrequests with error 1042). Each probe goes straight
+// to the source API using the worker's stored credentials.
 async function handleHealthIntegrations(request, env) {
-  const url = new URL(request.url);
-  const origin = url.origin;
-
-  // Each probe: hit our own worker route to validate end-to-end (key + upstream)
+  // Build probe definitions — each goes to upstream directly
   const probes = [
-    { key: 'fred',    path: '/api/fred/batch?series=WALCL&limit=1', validate: (j) => Array.isArray(j.series) && j.series.length > 0 },
-    { key: 'uw',      path: '/api/uw/api/stock/SPY/iv-rank?timespan=1m', validate: (j) => Array.isArray(j.data) },
-    { key: 'polygon', path: '/api/polygon/quote?ticker=SPY', validate: (j) => j.price != null },
-    { key: 'yahoo',   path: '/api/yahoo?symbol=%5EMOVE', validate: (j) => j.price != null || j.regularMarketPrice != null },
+    {
+      key: 'fred',
+      label: '/api/fred/batch?series=WALCL',
+      build: () => {
+        if (!env.FRED_API_KEY) return { error: 'FRED_API_KEY not set in worker secrets' };
+        return {
+          url: 'https://api.stlouisfed.org/fred/series/observations'
+            + '?series_id=WALCL&api_key=' + env.FRED_API_KEY
+            + '&file_type=json&sort_order=desc&limit=1',
+          init: { headers: { 'User-Agent': 'curl/8.0' } },
+          validate: (j) => Array.isArray(j.observations) && j.observations.length > 0,
+        };
+      },
+    },
+    {
+      key: 'uw',
+      label: '/api/uw/api/stock/SPY/iv-rank',
+      build: () => {
+        if (!env.UW_API_KEY) return { error: 'UW_API_KEY not set in worker secrets' };
+        return {
+          url: 'https://api.unusualwhales.com/api/stock/SPY/iv-rank?timespan=1m',
+          init: { headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + env.UW_API_KEY } },
+          validate: (j) => Array.isArray(j.data),
+        };
+      },
+    },
+    {
+      key: 'polygon',
+      label: '/api/polygon/quote?ticker=SPY',
+      build: () => {
+        if (!env.POLYGON_API_KEY) return { error: 'POLYGON_API_KEY not set in worker secrets' };
+        return {
+          url: 'https://api.polygon.io/v2/aggs/ticker/SPY/prev?adjusted=true&apiKey=' + env.POLYGON_API_KEY,
+          init: {},
+          validate: (j) => Array.isArray(j.results) && j.results.length > 0,
+        };
+      },
+    },
+    {
+      key: 'yahoo',
+      label: '/api/yahoo?symbol=%5EMOVE',
+      build: () => ({
+        url: 'https://query1.finance.yahoo.com/v8/finance/chart/%5EMOVE?interval=1d&range=1d',
+        init: { headers: { 'User-Agent': 'Mozilla/5.0' } },
+        validate: (j) => j && j.chart && Array.isArray(j.chart.result) && j.chart.result.length > 0,
+      }),
+    },
   ];
 
   const results = await Promise.all(probes.map(async (p) => {
     const t0 = Date.now();
+    const config = p.build();
+
+    if (config.error) {
+      return {
+        provider: p.key, path: p.label, status: 'error',
+        httpStatus: 0, reason: config.error, elapsedMs: 0, sample: '',
+      };
+    }
+
     try {
-      const r = await fetch(origin + p.path, { headers: { 'Accept': 'application/json' } });
+      const r = await fetch(config.url, config.init);
       const txt = await r.text();
       let json = null;
       let parseErr = null;
@@ -854,14 +903,14 @@ async function handleHealthIntegrations(request, env) {
       const elapsed = Date.now() - t0;
       let status = 'ok';
       let reason = 'OK';
-      if (!r.ok) { status = 'error'; reason = 'HTTP ' + r.status; }
+      if (!r.ok) { status = 'error'; reason = 'Upstream HTTP ' + r.status; }
       else if (parseErr) { status = 'error'; reason = 'JSON parse: ' + parseErr; }
       else if (!json) { status = 'error'; reason = 'Empty response'; }
-      else if (json.error) { status = 'error'; reason = 'API error: ' + json.error; }
-      else if (!p.validate(json)) { status = 'error'; reason = 'Validator failed (shape mismatch)'; }
+      else if (!config.validate(json)) { status = 'error'; reason = 'Validator failed (shape mismatch)'; }
+
       return {
         provider: p.key,
-        path: p.path,
+        path: p.label,
         status,
         httpStatus: r.status,
         reason,
@@ -871,7 +920,7 @@ async function handleHealthIntegrations(request, env) {
     } catch (e) {
       return {
         provider: p.key,
-        path: p.path,
+        path: p.label,
         status: 'error',
         httpStatus: 0,
         reason: 'NETWORK: ' + (e.message || 'fetch threw'),
