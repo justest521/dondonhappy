@@ -976,12 +976,17 @@ async function handleScannerBatch(request, env) {
   const headers = { 'Accept': 'application/json', 'Authorization': 'Bearer ' + env.UW_API_KEY };
 
   const results = await Promise.all(tickers.map(async (t) => {
-    const [ivrR, earnR] = await Promise.allSettled([
+    // Fetch IVR + earnings (UW) + prev-day quote (Polygon) in parallel
+    const [ivrR, earnR, quoteR] = await Promise.allSettled([
       fetch('https://api.unusualwhales.com/api/stock/' + encodeURIComponent(t) + '/iv-rank?timespan=1m', { headers }),
       fetch('https://api.unusualwhales.com/api/earnings/' + encodeURIComponent(t), { headers }),
+      env.POLYGON_API_KEY
+        ? fetch('https://api.polygon.io/v2/aggs/ticker/' + encodeURIComponent(t) + '/prev?adjusted=true&apiKey=' + env.POLYGON_API_KEY)
+        : Promise.resolve(null),
     ]);
 
     let ivr = null;
+    let close = null;  // last close from UW (free side product)
     if (ivrR.status === 'fulfilled' && ivrR.value.ok) {
       try {
         const j = await ivrR.value.json();
@@ -990,6 +995,8 @@ async function handleScannerBatch(request, env) {
           const latest = arr[arr.length - 1];
           const rank = parseFloat(latest.iv_rank_1y);
           const iv = parseFloat(latest.volatility);
+          const c = parseFloat(latest.close);
+          if (isFinite(c)) close = c;
           ivr = {
             ivr: isFinite(rank) ? parseFloat(rank.toFixed(1)) : null,
             iv: isFinite(iv) ? parseFloat((iv * 100).toFixed(1)) : null,
@@ -1023,7 +1030,20 @@ async function handleScannerBatch(request, env) {
       } catch (_) {}
     }
 
-    return { ticker: t, ivr, earnings };
+    // Polygon prev-day close — preferred over UW (more recent / current trading day)
+    let quote = close != null ? { price: close, source: 'uw-close' } : null;
+    if (quoteR && quoteR.status === 'fulfilled' && quoteR.value && quoteR.value.ok) {
+      try {
+        const j = await quoteR.value.json();
+        if (Array.isArray(j.results) && j.results.length > 0) {
+          const r = j.results[0];
+          const p = parseFloat(r.c);
+          if (isFinite(p)) quote = { price: p, source: 'polygon-prev', volume: r.v, asOf: r.t };
+        }
+      } catch (_) {}
+    }
+
+    return { ticker: t, ivr, earnings, quote };
   }));
 
   const response = jsonResponse({

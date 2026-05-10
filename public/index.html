@@ -3802,7 +3802,7 @@ async function fetchScannerBatchAndCache(tickers) {
     if (!d || !Array.isArray(d.tickers)) {
       return { ok: false, reason: 'invalid shape' };
     }
-    let ivrSeen = 0, earnSeen = 0;
+    let ivrSeen = 0, earnSeen = 0, spotSeen = 0;
     d.tickers.forEach(item => {
       const t = (item.ticker || '').toUpperCase();
       if (item.ivr) {
@@ -3815,10 +3815,16 @@ async function fetchScannerBatchAndCache(tickers) {
         window.__EARNINGS_CACHE[t] = item.earnings;
         earnSeen++;
       }
+      if (item.quote && item.quote.price != null) {
+        window.__SPOT_CACHE = window.__SPOT_CACHE || {};
+        window.__SPOT_CACHE[t] = item.quote.price;
+        spotSeen++;
+      }
     });
     if (ivrSeen > 0) recordSourceHealth('ivr', true);
     if (earnSeen > 0) recordSourceHealth('earnings', true);
-    return { ok: true, count: d.tickers.length, ivrSeen, earnSeen };
+    if (spotSeen > 0) recordSourceHealth('spot', true);
+    return { ok: true, count: d.tickers.length, ivrSeen, earnSeen, spotSeen };
   } catch (e) {
     recordSourceHealth('ivr', false, 'batch: ' + e.message);
     recordSourceHealth('earnings', false, 'batch: ' + e.message);
@@ -6341,16 +6347,18 @@ async function fetchSpotPrice(ticker) {
 function RiskDashboard({ positions, portfolioTotal }) {
   const [tick, setTick] = useState(0);
 
-  // Pre-fetch spot prices for all unique option underlyings
+  // Pre-fetch via worker server-side batch (1 fetch — bypasses N×3 fan-out
+  // that gets blocked by browser extensions / Service Worker)
   useEffect(() => {
     const uniqueTickers = [...new Set(positions
-      .filter(p => p._meta?.isOption || p.option_type)
       .map(p => (p.ticker || '').toUpperCase())
       .filter(Boolean))];
+    if (uniqueTickers.length === 0) return;
     const spotCache = window.__SPOT_CACHE || {};
-    const missing = uniqueTickers.filter(t => spotCache[t] == null);
+    const ivrCache = window.__IVR_CACHE || {};
+    const missing = uniqueTickers.filter(t => spotCache[t] == null || ivrCache[t] == null);
     if (missing.length === 0) return;
-    Promise.all(missing.map(fetchSpotPrice)).finally(() => setTick(x => x + 1));
+    fetchScannerBatchAndCache(uniqueTickers).finally(() => setTick(x => x + 1));
   }, [positions]);
 
   // Auto-refresh every 5 min
