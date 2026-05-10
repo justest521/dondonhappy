@@ -6171,6 +6171,342 @@ function computeScannerScores(ticker, opts) {
   };
 }
 
+// ============================================================
+// Pre-Trade Checklist — discipline gate for million-dollar trades
+// ============================================================
+// Forces a structured review before entering a position. Auto-pulls
+// IVR / earnings / sector exposure / size % from existing caches.
+// Manual: thesis (required, 50+ chars), bid-ask spread, OI.
+// "通過" only enabled when all 8 checks are green OR each non-green
+// has a written override reason.
+// ============================================================
+function PreTradeChecklist({ positions, portfolioTotal }) {
+  const [ticker, setTicker] = useState('');
+  const [side, setSide] = useState('long_call');
+  const [strike, setStrike] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [qty, setQty] = useState(1);
+  const [premium, setPremium] = useState('');
+  const [accountSize, setAccountSize] = useState(portfolioTotal && portfolioTotal > 1000 ? Math.round(portfolioTotal * 10) : 500000);
+  const [bidAskSpreadPct, setBidAskSpreadPct] = useState('');
+  const [oi, setOi] = useState('');
+  const [thesis, setThesis] = useState('');
+  const [overrides, setOverrides] = useState({});  // { checkId: 'reason' }
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [savedAt, setSavedAt] = useState(null);
+
+  const t = (ticker || '').toUpperCase().trim();
+  const isShort = side.startsWith('short_') || side === 'iron_condor' || side === 'put_credit_spread' || side === 'call_credit_spread';
+
+  // Cold-start fetch IVR/earnings if cache empty
+  useEffect(() => {
+    if (!t) return;
+    const ivrCache = (typeof window !== 'undefined' && window.__IVR_CACHE) || {};
+    const earnCache = (typeof window !== 'undefined' && window.__EARNINGS_CACHE) || {};
+    if (!ivrCache[t]) {
+      fetchIVR(t).then(d => { if (d) { window.__IVR_CACHE = window.__IVR_CACHE || {}; window.__IVR_CACHE[t] = d; setRefreshTick(x => x + 1); } });
+    }
+    if (!earnCache[t]) {
+      fetchEarnings(t).then(d => { if (d) { window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {}; window.__EARNINGS_CACHE[t] = d; setRefreshTick(x => x + 1); } });
+    }
+  }, [t]);
+
+  // Read auto-detection sources
+  const ivrData = (typeof window !== 'undefined' && window.__IVR_CACHE && window.__IVR_CACHE[t]) || null;
+  const earnData = (typeof window !== 'undefined' && window.__EARNINGS_CACHE && window.__EARNINGS_CACHE[t]) || null;
+  const tickerProfile = (typeof window !== 'undefined' && window.__TICKER_PROFILES && window.__TICKER_PROFILES[t]) || null;
+  const sector = tickerProfile && tickerProfile.sector ? tickerProfile.sector : null;
+
+  // Compute derived values
+  const ivr = ivrData ? ivrData.ivr : null;
+  const daysToEarnings = earnData && earnData.date
+    ? Math.round((new Date(earnData.date).getTime() - Date.now()) / 86400000)
+    : null;
+  const totalCost = (parseFloat(premium) || 0) * (parseFloat(qty) || 0) * 100;  // option contracts × 100
+  const sizePct = accountSize > 0 ? (totalCost / accountSize) * 100 : 0;
+  const sectorExposurePct = sector
+    ? (() => {
+        const sameSectorPositions = positions.filter(p => {
+          const pProfile = (typeof window !== 'undefined' && window.__TICKER_PROFILES && window.__TICKER_PROFILES[(p.ticker || '').toUpperCase()]) || null;
+          return pProfile && pProfile.sector === sector;
+        });
+        const sectorValue = sameSectorPositions.reduce((s, p) => s + (p.value || 0), 0);
+        const newExposure = sectorValue + totalCost;
+        return accountSize > 0 ? (newExposure / accountSize) * 100 : 0;
+      })()
+    : null;
+
+  // Compute checks
+  const checks = useMemo(() => {
+    const list = [];
+
+    // 1. IVR sweet spot — depends on side
+    {
+      let status = 'pending', detail = '尚未取得 IVR (輸入 ticker 後自動載入)';
+      if (ivr != null) {
+        if (!isShort) {
+          // Buyer wants 50-80
+          if (ivr >= 50 && ivr <= 80) { status = 'ok'; detail = `IVR ${ivr} (買方甜蜜點 50-80 ✓)`; }
+          else if (ivr < 50) { status = 'warn'; detail = `IVR ${ivr} 偏低 — 沒有催化劑時 vega 順風小`; }
+          else { status = 'red'; detail = `IVR ${ivr} 過高 — 買方面臨 IV crush 雙殺風險`; }
+        } else {
+          // Seller wants ≥85
+          if (ivr >= 85 && ivr <= 95) { status = 'ok'; detail = `IVR ${ivr} (賣方理想 85-95 ✓)`; }
+          else if (ivr >= 70) { status = 'warn'; detail = `IVR ${ivr} 不夠熱 — 賣方 edge 較小`; }
+          else { status = 'red'; detail = `IVR ${ivr} 過低 — 沒有 IV crush 空間`; }
+        }
+      }
+      list.push({ id: 'ivr', label: 'IVR sweet spot', status, detail });
+    }
+
+    // 2. Event proximity (earnings)
+    {
+      let status = 'pending', detail = '輸入 ticker 後自動載入';
+      if (daysToEarnings != null) {
+        if (daysToEarnings < 0) { status = 'ok'; detail = `已過 EPS (${earnData.date})`; }
+        else if (daysToEarnings <= 3) {
+          status = isShort ? 'ok' : 'warn';
+          detail = `T-${daysToEarnings} 財報前 — ${isShort ? '賣方理想時點' : '買方接近 IV 高點，crush 風險增'}`;
+        }
+        else if (daysToEarnings <= 14) { status = 'ok'; detail = `T-${daysToEarnings} 安全區`; }
+        else { status = 'warn'; detail = `T-${daysToEarnings} 太遠，事件 driver 較弱`; }
+      } else if (earnData === null && t) {
+        status = 'ok'; detail = '無近期財報事件';
+      }
+      list.push({ id: 'earnings', label: '事件接近度', status, detail });
+    }
+
+    // 3. Position size % of account (max loss for buyer = premium; for seller assume 3x)
+    {
+      const maxLoss = isShort ? totalCost * 3 : totalCost;
+      const maxLossPct = accountSize > 0 ? (maxLoss / accountSize) * 100 : 0;
+      let status, detail;
+      if (totalCost === 0) { status = 'pending'; detail = '輸入 premium + qty'; }
+      else if (maxLossPct <= 2) { status = 'ok'; detail = `最大虧損 $${Math.round(maxLoss).toLocaleString()} = ${maxLossPct.toFixed(2)}% 帳戶 (上限 2%)`; }
+      else if (maxLossPct <= 5) { status = 'warn'; detail = `最大虧損 ${maxLossPct.toFixed(1)}% — 教科書建議 ≤2%`; }
+      else { status = 'red'; detail = `最大虧損 ${maxLossPct.toFixed(1)}% — 超過 2× 教科書上限`; }
+      list.push({ id: 'size', label: '單筆最大損失', status, detail });
+    }
+
+    // 4. Sector exposure
+    {
+      let status, detail;
+      if (!sector) { status = 'pending'; detail = '尚未取得產業資料 (Polygon ticker-details)'; }
+      else if (sectorExposurePct <= 8) { status = 'ok'; detail = `${sector} ${sectorExposurePct.toFixed(1)}% (上限 8%)`; }
+      else if (sectorExposurePct <= 15) { status = 'warn'; detail = `${sector} ${sectorExposurePct.toFixed(1)}% — 接近警戒`; }
+      else { status = 'red'; detail = `${sector} ${sectorExposurePct.toFixed(1)}% — 產業共振風險高`; }
+      list.push({ id: 'sector', label: '同產業曝險', status, detail });
+    }
+
+    // 5. Liquidity — bid-ask spread
+    {
+      const sp = parseFloat(bidAskSpreadPct);
+      let status, detail;
+      if (!isFinite(sp)) { status = 'pending'; detail = '請手動輸入 (見 broker option chain)'; }
+      else if (sp <= 5) { status = 'ok'; detail = `Spread ${sp}% (上限 5%)`; }
+      else if (sp <= 10) { status = 'warn'; detail = `Spread ${sp}% — 進出磨損明顯`; }
+      else { status = 'red'; detail = `Spread ${sp}% — 流動性陷阱，百萬級單會被吃幾趴`; }
+      list.push({ id: 'spread', label: 'Bid-Ask Spread', status, detail });
+    }
+
+    // 6. Open Interest
+    {
+      const o = parseFloat(oi);
+      let status, detail;
+      if (!isFinite(o)) { status = 'pending'; detail = '請手動輸入 (見 broker option chain)'; }
+      else if (o >= 5000) { status = 'ok'; detail = `OI ${o.toLocaleString()} (>5,000 ✓)`; }
+      else if (o >= 1000) { status = 'warn'; detail = `OI ${o.toLocaleString()} — 偏低，急退場可能找不到對手盤`; }
+      else { status = 'red'; detail = `OI ${o.toLocaleString()} — 流動性極差`; }
+      list.push({ id: 'oi', label: 'Open Interest', status, detail });
+    }
+
+    // 7. Strategy match
+    {
+      const isDefined = side === 'long_call' || side === 'long_put' ||
+                        side === 'put_credit_spread' || side === 'call_credit_spread' ||
+                        side === 'iron_condor' || side === 'long_call_spread' || side === 'long_put_spread';
+      let status, detail;
+      if (isShort && !isDefined) { status = 'red'; detail = '裸賣風險無上限 — 教科書要求 50+ 次經驗才開放'; }
+      else if (isDefined) { status = 'ok'; detail = '已定義最大風險 ✓'; }
+      else { status = 'ok'; detail = '純買方風險 = 權利金'; }
+      list.push({ id: 'structure', label: '策略風險結構', status, detail });
+    }
+
+    // 8. Thesis (manual)
+    {
+      const len = (thesis || '').trim().length;
+      let status, detail;
+      if (len === 0) { status = 'pending'; detail = '請寫下你的進場 thesis (≥50 字)'; }
+      else if (len < 50) { status = 'red'; detail = `只有 ${len} 字 — 寫不出 thesis 的單通常虧得快`; }
+      else if (len > 800) { status = 'warn'; detail = `${len} 字 — 太長代表你還沒抓到核心`; }
+      else { status = 'ok'; detail = `${len} 字 thesis ✓`; }
+      list.push({ id: 'thesis', label: 'Thesis 紀錄', status, detail });
+    }
+
+    return list;
+  }, [t, ivr, daysToEarnings, sector, sectorExposurePct, totalCost, accountSize, bidAskSpreadPct, oi, thesis, side, isShort, refreshTick, earnData]);
+
+  // Status counts
+  const okCount = checks.filter(c => c.status === 'ok').length;
+  const redCount = checks.filter(c => c.status === 'red').length;
+  const warnCount = checks.filter(c => c.status === 'warn').length;
+  const pendingCount = checks.filter(c => c.status === 'pending').length;
+
+  // Items needing override (red or warn) — must have a written reason
+  const needOverride = checks.filter(c => c.status === 'red' || c.status === 'warn');
+  const allCovered = needOverride.every(c => (overrides[c.id] || '').trim().length >= 10);
+  const canPass = pendingCount === 0 && (needOverride.length === 0 || allCovered);
+
+  const handlePass = () => {
+    const record = {
+      timestamp: new Date().toISOString(),
+      ticker: t, side, strike, expiry, qty, premium, accountSize,
+      checks: checks.map(c => ({ id: c.id, status: c.status, detail: c.detail, override: overrides[c.id] || null })),
+      thesis,
+      summary: `${okCount}/8 ok · ${warnCount} warn · ${redCount} red · all overridden=${allCovered}`,
+    };
+    try {
+      const log = JSON.parse(localStorage.getItem('ddh_pretrade_log') || '[]');
+      log.push(record);
+      localStorage.setItem('ddh_pretrade_log', JSON.stringify(log.slice(-100)));  // keep last 100
+      setSavedAt(new Date());
+      try { console.log('[pretrade] passed', record); } catch(_) {}
+    } catch(e) { alert('儲存失敗: ' + e.message); }
+  };
+
+  const inputStyle = {
+    background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#f4f4f4',
+    padding: '6px 10px', fontFamily: 'DM Mono', fontSize: '13px',
+    borderRadius: '4px', width: '100%',
+  };
+  const labelStyle = { fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', display: 'block', marginBottom: '4px' };
+
+  const colorOf = (s) => s === 'ok' ? '#10b981' : s === 'warn' ? '#EAB308' : s === 'red' ? '#ef4444' : '#7a7a7a';
+  const iconOf = (s) => s === 'ok' ? '✅' : s === 'warn' ? '⚠️' : s === 'red' ? '❌' : '⋯';
+
+  return (
+    <div style={{ padding: '16px 24px', background: '#0a0a0a' }}>
+      {/* Inputs grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '14px' }}>
+        <div>
+          <label style={labelStyle}>Ticker</label>
+          <input style={inputStyle} value={ticker} onChange={e => setTicker(e.target.value.toUpperCase())} placeholder="NVDA" />
+        </div>
+        <div>
+          <label style={labelStyle}>策略</label>
+          <select style={inputStyle} value={side} onChange={e => setSide(e.target.value)}>
+            <option value="long_call">Long Call (買看多)</option>
+            <option value="long_put">Long Put (買看空)</option>
+            <option value="long_call_spread">Long Call Spread</option>
+            <option value="long_put_spread">Long Put Spread</option>
+            <option value="put_credit_spread">Put Credit Spread (賣方)</option>
+            <option value="call_credit_spread">Call Credit Spread (賣方)</option>
+            <option value="iron_condor">Iron Condor (賣方)</option>
+            <option value="short_strangle">Short Strangle (裸賣)</option>
+            <option value="short_call">Short Call (裸賣 — 高風險)</option>
+            <option value="short_put">Short Put (裸賣)</option>
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>Strike</label>
+          <input style={inputStyle} value={strike} onChange={e => setStrike(e.target.value)} placeholder="220" />
+        </div>
+        <div>
+          <label style={labelStyle}>Expiry</label>
+          <input type="date" style={inputStyle} value={expiry} onChange={e => setExpiry(e.target.value)} />
+        </div>
+        <div>
+          <label style={labelStyle}>Qty (口)</label>
+          <input type="number" style={inputStyle} value={qty} onChange={e => setQty(e.target.value)} />
+        </div>
+        <div>
+          <label style={labelStyle}>Premium ($)</label>
+          <input type="number" step="0.01" style={inputStyle} value={premium} onChange={e => setPremium(e.target.value)} placeholder="6.85" />
+        </div>
+        <div>
+          <label style={labelStyle}>Account Size ($)</label>
+          <input type="number" style={inputStyle} value={accountSize} onChange={e => setAccountSize(parseFloat(e.target.value) || 0)} />
+        </div>
+        <div>
+          <label style={labelStyle}>Bid-Ask Spread (%)</label>
+          <input type="number" step="0.1" style={inputStyle} value={bidAskSpreadPct} onChange={e => setBidAskSpreadPct(e.target.value)} placeholder="3.5" />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '14px' }}>
+        <div>
+          <label style={labelStyle}>Open Interest (人工填，看 broker chain)</label>
+          <input type="number" style={inputStyle} value={oi} onChange={e => setOi(e.target.value)} placeholder="12450" />
+        </div>
+        <div style={{ alignSelf: 'end', fontFamily: 'DM Mono', fontSize: '12px', color: '#9a9a9a' }}>
+          總成本: <b style={{ color: '#f4f4f4' }}>${totalCost.toLocaleString()}</b> ({sizePct.toFixed(2)}% 帳戶)
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '14px' }}>
+        <label style={labelStyle}>Thesis (≥50 字 / 三句話寫得出來再進場)</label>
+        <textarea
+          style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
+          value={thesis} onChange={e => setThesis(e.target.value)}
+          placeholder="例：NVDA 5/20 EPS 預期 +14.98 ($1.77 Street est)，T-10 IVR 61.5 屬於買方甜蜜點。AI 資本支出週期未到頂，期權流近 7 天 call/put = 2.3 看多，目標 +8% 即出場。"
+        />
+      </div>
+
+      {/* Checks list */}
+      <div style={{ background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '12px', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#f4f4f4', fontWeight: 700 }}>
+            自動檢查 · {okCount}/8 ✅ · {warnCount} ⚠️ · {redCount} ❌ · {pendingCount} ⋯
+          </div>
+        </div>
+        {checks.map(c => (
+          <div key={c.id} style={{ padding: '8px 0', borderTop: '1px solid #2a2a2a', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+            <span style={{ fontSize: '15px' }}>{iconOf(c.status)}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: colorOf(c.status), fontWeight: 700 }}>{c.label}</div>
+              <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#b8b8b8', marginTop: '2px' }}>{c.detail}</div>
+              {(c.status === 'red' || c.status === 'warn') && (
+                <input
+                  style={{ ...inputStyle, marginTop: '6px', borderColor: (overrides[c.id] || '').trim().length >= 10 ? '#10b981' : '#ef4444' }}
+                  value={overrides[c.id] || ''}
+                  onChange={e => setOverrides({ ...overrides, [c.id]: e.target.value })}
+                  placeholder="Override 理由 (≥10 字) — 為什麼明知不理想還要做？"
+                />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Pass button */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          onClick={handlePass}
+          disabled={!canPass}
+          style={{
+            background: canPass ? '#10b98122' : '#2a2a2a',
+            border: '1px solid ' + (canPass ? '#10b981' : '#3a3a3a'),
+            color: canPass ? '#10b981' : '#7a7a7a',
+            padding: '10px 24px',
+            fontFamily: 'DM Mono', fontSize: '13px', fontWeight: 700,
+            borderRadius: '4px',
+            cursor: canPass ? 'pointer' : 'not-allowed',
+          }}
+        >{canPass ? '✅ 通過 → 記錄到 localStorage' : (pendingCount > 0 ? `${pendingCount} 項未填` : `${needOverride.length - needOverride.filter(c => (overrides[c.id]||'').trim().length >= 10).length} 項需 override 理由`)}</button>
+        {savedAt && (
+          <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#10b981' }}>
+            ✓ 已記錄 {Math.round((Date.now() - savedAt.getTime()) / 1000)}s 前 — 開單去吧
+          </span>
+        )}
+      </div>
+
+      <div style={{ marginTop: '12px', fontFamily: 'DM Mono', fontSize: '11px', color: '#7a7a7a', lineHeight: 1.6 }}>
+        💡 通過後存於 localStorage `ddh_pretrade_log` (近 100 筆)。下個 PR 會接 Supabase 做歷史回顧。
+      </div>
+    </div>
+  );
+}
+
 function OptionsScanner({ positions }) {
   const [mode, setMode] = useState('both');  // 'buyer' | 'seller' | 'both'
   const [watchlist, setWatchlist] = useState(() => {
@@ -7627,6 +7963,7 @@ function App() {
   const [collapseScanner, setCollapseScanner] = useState(true);
   const [collapseTextbook, setCollapseTextbook] = useState(true);
   const [collapseBacktest, setCollapseBacktest] = useState(true);
+  const [collapsePretrade, setCollapsePretrade] = useState(true);
 
   // Tab navigation — UI organization (home / portfolio / options / textbook / hedge)
   const [activeTab, setActiveTab] = useState('home');
@@ -8043,6 +8380,17 @@ function App() {
         {/* ──────────────────────────────────────────────────── */}
         {activeTab === 'options' && (
           <>
+            {/* Pre-trade checklist — discipline before clicking buy */}
+            <CollapsibleSection
+              title="🛡️ 開倉前檢核 (Pre-Trade Checklist)"
+              subtitle="百萬級紀律：8 個檢查全綠 / 紅項寫 override 理由才進場"
+              collapsed={collapsePretrade}
+              setCollapsed={setCollapsePretrade}
+              icon={Shield}
+            >
+              <PreTradeChecklist positions={positions} portfolioTotal={portfolioTotal} />
+            </CollapsibleSection>
+
             <CollapsibleSection
               title="選擇權機會掃描器"
               subtitle="爆噴買方 ⊕ IV Crush 賣方 · 7-signal 雙邊評分"
