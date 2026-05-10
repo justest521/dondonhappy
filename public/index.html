@@ -6506,9 +6506,26 @@ async function fetchSpotPrice(ticker) {
 //   4. Dealer GEX (real: UW aggregate; per-strike heatmap pending Polygon tier)
 // Palette: SIG Violet (matches user's lavender theme).
 // ============================================================
+// V6 palette presets — port from L2_Templates v6-top-tier.jsx + custom 'wg' (user pref)
+const V6_PALETTES = [
+  { id: "wg",     label: "White Green ✓", bg: "#ffffff", panel: "#ffffff", panel2: "#f5f5f5", line: "#e5e7eb", fg: "#1a1a1a", mute: "#525252", dim: "#a3a3a3", accent: "#10b981", bull: "#10b981", bear: "#ef4444", warn: "#f59e0b", info: "#3b82f6", vio: "#a78bfa" },
+  { id: "paper",  label: "Paper Light",   bg: "#f5f3ee", panel: "#ffffff", panel2: "#ebe7df", line: "#d9d4c9", fg: "#1a1814", mute: "#5e564a", dim: "#94897a", accent: "#2d4a8a", bull: "#15803d", bear: "#b91c1c", warn: "#b45309", info: "#0369a1", vio: "#7c3aed" },
+  { id: "matrix", label: "Matrix Green",  bg: "#050a07", panel: "#0a130d", panel2: "#0e1a13", line: "#16261c", fg: "#d1f5dc", mute: "#7ba88a", dim: "#4a6b56", accent: "#22c55e", bull: "#4ade80", bear: "#ef4444", warn: "#fbbf24", info: "#60a5fa", vio: "#a78bfa" },
+  { id: "cyan",   label: "Vol Desk Cyan", bg: "#07090d", panel: "#0f1319", panel2: "#161c25", line: "#1e2733", fg: "#e8eef5", mute: "#8a99ab", dim: "#5a6776", accent: "#22d3ee", bull: "#22c55e", bear: "#ef4444", warn: "#f59e0b", info: "#60a5fa", vio: "#a78bfa" },
+  { id: "ice",    label: "Citadel Ice",   bg: "#0a0f1a", panel: "#10172a", panel2: "#161f38", line: "#1f2a44", fg: "#e6edff", mute: "#8a9ab8", dim: "#566480", accent: "#60a5fa", bull: "#4ade80", bear: "#f87171", warn: "#fbbf24", info: "#a78bfa", vio: "#c084fc" },
+  { id: "violet", label: "SIG Violet",    bg: "#0d0a14", panel: "#16111f", panel2: "#1d1729", line: "#2a2238", fg: "#ede8f7", mute: "#9b8fb5", dim: "#665a80", accent: "#a78bfa", bull: "#34d399", bear: "#fb7185", warn: "#fbbf24", info: "#60a5fa", vio: "#c084fc" },
+  { id: "amber",  label: "Bloomberg",     bg: "#0a0807", panel: "#13100d", panel2: "#1a1612", line: "#2a221c", fg: "#f5e8d0", mute: "#a89880", dim: "#6e6050", accent: "#f5a524", bull: "#86efac", bear: "#fca5a5", warn: "#fde047", info: "#fbbf24", vio: "#f97316" },
+  { id: "ink",    label: "Pure Ink",      bg: "#0a0a0a", panel: "#141414", panel2: "#1c1c1c", line: "#262626", fg: "#fafafa", mute: "#a3a3a3", dim: "#6b6b6b", accent: "#ffffff", bull: "#22c55e", bear: "#ef4444", warn: "#eab308", info: "#3b82f6", vio: "#a78bfa" },
+];
+
 function VolDeskV6({ positions, portfolioTotal, macroState }) {
   const [refreshTick, setRefreshTick] = useState(0);
   const [topData, setTopData] = useState({});
+  const [paletteId, setPaletteId] = useState(() => {
+    try { return localStorage.getItem('v6_palette') || 'wg'; } catch (_) { return 'wg'; }
+  });
+  const setPalette = (id) => { setPaletteId(id); try { localStorage.setItem('v6_palette', id); } catch (_) {} };
+  const userPalette = V6_PALETTES.find(p => p.id === paletteId) || V6_PALETTES[0];
 
   // Fetch top status bar real-time data
   useEffect(() => {
@@ -6706,12 +6723,7 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
     return sign + prefix + abs.toFixed(0);
   };
 
-  const palette = {
-    bg: '#ffffff', panel: '#ffffff', panel2: '#f5f5f5', line: '#e5e7eb',
-    fg: '#1a1a1a', mute: '#525252', dim: '#a3a3a3',
-    accent: '#10b981', bull: '#34d399', bear: '#fb7185',
-    warn: '#fbbf24', info: '#60a5fa', vio: '#c084fc',
-  };
+  const palette = userPalette;
 
   // Payoff chart geometry
   const chartW = 540, chartH = 200, pad = { l: 50, r: 16, t: 14, b: 26 };
@@ -6763,6 +6775,47 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
           {macroState && <span style={{ color: palette.mute }}>Macro <b style={{ color: palette.accent }}>{macroState.score?.toFixed(0) || '—'}</b> · {macroState.band || '—'}</span>}
           <span style={{ color: palette.dim, fontSize: '11px' }}>{topData.t ? topData.t.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '⋯'}</span>
         </div>
+      </div>
+
+      {/* ── Palette switcher ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '6px',
+        padding: '8px 24px', borderBottom: '1px solid ' + palette.line,
+        background: palette.panel2, flexWrap: 'wrap',
+      }}>
+        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '9px', letterSpacing: '0.18em', color: palette.dim, marginRight: '4px' }}>
+          PALETTE
+        </span>
+        {V6_PALETTES.map(pp => {
+          const active = pp.id === paletteId;
+          return (
+            <button
+              key={pp.id}
+              onClick={() => setPalette(pp.id)}
+              title={pp.label}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                padding: '4px 9px', borderRadius: '999px',
+                border: '1.5px solid ' + (active ? pp.accent : palette.line),
+                background: active ? pp.bg : 'transparent',
+                color: active ? pp.fg : palette.mute,
+                fontFamily: 'JetBrains Mono', fontSize: '10px',
+                cursor: 'pointer', transition: 'all 0.15s',
+                fontWeight: active ? 600 : 400,
+              }}
+            >
+              <span style={{
+                width: '10px', height: '10px', borderRadius: '50%',
+                background: pp.accent, display: 'inline-block',
+                border: '1px solid ' + pp.line,
+              }} />
+              {pp.label}
+            </button>
+          );
+        })}
+        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: palette.dim, marginLeft: 'auto' }}>
+          選好按一下，自動存到 localStorage
+        </span>
       </div>
 
       <div style={{ padding: '14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
