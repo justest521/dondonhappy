@@ -6171,6 +6171,626 @@ function computeScannerScores(ticker, opts) {
   };
 }
 
+// ============================================================
+// Black-Scholes Greeks (approximation — for portfolio risk dashboard)
+// ============================================================
+// Standard Hull formulas. r = 5% risk-free (US Treasury 1y),
+// q = 0 dividend yield (close enough for options held weeks-months).
+// Returns per-contract Greeks; multiply by qty × 100 for position dollar impact.
+// ============================================================
+function bsNormCDF(x) {
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x) / Math.SQRT2;
+  const t = 1 / (1 + p * x);
+  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+  return 0.5 * (1 + sign * y);
+}
+function bsNormPDF(x) { return Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI); }
+
+function bsGreeks(opts) {
+  const { spot, strike, dte, iv, type } = opts;
+  const r = 0.05;
+  if (!isFinite(spot) || !isFinite(strike) || !isFinite(dte) || !isFinite(iv) ||
+      spot <= 0 || strike <= 0 || iv <= 0 || dte <= 0) {
+    return { delta: null, gamma: null, vega: null, theta: null, price: null };
+  }
+  const T = dte / 365;
+  const sqrtT = Math.sqrt(T);
+  const d1 = (Math.log(spot / strike) + (r + iv * iv / 2) * T) / (iv * sqrtT);
+  const d2 = d1 - iv * sqrtT;
+  const Nd1 = bsNormCDF(d1), Nd2 = bsNormCDF(d2);
+  const nd1 = bsNormPDF(d1);
+  const isCall = (type || '').toUpperCase().startsWith('C');
+
+  const delta = isCall ? Nd1 : Nd1 - 1;
+  const gamma = nd1 / (spot * iv * sqrtT);
+  const vega = spot * nd1 * sqrtT * 0.01;  // per 1% IV (vol point)
+  const thetaAnnual = isCall
+    ? -(spot * nd1 * iv) / (2 * sqrtT) - r * strike * Math.exp(-r * T) * Nd2
+    : -(spot * nd1 * iv) / (2 * sqrtT) + r * strike * Math.exp(-r * T) * (1 - Nd2);
+  const theta = thetaAnnual / 365;
+
+  // Theoretical option price (Black-Scholes)
+  const price = isCall
+    ? spot * Nd1 - strike * Math.exp(-r * T) * Nd2
+    : strike * Math.exp(-r * T) * (1 - Nd2) - spot * (1 - Nd1);
+
+  return { delta, gamma, vega, theta, price };
+}
+
+// Spot price cache — populated by RiskDashboard (one Polygon quote per ticker)
+if (typeof window !== 'undefined' && !window.__SPOT_CACHE) window.__SPOT_CACHE = {};
+async function fetchSpotPrice(ticker) {
+  const t = (ticker || '').toUpperCase().trim();
+  if (!t) return null;
+  try {
+    const r = await fetch(WORKER_URL + '/api/polygon/quote?ticker=' + encodeURIComponent(t));
+    if (!r.ok) { recordSourceHealth('spot', false, 'HTTP ' + r.status); return null; }
+    const d = await r.json();
+    if (d && d.price != null) {
+      window.__SPOT_CACHE = window.__SPOT_CACHE || {};
+      window.__SPOT_CACHE[t] = d.price;
+      recordSourceHealth('spot', true);
+      return d.price;
+    }
+    recordSourceHealth('spot', false, 'no price field');
+    return null;
+  } catch (e) { recordSourceHealth('spot', false, e.message); return null; }
+}
+
+// ============================================================
+// Risk Dashboard — net Greeks + sector concentration + stress test
+// ============================================================
+function RiskDashboard({ positions, portfolioTotal }) {
+  const [tick, setTick] = useState(0);
+
+  // Pre-fetch spot prices for all unique option underlyings
+  useEffect(() => {
+    const uniqueTickers = [...new Set(positions
+      .filter(p => p._meta?.isOption || p.option_type)
+      .map(p => (p.ticker || '').toUpperCase())
+      .filter(Boolean))];
+    const spotCache = window.__SPOT_CACHE || {};
+    const missing = uniqueTickers.filter(t => spotCache[t] == null);
+    if (missing.length === 0) return;
+    Promise.all(missing.map(fetchSpotPrice)).finally(() => setTick(x => x + 1));
+  }, [positions]);
+
+  // Auto-refresh every 5 min
+  useEffect(() => {
+    const id = setInterval(() => setTick(x => x + 1), 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Compute per-position Greeks
+  const enriched = useMemo(() => {
+    const ivrCache = window.__IVR_CACHE || {};
+    const spotCache = window.__SPOT_CACHE || {};
+
+    return positions.map(p => {
+      const t = (p.ticker || '').toUpperCase();
+      const isOpt = p._meta?.isOption || (p.option_type && p.strike);
+
+      if (!isOpt) {
+        // Stock position — delta = qty, no gamma/vega/theta
+        const qty = p.qty || 0;
+        const spot = spotCache[t] || p.current_price || 0;
+        return {
+          ...p, t, isOpt: false,
+          deltaShares: qty, deltaDollars: qty * spot,
+          gammaShares: 0, vega: 0, theta: 0,
+          marketValue: qty * spot,
+        };
+      }
+
+      // Option position
+      const strike = parseFloat(p.strike) || 0;
+      const expiryDate = p.expiry ? new Date(typeof p.expiry === 'string' && p.expiry.includes('/') ? p.expiry.split('/').reverse().join('-') : p.expiry) : null;
+      const dte = expiryDate ? Math.max(1, Math.round((expiryDate.getTime() - Date.now()) / 86400000)) : 30;
+      const spot = spotCache[t] || 0;
+      const ivData = ivrCache[t];
+      const iv = ivData && ivData.iv ? ivData.iv / 100 : 0.30;  // fallback 30%
+      const optType = (p.option_type || 'CALL').toUpperCase();
+      const qty = p.qty || 0;
+      const sideMul = qty >= 0 ? 1 : -1;  // long vs short
+      const absQty = Math.abs(qty);
+
+      const greeks = bsGreeks({ spot, strike, dte, iv, type: optType });
+
+      // Position-level (per contract = ×100 shares)
+      const deltaShares = (greeks.delta || 0) * absQty * 100 * sideMul;
+      const deltaDollars = deltaShares * spot;
+      const gammaShares = (greeks.gamma || 0) * absQty * 100 * sideMul * spot * 0.01;  // gamma × 1% spot move
+      const vegaPos = (greeks.vega || 0) * absQty * 100 * sideMul;
+      const thetaPos = (greeks.theta || 0) * absQty * 100 * sideMul;
+      const marketValue = (p.current_price || 0) * absQty * 100 * (sideMul > 0 ? 1 : -1);
+
+      return {
+        ...p, t, isOpt: true,
+        spot, dte, iv, strike, optType, qty, sideMul,
+        delta: greeks.delta, gamma: greeks.gamma, vega: greeks.vega, theta: greeks.theta,
+        deltaShares, deltaDollars, gammaShares, vega: vegaPos, theta: thetaPos,
+        marketValue,
+      };
+    });
+  }, [positions, tick]);
+
+  // Aggregate
+  const agg = useMemo(() => {
+    let netDelta = 0, netDeltaShares = 0, netGammaPer1Pct = 0, netVega = 0, netTheta = 0;
+    enriched.forEach(p => {
+      if (p.deltaDollars != null) netDelta += p.deltaDollars;
+      if (p.deltaShares != null) netDeltaShares += p.deltaShares;
+      if (p.gammaShares != null) netGammaPer1Pct += p.gammaShares;
+      if (p.vega != null) netVega += p.vega;
+      if (p.theta != null) netTheta += p.theta;
+    });
+    return { netDelta, netDeltaShares, netGammaPer1Pct, netVega, netTheta };
+  }, [enriched]);
+
+  // Sector concentration (uses __TICKER_PROFILES if seeded)
+  const sectorBreakdown = useMemo(() => {
+    const profiles = window.__TICKER_PROFILES || {};
+    const bucket = {};
+    enriched.forEach(p => {
+      const profile = profiles[p.t];
+      const sec = (profile && profile.sector) ? profile.sector : '未分類';
+      if (!bucket[sec]) bucket[sec] = { delta: 0, mv: 0, tickers: new Set() };
+      bucket[sec].delta += p.deltaDollars || 0;
+      bucket[sec].mv += p.marketValue || 0;
+      bucket[sec].tickers.add(p.t);
+    });
+    return Object.entries(bucket)
+      .map(([sec, v]) => ({ sector: sec, delta: v.delta, mv: v.mv, tickers: [...v.tickers] }))
+      .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  }, [enriched]);
+
+  // Stress test scenarios
+  const scenarios = useMemo(() => {
+    const scenarios = [
+      { name: 'SPY −3% / VIX +30%', spotMult: -0.03, ivAdd: 0.30, label: '溫和回檔', color: '#EAB308' },
+      { name: 'SPY −5% / VIX +50%', spotMult: -0.05, ivAdd: 0.50, label: '中度修正', color: '#f59e0b' },
+      { name: 'SPY −10% / VIX +100%', spotMult: -0.10, ivAdd: 1.00, label: '崩盤', color: '#ef4444' },
+      { name: 'SPY +3% (rally)', spotMult: 0.03, ivAdd: -0.10, label: '反彈', color: '#10b981' },
+    ];
+    return scenarios.map(s => {
+      // Simplified: P&L ≈ delta × spot move + gamma × spot²/2 + vega × IV move
+      const spotMoveDollar = agg.netDelta * s.spotMult;
+      const gammaPnL = agg.netGammaPer1Pct * (s.spotMult * 100) * (s.spotMult * 100) / 2;  // gamma is per 1% move; scenario in %
+      const vegaPnL = agg.netVega * s.ivAdd * 100;  // vega is per 1pt; ivAdd in decimal converted to %
+      const total = spotMoveDollar + gammaPnL + vegaPnL;
+      return { ...s, pnl: total };
+    });
+  }, [agg]);
+
+  const fmt = (v, prefix = '$') => {
+    if (v == null || !isFinite(v)) return '—';
+    const sign = v < 0 ? '−' : (v > 0 ? '+' : '');
+    const abs = Math.abs(v);
+    if (abs >= 1e6) return sign + prefix + (abs / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return sign + prefix + (abs / 1e3).toFixed(1) + 'K';
+    return sign + prefix + abs.toFixed(0);
+  };
+
+  const concentrationWarning = sectorBreakdown.length > 0 && sectorBreakdown[0].mv / Math.max(portfolioTotal, 1) > 0.4;
+
+  return (
+    <div style={{ padding: '16px 24px', background: '#0a0a0a' }}>
+      {/* Greeks summary grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
+        {[
+          { label: 'Net Δ (delta-equiv stock)', value: fmt(agg.netDelta), sub: `${agg.netDeltaShares >= 0 ? '+' : ''}${agg.netDeltaShares.toFixed(0)} shares 等同`, color: agg.netDelta >= 0 ? '#10b981' : '#ef4444' },
+          { label: 'Net Γ (per 1% spot)', value: fmt(agg.netGammaPer1Pct), sub: '組合 P&L per 1% 大盤動', color: '#a78bfa' },
+          { label: 'Net V (per 1pt IV)', value: fmt(agg.netVega), sub: agg.netVega >= 0 ? 'long vega — IV ↑ 賺' : 'short vega — IV ↑ 虧', color: '#14b8a6' },
+          { label: 'Net Θ (per day)', value: fmt(agg.netTheta), sub: agg.netTheta >= 0 ? 'theta 順風（收 premium）' : 'theta 逆風（時間虧）', color: agg.netTheta >= 0 ? '#10b981' : '#EAB308' },
+        ].map((m, i) => (
+          <div key={i} style={{
+            padding: '14px', background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: '6px',
+          }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', letterSpacing: '0.05em', marginBottom: '4px' }}>{m.label}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '22px', color: m.color, fontWeight: 700, marginBottom: '2px' }}>{m.value}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '11px', color: '#7a7a7a' }}>{m.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Sector concentration */}
+      <div style={{ background: '#0f0f0f', border: '1px solid ' + (concentrationWarning ? '#ef4444' : '#2a2a2a'), borderRadius: '6px', padding: '14px', marginBottom: '16px' }}>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#f4f4f4', fontWeight: 700, marginBottom: '10px' }}>
+          {concentrationWarning ? '⚠️ ' : ''}產業集中度（按 delta 曝險排序）
+        </div>
+        {sectorBreakdown.length === 0 ? (
+          <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#7a7a7a' }}>
+            (尚未取得 ticker profiles — 進選擇權掃描器後 30s 內會載入)
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {sectorBreakdown.slice(0, 6).map(s => {
+              const pct = portfolioTotal > 0 ? (s.mv / portfolioTotal) * 100 : 0;
+              const tooHigh = pct > 40;
+              return (
+                <div key={s.sector} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 100px 100px', gap: '10px', alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#f4f4f4' }}>{s.sector}</span>
+                  <div style={{ background: '#1a1a1a', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: Math.min(100, pct) + '%', height: '100%', background: tooHigh ? '#ef4444' : '#a78bfa' }} />
+                  </div>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: tooHigh ? '#ef4444' : '#b8b8b8' }}>{pct.toFixed(1)}% 帳戶</span>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#7a7a7a' }}>{s.tickers.slice(0, 3).join(', ')}{s.tickers.length > 3 ? '...' : ''}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Stress test */}
+      <div style={{ background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '14px' }}>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#f4f4f4', fontWeight: 700, marginBottom: '10px' }}>
+          壓力測試 · 情境 P&L (delta + gamma + vega 一階近似)
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+          {scenarios.map(s => {
+            const pctOfAccount = portfolioTotal > 0 ? (s.pnl / portfolioTotal) * 100 : 0;
+            const sevColor = s.pnl >= 0 ? '#10b981' : (Math.abs(pctOfAccount) > 5 ? '#ef4444' : '#EAB308');
+            return (
+              <div key={s.name} style={{ padding: '12px', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '4px', borderLeft: '3px solid ' + s.color }}>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', marginBottom: '4px' }}>{s.label}</div>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#7a7a7a', marginBottom: '6px' }}>{s.name}</div>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '18px', color: sevColor, fontWeight: 700 }}>{fmt(s.pnl)}</div>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '11px', color: sevColor }}>
+                  {pctOfAccount >= 0 ? '+' : ''}{pctOfAccount.toFixed(2)}% 帳戶
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: '10px', fontFamily: 'DM Mono', fontSize: '10px', color: '#7a7a7a', lineHeight: 1.6 }}>
+          ⚠️ 一階近似 — 用 BS Greeks。實際非線性 (gamma scalping、IV smile、early exercise) 會偏差 10-20%。
+          IV 用 UW IVR 30 天年化值；缺資料 fallback 30%。
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Pre-Trade Checklist — discipline gate for million-dollar trades
+// ============================================================
+// Forces a structured review before entering a position. Auto-pulls
+// IVR / earnings / sector exposure / size % from existing caches.
+// Manual: thesis (required, 50+ chars), bid-ask spread, OI.
+// "通過" only enabled when all 8 checks are green OR each non-green
+// has a written override reason.
+// ============================================================
+function PreTradeChecklist({ positions, portfolioTotal }) {
+  const [ticker, setTicker] = useState('');
+  const [side, setSide] = useState('long_call');
+  const [strike, setStrike] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [qty, setQty] = useState(1);
+  const [premium, setPremium] = useState('');
+  const [accountSize, setAccountSize] = useState(portfolioTotal && portfolioTotal > 1000 ? Math.round(portfolioTotal * 10) : 500000);
+  const [bidAskSpreadPct, setBidAskSpreadPct] = useState('');
+  const [oi, setOi] = useState('');
+  const [thesis, setThesis] = useState('');
+  const [overrides, setOverrides] = useState({});  // { checkId: 'reason' }
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [savedAt, setSavedAt] = useState(null);
+
+  const t = (ticker || '').toUpperCase().trim();
+  const isShort = side.startsWith('short_') || side === 'iron_condor' || side === 'put_credit_spread' || side === 'call_credit_spread';
+
+  // Cold-start fetch IVR/earnings if cache empty
+  useEffect(() => {
+    if (!t) return;
+    const ivrCache = (typeof window !== 'undefined' && window.__IVR_CACHE) || {};
+    const earnCache = (typeof window !== 'undefined' && window.__EARNINGS_CACHE) || {};
+    if (!ivrCache[t]) {
+      fetchIVR(t).then(d => { if (d) { window.__IVR_CACHE = window.__IVR_CACHE || {}; window.__IVR_CACHE[t] = d; setRefreshTick(x => x + 1); } });
+    }
+    if (!earnCache[t]) {
+      fetchEarnings(t).then(d => { if (d) { window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {}; window.__EARNINGS_CACHE[t] = d; setRefreshTick(x => x + 1); } });
+    }
+  }, [t]);
+
+  // Read auto-detection sources
+  const ivrData = (typeof window !== 'undefined' && window.__IVR_CACHE && window.__IVR_CACHE[t]) || null;
+  const earnData = (typeof window !== 'undefined' && window.__EARNINGS_CACHE && window.__EARNINGS_CACHE[t]) || null;
+  const tickerProfile = (typeof window !== 'undefined' && window.__TICKER_PROFILES && window.__TICKER_PROFILES[t]) || null;
+  const sector = tickerProfile && tickerProfile.sector ? tickerProfile.sector : null;
+
+  // Compute derived values
+  const ivr = ivrData ? ivrData.ivr : null;
+  const daysToEarnings = earnData && earnData.date
+    ? Math.round((new Date(earnData.date).getTime() - Date.now()) / 86400000)
+    : null;
+  const totalCost = (parseFloat(premium) || 0) * (parseFloat(qty) || 0) * 100;  // option contracts × 100
+  const sizePct = accountSize > 0 ? (totalCost / accountSize) * 100 : 0;
+  const sectorExposurePct = sector
+    ? (() => {
+        const sameSectorPositions = positions.filter(p => {
+          const pProfile = (typeof window !== 'undefined' && window.__TICKER_PROFILES && window.__TICKER_PROFILES[(p.ticker || '').toUpperCase()]) || null;
+          return pProfile && pProfile.sector === sector;
+        });
+        const sectorValue = sameSectorPositions.reduce((s, p) => s + (p.value || 0), 0);
+        const newExposure = sectorValue + totalCost;
+        return accountSize > 0 ? (newExposure / accountSize) * 100 : 0;
+      })()
+    : null;
+
+  // Compute checks
+  const checks = useMemo(() => {
+    const list = [];
+
+    // 1. IVR sweet spot — depends on side
+    {
+      let status = 'pending', detail = '尚未取得 IVR (輸入 ticker 後自動載入)';
+      if (ivr != null) {
+        if (!isShort) {
+          // Buyer wants 50-80
+          if (ivr >= 50 && ivr <= 80) { status = 'ok'; detail = `IVR ${ivr} (買方甜蜜點 50-80 ✓)`; }
+          else if (ivr < 50) { status = 'warn'; detail = `IVR ${ivr} 偏低 — 沒有催化劑時 vega 順風小`; }
+          else { status = 'red'; detail = `IVR ${ivr} 過高 — 買方面臨 IV crush 雙殺風險`; }
+        } else {
+          // Seller wants ≥85
+          if (ivr >= 85 && ivr <= 95) { status = 'ok'; detail = `IVR ${ivr} (賣方理想 85-95 ✓)`; }
+          else if (ivr >= 70) { status = 'warn'; detail = `IVR ${ivr} 不夠熱 — 賣方 edge 較小`; }
+          else { status = 'red'; detail = `IVR ${ivr} 過低 — 沒有 IV crush 空間`; }
+        }
+      }
+      list.push({ id: 'ivr', label: 'IVR sweet spot', status, detail });
+    }
+
+    // 2. Event proximity (earnings)
+    {
+      let status = 'pending', detail = '輸入 ticker 後自動載入';
+      if (daysToEarnings != null) {
+        if (daysToEarnings < 0) { status = 'ok'; detail = `已過 EPS (${earnData.date})`; }
+        else if (daysToEarnings <= 3) {
+          status = isShort ? 'ok' : 'warn';
+          detail = `T-${daysToEarnings} 財報前 — ${isShort ? '賣方理想時點' : '買方接近 IV 高點，crush 風險增'}`;
+        }
+        else if (daysToEarnings <= 14) { status = 'ok'; detail = `T-${daysToEarnings} 安全區`; }
+        else { status = 'warn'; detail = `T-${daysToEarnings} 太遠，事件 driver 較弱`; }
+      } else if (earnData === null && t) {
+        status = 'ok'; detail = '無近期財報事件';
+      }
+      list.push({ id: 'earnings', label: '事件接近度', status, detail });
+    }
+
+    // 3. Position size % of account (max loss for buyer = premium; for seller assume 3x)
+    {
+      const maxLoss = isShort ? totalCost * 3 : totalCost;
+      const maxLossPct = accountSize > 0 ? (maxLoss / accountSize) * 100 : 0;
+      let status, detail;
+      if (totalCost === 0) { status = 'pending'; detail = '輸入 premium + qty'; }
+      else if (maxLossPct <= 2) { status = 'ok'; detail = `最大虧損 $${Math.round(maxLoss).toLocaleString()} = ${maxLossPct.toFixed(2)}% 帳戶 (上限 2%)`; }
+      else if (maxLossPct <= 5) { status = 'warn'; detail = `最大虧損 ${maxLossPct.toFixed(1)}% — 教科書建議 ≤2%`; }
+      else { status = 'red'; detail = `最大虧損 ${maxLossPct.toFixed(1)}% — 超過 2× 教科書上限`; }
+      list.push({ id: 'size', label: '單筆最大損失', status, detail });
+    }
+
+    // 4. Sector exposure
+    {
+      let status, detail;
+      if (!sector) { status = 'pending'; detail = '尚未取得產業資料 (Polygon ticker-details)'; }
+      else if (sectorExposurePct <= 8) { status = 'ok'; detail = `${sector} ${sectorExposurePct.toFixed(1)}% (上限 8%)`; }
+      else if (sectorExposurePct <= 15) { status = 'warn'; detail = `${sector} ${sectorExposurePct.toFixed(1)}% — 接近警戒`; }
+      else { status = 'red'; detail = `${sector} ${sectorExposurePct.toFixed(1)}% — 產業共振風險高`; }
+      list.push({ id: 'sector', label: '同產業曝險', status, detail });
+    }
+
+    // 5. Liquidity — bid-ask spread
+    {
+      const sp = parseFloat(bidAskSpreadPct);
+      let status, detail;
+      if (!isFinite(sp)) { status = 'pending'; detail = '請手動輸入 (見 broker option chain)'; }
+      else if (sp <= 5) { status = 'ok'; detail = `Spread ${sp}% (上限 5%)`; }
+      else if (sp <= 10) { status = 'warn'; detail = `Spread ${sp}% — 進出磨損明顯`; }
+      else { status = 'red'; detail = `Spread ${sp}% — 流動性陷阱，百萬級單會被吃幾趴`; }
+      list.push({ id: 'spread', label: 'Bid-Ask Spread', status, detail });
+    }
+
+    // 6. Open Interest
+    {
+      const o = parseFloat(oi);
+      let status, detail;
+      if (!isFinite(o)) { status = 'pending'; detail = '請手動輸入 (見 broker option chain)'; }
+      else if (o >= 5000) { status = 'ok'; detail = `OI ${o.toLocaleString()} (>5,000 ✓)`; }
+      else if (o >= 1000) { status = 'warn'; detail = `OI ${o.toLocaleString()} — 偏低，急退場可能找不到對手盤`; }
+      else { status = 'red'; detail = `OI ${o.toLocaleString()} — 流動性極差`; }
+      list.push({ id: 'oi', label: 'Open Interest', status, detail });
+    }
+
+    // 7. Strategy match
+    {
+      const isDefined = side === 'long_call' || side === 'long_put' ||
+                        side === 'put_credit_spread' || side === 'call_credit_spread' ||
+                        side === 'iron_condor' || side === 'long_call_spread' || side === 'long_put_spread';
+      let status, detail;
+      if (isShort && !isDefined) { status = 'red'; detail = '裸賣風險無上限 — 教科書要求 50+ 次經驗才開放'; }
+      else if (isDefined) { status = 'ok'; detail = '已定義最大風險 ✓'; }
+      else { status = 'ok'; detail = '純買方風險 = 權利金'; }
+      list.push({ id: 'structure', label: '策略風險結構', status, detail });
+    }
+
+    // 8. Thesis (manual)
+    {
+      const len = (thesis || '').trim().length;
+      let status, detail;
+      if (len === 0) { status = 'pending'; detail = '請寫下你的進場 thesis (≥50 字)'; }
+      else if (len < 50) { status = 'red'; detail = `只有 ${len} 字 — 寫不出 thesis 的單通常虧得快`; }
+      else if (len > 800) { status = 'warn'; detail = `${len} 字 — 太長代表你還沒抓到核心`; }
+      else { status = 'ok'; detail = `${len} 字 thesis ✓`; }
+      list.push({ id: 'thesis', label: 'Thesis 紀錄', status, detail });
+    }
+
+    return list;
+  }, [t, ivr, daysToEarnings, sector, sectorExposurePct, totalCost, accountSize, bidAskSpreadPct, oi, thesis, side, isShort, refreshTick, earnData]);
+
+  // Status counts
+  const okCount = checks.filter(c => c.status === 'ok').length;
+  const redCount = checks.filter(c => c.status === 'red').length;
+  const warnCount = checks.filter(c => c.status === 'warn').length;
+  const pendingCount = checks.filter(c => c.status === 'pending').length;
+
+  // Items needing override (red or warn) — must have a written reason
+  const needOverride = checks.filter(c => c.status === 'red' || c.status === 'warn');
+  const allCovered = needOverride.every(c => (overrides[c.id] || '').trim().length >= 10);
+  const canPass = pendingCount === 0 && (needOverride.length === 0 || allCovered);
+
+  const handlePass = () => {
+    const record = {
+      timestamp: new Date().toISOString(),
+      ticker: t, side, strike, expiry, qty, premium, accountSize,
+      checks: checks.map(c => ({ id: c.id, status: c.status, detail: c.detail, override: overrides[c.id] || null })),
+      thesis,
+      summary: `${okCount}/8 ok · ${warnCount} warn · ${redCount} red · all overridden=${allCovered}`,
+    };
+    try {
+      const log = JSON.parse(localStorage.getItem('ddh_pretrade_log') || '[]');
+      log.push(record);
+      localStorage.setItem('ddh_pretrade_log', JSON.stringify(log.slice(-100)));  // keep last 100
+      setSavedAt(new Date());
+      try { console.log('[pretrade] passed', record); } catch(_) {}
+    } catch(e) { alert('儲存失敗: ' + e.message); }
+  };
+
+  const inputStyle = {
+    background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#f4f4f4',
+    padding: '6px 10px', fontFamily: 'DM Mono', fontSize: '13px',
+    borderRadius: '4px', width: '100%',
+  };
+  const labelStyle = { fontFamily: 'DM Mono', fontSize: '11px', color: '#9a9a9a', display: 'block', marginBottom: '4px' };
+
+  const colorOf = (s) => s === 'ok' ? '#10b981' : s === 'warn' ? '#EAB308' : s === 'red' ? '#ef4444' : '#7a7a7a';
+  const iconOf = (s) => s === 'ok' ? '✅' : s === 'warn' ? '⚠️' : s === 'red' ? '❌' : '⋯';
+
+  return (
+    <div style={{ padding: '16px 24px', background: '#0a0a0a' }}>
+      {/* Inputs grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '14px' }}>
+        <div>
+          <label style={labelStyle}>Ticker</label>
+          <input style={inputStyle} value={ticker} onChange={e => setTicker(e.target.value.toUpperCase())} placeholder="NVDA" />
+        </div>
+        <div>
+          <label style={labelStyle}>策略</label>
+          <select style={inputStyle} value={side} onChange={e => setSide(e.target.value)}>
+            <option value="long_call">Long Call (買看多)</option>
+            <option value="long_put">Long Put (買看空)</option>
+            <option value="long_call_spread">Long Call Spread</option>
+            <option value="long_put_spread">Long Put Spread</option>
+            <option value="put_credit_spread">Put Credit Spread (賣方)</option>
+            <option value="call_credit_spread">Call Credit Spread (賣方)</option>
+            <option value="iron_condor">Iron Condor (賣方)</option>
+            <option value="short_strangle">Short Strangle (裸賣)</option>
+            <option value="short_call">Short Call (裸賣 — 高風險)</option>
+            <option value="short_put">Short Put (裸賣)</option>
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>Strike</label>
+          <input style={inputStyle} value={strike} onChange={e => setStrike(e.target.value)} placeholder="220" />
+        </div>
+        <div>
+          <label style={labelStyle}>Expiry</label>
+          <input type="date" style={inputStyle} value={expiry} onChange={e => setExpiry(e.target.value)} />
+        </div>
+        <div>
+          <label style={labelStyle}>Qty (口)</label>
+          <input type="number" style={inputStyle} value={qty} onChange={e => setQty(e.target.value)} />
+        </div>
+        <div>
+          <label style={labelStyle}>Premium ($)</label>
+          <input type="number" step="0.01" style={inputStyle} value={premium} onChange={e => setPremium(e.target.value)} placeholder="6.85" />
+        </div>
+        <div>
+          <label style={labelStyle}>Account Size ($)</label>
+          <input type="number" style={inputStyle} value={accountSize} onChange={e => setAccountSize(parseFloat(e.target.value) || 0)} />
+        </div>
+        <div>
+          <label style={labelStyle}>Bid-Ask Spread (%)</label>
+          <input type="number" step="0.1" style={inputStyle} value={bidAskSpreadPct} onChange={e => setBidAskSpreadPct(e.target.value)} placeholder="3.5" />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '14px' }}>
+        <div>
+          <label style={labelStyle}>Open Interest (人工填，看 broker chain)</label>
+          <input type="number" style={inputStyle} value={oi} onChange={e => setOi(e.target.value)} placeholder="12450" />
+        </div>
+        <div style={{ alignSelf: 'end', fontFamily: 'DM Mono', fontSize: '12px', color: '#9a9a9a' }}>
+          總成本: <b style={{ color: '#f4f4f4' }}>${totalCost.toLocaleString()}</b> ({sizePct.toFixed(2)}% 帳戶)
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '14px' }}>
+        <label style={labelStyle}>Thesis (≥50 字 / 三句話寫得出來再進場)</label>
+        <textarea
+          style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
+          value={thesis} onChange={e => setThesis(e.target.value)}
+          placeholder="例：NVDA 5/20 EPS 預期 +14.98 ($1.77 Street est)，T-10 IVR 61.5 屬於買方甜蜜點。AI 資本支出週期未到頂，期權流近 7 天 call/put = 2.3 看多，目標 +8% 即出場。"
+        />
+      </div>
+
+      {/* Checks list */}
+      <div style={{ background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '12px', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#f4f4f4', fontWeight: 700 }}>
+            自動檢查 · {okCount}/8 ✅ · {warnCount} ⚠️ · {redCount} ❌ · {pendingCount} ⋯
+          </div>
+        </div>
+        {checks.map(c => (
+          <div key={c.id} style={{ padding: '8px 0', borderTop: '1px solid #2a2a2a', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+            <span style={{ fontSize: '15px' }}>{iconOf(c.status)}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: colorOf(c.status), fontWeight: 700 }}>{c.label}</div>
+              <div style={{ fontFamily: 'Noto Sans TC', fontSize: '12px', color: '#b8b8b8', marginTop: '2px' }}>{c.detail}</div>
+              {(c.status === 'red' || c.status === 'warn') && (
+                <input
+                  style={{ ...inputStyle, marginTop: '6px', borderColor: (overrides[c.id] || '').trim().length >= 10 ? '#10b981' : '#ef4444' }}
+                  value={overrides[c.id] || ''}
+                  onChange={e => setOverrides({ ...overrides, [c.id]: e.target.value })}
+                  placeholder="Override 理由 (≥10 字) — 為什麼明知不理想還要做？"
+                />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Pass button */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          onClick={handlePass}
+          disabled={!canPass}
+          style={{
+            background: canPass ? '#10b98122' : '#2a2a2a',
+            border: '1px solid ' + (canPass ? '#10b981' : '#3a3a3a'),
+            color: canPass ? '#10b981' : '#7a7a7a',
+            padding: '10px 24px',
+            fontFamily: 'DM Mono', fontSize: '13px', fontWeight: 700,
+            borderRadius: '4px',
+            cursor: canPass ? 'pointer' : 'not-allowed',
+          }}
+        >{canPass ? '✅ 通過 → 記錄到 localStorage' : (pendingCount > 0 ? `${pendingCount} 項未填` : `${needOverride.length - needOverride.filter(c => (overrides[c.id]||'').trim().length >= 10).length} 項需 override 理由`)}</button>
+        {savedAt && (
+          <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#10b981' }}>
+            ✓ 已記錄 {Math.round((Date.now() - savedAt.getTime()) / 1000)}s 前 — 開單去吧
+          </span>
+        )}
+      </div>
+
+      <div style={{ marginTop: '12px', fontFamily: 'DM Mono', fontSize: '11px', color: '#7a7a7a', lineHeight: 1.6 }}>
+        💡 通過後存於 localStorage `ddh_pretrade_log` (近 100 筆)。下個 PR 會接 Supabase 做歷史回顧。
+      </div>
+    </div>
+  );
+}
+
 function OptionsScanner({ positions }) {
   const [mode, setMode] = useState('both');  // 'buyer' | 'seller' | 'both'
   const [watchlist, setWatchlist] = useState(() => {
@@ -7627,6 +8247,8 @@ function App() {
   const [collapseScanner, setCollapseScanner] = useState(true);
   const [collapseTextbook, setCollapseTextbook] = useState(true);
   const [collapseBacktest, setCollapseBacktest] = useState(true);
+  const [collapsePretrade, setCollapsePretrade] = useState(true);
+  const [collapseRisk, setCollapseRisk] = useState(false);  // open by default — most important info
 
   // Tab navigation — UI organization (home / portfolio / options / textbook / hedge)
   const [activeTab, setActiveTab] = useState('home');
@@ -7961,6 +8583,17 @@ function App() {
         {/* ──────────────────────────────────────────────────── */}
         {activeTab === 'home' && (
           <>
+            {/* Real-time risk dashboard — net Greeks + sector + stress */}
+            <CollapsibleSection
+              title="📊 即時曝險儀表板 (Real-time Risk)"
+              subtitle="Net Δ/Γ/V/Θ · 產業集中度 · 4 種壓力情境"
+              collapsed={collapseRisk}
+              setCollapsed={setCollapseRisk}
+              icon={Gauge}
+            >
+              <RiskDashboard positions={positions} portfolioTotal={portfolioTotal} />
+            </CollapsibleSection>
+
             <CollapsibleSection
               title="L2 — Macro Regime Dashboard"
               subtitle="水位 · 週期 · 風險 → 倉位建議"
@@ -8043,6 +8676,17 @@ function App() {
         {/* ──────────────────────────────────────────────────── */}
         {activeTab === 'options' && (
           <>
+            {/* Pre-trade checklist — discipline before clicking buy */}
+            <CollapsibleSection
+              title="🛡️ 開倉前檢核 (Pre-Trade Checklist)"
+              subtitle="百萬級紀律：8 個檢查全綠 / 紅項寫 override 理由才進場"
+              collapsed={collapsePretrade}
+              setCollapsed={setCollapsePretrade}
+              icon={Shield}
+            >
+              <PreTradeChecklist positions={positions} portfolioTotal={portfolioTotal} />
+            </CollapsibleSection>
+
             <CollapsibleSection
               title="選擇權機會掃描器"
               subtitle="爆噴買方 ⊕ IV Crush 賣方 · 7-signal 雙邊評分"
