@@ -33,8 +33,8 @@
        White panels + #10b981 green accent. Signal colors (red/green) preserved for P&L semantics.
        ============================================================ */
     :root {
-      --v2-bg: #ffffff;
-      --v2-panel: #ffffff;
+      --v2-bg: #f7f8fa;
+      --v2-panel: #f7f8fa;
       --v2-panel-2: #f5f5f5;
       --v2-line: #e5e7eb;
       --v2-line-2: #d4d4d4;
@@ -68,7 +68,7 @@
     .toggle-pill button { color: var(--v2-fg-mute) !important; }
     .toggle-pill button.active {
       background: var(--v2-accent) !important;
-      color: #ffffff !important;
+      color: #f7f8fa !important;
     }
     .num-input, .text-input, select.num-input {
       border-color: var(--v2-line) !important;
@@ -112,7 +112,7 @@
     /* ============================================================ */
 
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: #ffffff; color: #1a1a1a; font-family: 'Geist', 'Noto Sans TC', -apple-system, sans-serif; }
+    html, body { margin: 0; padding: 0; background: #f7f8fa; color: #1a1a1a; font-family: 'Geist', 'Noto Sans TC', -apple-system, sans-serif; }
     #root { min-height: 100vh; }
 
     /* Loading splash before Babel finishes transpiling */
@@ -384,7 +384,7 @@ Anthropic API: docs.claude.com` },
           zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px',
         }}>
           <div onClick={(e) => e.stopPropagation()} style={{
-            background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px',
+            background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '8px',
             maxWidth: '720px', width: '100%', maxHeight: '85vh', overflowY: 'auto',
             padding: '28px 32px', boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
           }}>
@@ -432,7 +432,7 @@ const styleSheet = [
 '  .font-tc { font-family: \'Noto Sans TC\', -apple-system, sans-serif; }',
 '  .tabular { font-variant-numeric: tabular-nums; }',
 '',
-'  .bg-app { background: #ffffff; }',
+'  .bg-app { background: #f7f8fa; }',
 '  .bg-card { background: #f5f5f5; }',
 '  .bg-subcard { background: #f5f5f5; }',
 '  .bg-deepcard { background: #f8f9fa; }',
@@ -468,7 +468,7 @@ const styleSheet = [
 '    background: #10b981;',
 '    border-radius: 50%;',
 '    cursor: pointer;',
-'    border: 2px solid #ffffff;',
+'    border: 2px solid #f7f8fa;',
 '  }',
 '',
 '  .num-input, .text-input, select.num-input {',
@@ -510,7 +510,7 @@ const styleSheet = [
 '  }',
 '  .toggle-pill button.active {',
 '    background: #10b981;',
-'    color: #ffffff;',
+'    color: #f7f8fa;',
 '    font-weight: 700;',
 '  }',
 '',
@@ -3224,7 +3224,7 @@ function FREDSyncBar({ status, syncTime, error, details, onSync }) {
   return (
     <div
       style={{
-        background: '#ffffff',
+        background: '#f7f8fa',
         border: '1px solid ' + cfg.color + '30',
         borderRadius: '4px',
         padding: '10px 12px',
@@ -3331,7 +3331,7 @@ function PolygonSyncBar({ status, syncTime, error, details, onSync }) {
   return (
     <div
       style={{
-        background: '#ffffff',
+        background: '#f7f8fa',
         border: '1px solid ' + cfg.color + '30',
         borderRadius: '4px',
         padding: '10px 12px',
@@ -3476,7 +3476,7 @@ const styleSheet = [
 '  .font-tc { font-family: \'Noto Sans TC\', -apple-system, sans-serif; }',
 '  .tabular { font-variant-numeric: tabular-nums; }',
 '',
-'  .bg-app { background: #ffffff; }',
+'  .bg-app { background: #f7f8fa; }',
 '  .bg-card { background: #f5f5f5; }',
 '  .bg-subcard { background: #f5f5f5; }',
 '  .bg-deepcard { background: #f8f9fa; }',
@@ -3512,7 +3512,7 @@ const styleSheet = [
 '    background: #10b981;',
 '    border-radius: 50%;',
 '    cursor: pointer;',
-'    border: 2px solid #ffffff;',
+'    border: 2px solid #f7f8fa;',
 '  }',
 '',
 '  .num-input {',
@@ -3614,7 +3614,7 @@ const styleSheet = [
 '    transition: background 0.1s;',
 '  }',
 '  .pos-row:hover {',
-'    background: #1f1f1f;',
+'    background: #f5f5f5;',
 '  }',
 '',
 '  .toggle-pill {',
@@ -3636,7 +3636,7 @@ const styleSheet = [
 '  }',
 '  .toggle-pill button.active {',
 '    background: #10b981;',
-'    color: #ffffff;',
+'    color: #f7f8fa;',
 '    font-weight: 700;',
 '  }',
 '',
@@ -5319,7 +5319,7 @@ function StrategyCard({ id, strat, selected, onSelect, badge, recommended }) {
             top: '-7px',
             right: '12px',
             background: '#10b981',
-            color: '#ffffff',
+            color: '#f7f8fa',
             fontSize: '13px',
             fontWeight: 700,
             padding: '2px 6px',
@@ -6508,14 +6508,14 @@ async function fetchSpotPrice(ticker) {
 // ============================================================
 // V6 palette presets — port from L2_Templates v6-top-tier.jsx + custom 'wg' (user pref)
 const V6_PALETTES = [
-  { id: "wg",     label: "White Green ✓", bg: "#ffffff", panel: "#ffffff", panel2: "#f5f5f5", line: "#e5e7eb", fg: "#1a1a1a", mute: "#525252", dim: "#a3a3a3", accent: "#10b981", bull: "#10b981", bear: "#ef4444", warn: "#f59e0b", info: "#3b82f6", vio: "#a78bfa" },
-  { id: "paper",  label: "Paper Light",   bg: "#f5f3ee", panel: "#ffffff", panel2: "#ebe7df", line: "#d9d4c9", fg: "#1a1814", mute: "#5e564a", dim: "#94897a", accent: "#2d4a8a", bull: "#15803d", bear: "#b91c1c", warn: "#b45309", info: "#0369a1", vio: "#7c3aed" },
+  { id: "wg",     label: "White Green ✓", bg: "#f7f8fa", panel: "#f7f8fa", panel2: "#f5f5f5", line: "#e5e7eb", fg: "#1a1a1a", mute: "#525252", dim: "#a3a3a3", accent: "#10b981", bull: "#10b981", bear: "#ef4444", warn: "#f59e0b", info: "#3b82f6", vio: "#a78bfa" },
+  { id: "paper",  label: "Paper Light",   bg: "#f5f3ee", panel: "#f7f8fa", panel2: "#ebe7df", line: "#d9d4c9", fg: "#1a1814", mute: "#5e564a", dim: "#94897a", accent: "#2d4a8a", bull: "#15803d", bear: "#b91c1c", warn: "#b45309", info: "#0369a1", vio: "#7c3aed" },
   { id: "matrix", label: "Matrix Green",  bg: "#050a07", panel: "#0a130d", panel2: "#0e1a13", line: "#16261c", fg: "#d1f5dc", mute: "#7ba88a", dim: "#4a6b56", accent: "#22c55e", bull: "#4ade80", bear: "#ef4444", warn: "#fbbf24", info: "#60a5fa", vio: "#a78bfa" },
   { id: "cyan",   label: "Vol Desk Cyan", bg: "#07090d", panel: "#0f1319", panel2: "#161c25", line: "#1e2733", fg: "#e8eef5", mute: "#8a99ab", dim: "#5a6776", accent: "#22d3ee", bull: "#22c55e", bear: "#ef4444", warn: "#f59e0b", info: "#60a5fa", vio: "#a78bfa" },
   { id: "ice",    label: "Citadel Ice",   bg: "#0a0f1a", panel: "#10172a", panel2: "#161f38", line: "#1f2a44", fg: "#e6edff", mute: "#8a9ab8", dim: "#566480", accent: "#60a5fa", bull: "#4ade80", bear: "#f87171", warn: "#fbbf24", info: "#a78bfa", vio: "#c084fc" },
   { id: "violet", label: "SIG Violet",    bg: "#0d0a14", panel: "#16111f", panel2: "#1d1729", line: "#2a2238", fg: "#ede8f7", mute: "#9b8fb5", dim: "#665a80", accent: "#a78bfa", bull: "#34d399", bear: "#fb7185", warn: "#fbbf24", info: "#60a5fa", vio: "#c084fc" },
   { id: "amber",  label: "Bloomberg",     bg: "#0a0807", panel: "#13100d", panel2: "#1a1612", line: "#2a221c", fg: "#f5e8d0", mute: "#a89880", dim: "#6e6050", accent: "#f5a524", bull: "#86efac", bear: "#fca5a5", warn: "#fde047", info: "#fbbf24", vio: "#f97316" },
-  { id: "ink",    label: "Pure Ink",      bg: "#0a0a0a", panel: "#141414", panel2: "#1c1c1c", line: "#262626", fg: "#fafafa", mute: "#a3a3a3", dim: "#6b6b6b", accent: "#ffffff", bull: "#22c55e", bear: "#ef4444", warn: "#eab308", info: "#3b82f6", vio: "#a78bfa" },
+  { id: "ink",    label: "Pure Ink",      bg: "#0a0a0a", panel: "#141414", panel2: "#1c1c1c", line: "#262626", fg: "#fafafa", mute: "#a3a3a3", dim: "#6b6b6b", accent: "#f7f8fa", bull: "#22c55e", bear: "#ef4444", warn: "#eab308", info: "#3b82f6", vio: "#a78bfa" },
 ];
 
 function VolDeskV6({ positions, portfolioTotal, macroState }) {
@@ -7303,7 +7303,7 @@ function RiskDashboard({ positions, portfolioTotal }) {
   const concentrationWarning = sectorBreakdown.length > 0 && sectorBreakdown[0].mv / Math.max(portfolioTotal, 1) > 0.4;
 
   return (
-    <div style={{ padding: '16px 24px', background: '#ffffff' }}>
+    <div style={{ padding: '16px 24px', background: '#f7f8fa' }}>
       {/* Greeks summary grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
         {[
@@ -7313,7 +7313,7 @@ function RiskDashboard({ positions, portfolioTotal }) {
           { label: 'Net Θ (per day)', value: fmt(agg.netTheta), sub: agg.netTheta >= 0 ? 'theta 順風（收 premium）' : 'theta 逆風（時間虧）', color: agg.netTheta >= 0 ? '#10b981' : '#10b981' },
         ].map((m, i) => (
           <div key={i} style={{
-            padding: '14px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '6px',
+            padding: '14px', background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px',
           }}>
             <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', letterSpacing: '0.05em', marginBottom: '4px' }}>{m.label}</div>
             <div style={{ fontFamily: 'DM Mono', fontSize: '22px', color: m.color, fontWeight: 700, marginBottom: '2px' }}>{m.value}</div>
@@ -7323,7 +7323,7 @@ function RiskDashboard({ positions, portfolioTotal }) {
       </div>
 
       {/* Sector concentration */}
-      <div style={{ background: '#ffffff', border: '1px solid ' + (concentrationWarning ? '#ef4444' : '#e5e7eb'), borderRadius: '6px', padding: '14px', marginBottom: '16px' }}>
+      <div style={{ background: '#f7f8fa', border: '1px solid ' + (concentrationWarning ? '#ef4444' : '#e5e7eb'), borderRadius: '6px', padding: '14px', marginBottom: '16px' }}>
         <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#1a1a1a', fontWeight: 700, marginBottom: '10px' }}>
           {concentrationWarning ? '⚠️ ' : ''}產業集中度（按 delta 曝險排序）
         </div>
@@ -7352,7 +7352,7 @@ function RiskDashboard({ positions, portfolioTotal }) {
       </div>
 
       {/* Stress test */}
-      <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '14px' }}>
+      <div style={{ background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '14px' }}>
         <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#1a1a1a', fontWeight: 700, marginBottom: '10px' }}>
           壓力測試 · 情境 P&L (delta + gamma + vega 一階近似)
         </div>
@@ -7361,7 +7361,7 @@ function RiskDashboard({ positions, portfolioTotal }) {
             const pctOfAccount = portfolioTotal > 0 ? (s.pnl / portfolioTotal) * 100 : 0;
             const sevColor = s.pnl >= 0 ? '#10b981' : (Math.abs(pctOfAccount) > 5 ? '#ef4444' : '#10b981');
             return (
-              <div key={s.name} style={{ padding: '12px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '4px', borderLeft: '3px solid ' + s.color }}>
+              <div key={s.name} style={{ padding: '12px', background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '4px', borderLeft: '3px solid ' + s.color }}>
                 <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', marginBottom: '4px' }}>{s.label}</div>
                 <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#a3a3a3', marginBottom: '6px' }}>{s.name}</div>
                 <div style={{ fontFamily: 'DM Mono', fontSize: '18px', color: sevColor, fontWeight: 700 }}>{fmt(s.pnl)}</div>
@@ -7531,7 +7531,7 @@ ${summary}
   const labelStyle = { fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', display: 'block', marginBottom: '3px' };
 
   return (
-    <div style={{ padding: '16px 24px', background: '#ffffff' }}>
+    <div style={{ padding: '16px 24px', background: '#f7f8fa' }}>
       {/* Stats summary */}
       {stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '14px' }}>
@@ -7542,7 +7542,7 @@ ${summary}
             { label: 'R/R', value: stats.avgLoss < 0 ? Math.abs(stats.avgWin / stats.avgLoss).toFixed(2) : '∞', color: '#10b981' },
             { label: '期望值/筆', value: '$' + Math.round(stats.expectancy).toLocaleString(), color: stats.expectancy >= 0 ? '#10b981' : '#ef4444' },
           ].map((m, i) => (
-            <div key={i} style={{ padding: '10px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '4px' }}>
+            <div key={i} style={{ padding: '10px', background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '4px' }}>
               <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3' }}>{m.label}</div>
               <div style={{ fontFamily: 'DM Mono', fontSize: '15px', fontWeight: 700, color: m.color, marginTop: '2px' }}>{m.value}</div>
             </div>
@@ -7569,7 +7569,7 @@ ${summary}
 
       {/* Add form */}
       {showForm && (
-        <div style={{ background: '#ffffff', border: '1px solid #14b8a6', borderRadius: '6px', padding: '14px', marginBottom: '14px' }}>
+        <div style={{ background: '#f7f8fa', border: '1px solid #14b8a6', borderRadius: '6px', padding: '14px', marginBottom: '14px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '10px' }}>
             <div><label style={labelStyle}>Ticker *</label><input style={inputStyle} value={draft.ticker} onChange={e => setDraft({...draft, ticker: e.target.value.toUpperCase()})} placeholder="NVDA" /></div>
             <div><label style={labelStyle}>策略</label>
@@ -7643,7 +7643,7 @@ ${summary}
           {entries.slice().reverse().slice(0, 50).map((e) => {
             const pnlColor = (e.pnl_dollars || 0) >= 0 ? '#10b981' : '#ef4444';
             return (
-              <div key={e.id} style={{ padding: '10px 12px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '4px' }}>
+              <div key={e.id} style={{ padding: '10px 12px', background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '4px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
                   <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#1a1a1a', fontWeight: 700 }}>{e.ticker}</span>
                   <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373' }}>{e.side}</span>
@@ -7753,7 +7753,7 @@ function EventRadar({ positions }) {
   };
 
   return (
-    <div style={{ padding: '14px 24px', background: '#ffffff' }}>
+    <div style={{ padding: '14px 24px', background: '#f7f8fa' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
         <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#525252', fontWeight: 600 }}>
           未來 14 天 · {allEvents.length} 個事件 · {macroEvents.length} 宏觀 + {earnings.length} 財報
@@ -7776,7 +7776,7 @@ function EventRadar({ positions }) {
             return (
               <div key={i} style={{
                 display: 'grid', gridTemplateColumns: '70px 24px 1fr', gap: '12px', alignItems: 'center',
-                padding: '8px 12px', background: '#ffffff',
+                padding: '8px 12px', background: '#f7f8fa',
                 border: '1px solid ' + (isClose ? colorOf(e.sev) + '60' : '#e5e7eb'),
                 borderLeft: '3px solid ' + colorOf(e.sev),
                 borderRadius: '4px',
@@ -7857,7 +7857,7 @@ function AlertsPanel() {
     finally { setLoading(false); }
   };
 
-  const cardStyle = { padding: '12px 14px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '6px' };
+  const cardStyle = { padding: '12px 14px', background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px' };
   const btnStyle = (color, dis) => ({
     background: dis ? '#e5e7eb' : color + '14',
     border: '1px solid ' + (dis ? '#1a1a1a' : color),
@@ -7868,7 +7868,7 @@ function AlertsPanel() {
   });
 
   return (
-    <div style={{ padding: '16px 24px', background: '#ffffff' }}>
+    <div style={{ padding: '16px 24px', background: '#f7f8fa' }}>
       {/* Status */}
       <div style={{ ...cardStyle, marginBottom: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -7946,7 +7946,7 @@ function AlertsPanel() {
       )}
 
       {/* Setup instructions */}
-      <div style={{ ...cardStyle, marginTop: '14px', background: '#ffffff', borderColor: '#f5f5f5' }}>
+      <div style={{ ...cardStyle, marginTop: '14px', background: '#f7f8fa', borderColor: '#f5f5f5' }}>
         <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#525252', fontWeight: 600, marginBottom: '6px' }}>
           📖 首次設定（5 分鐘）
         </div>
@@ -8179,7 +8179,7 @@ function PreTradeChecklist({ positions, portfolioTotal }) {
   const iconOf = (s) => s === 'ok' ? '✅' : s === 'warn' ? '⚠️' : s === 'red' ? '❌' : '⋯';
 
   return (
-    <div style={{ padding: '16px 24px', background: '#ffffff' }}>
+    <div style={{ padding: '16px 24px', background: '#f7f8fa' }}>
       {/* Inputs grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '14px' }}>
         <div>
@@ -8247,7 +8247,7 @@ function PreTradeChecklist({ positions, portfolioTotal }) {
       </div>
 
       {/* Checks list */}
-      <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '12px', marginBottom: '14px' }}>
+      <div style={{ background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '12px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 700 }}>
             自動檢查 · {okCount}/8 ✅ · {warnCount} ⚠️ · {redCount} ❌ · {pendingCount} ⋯
@@ -8405,7 +8405,7 @@ function OptionsScanner({ positions }) {
   }, [scoredList]);
 
   return (
-    <div style={{ padding: '16px 24px', background: '#ffffff' }}>
+    <div style={{ padding: '16px 24px', background: '#f7f8fa' }}>
       {/* Top controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -8441,7 +8441,7 @@ function OptionsScanner({ positions }) {
             onKeyDown={e => { if (e.key === 'Enter') handleAddTicker(); }}
             placeholder="加入 ticker"
             style={{
-              background: '#ffffff', border: '1px solid #e5e7eb', color: '#1a1a1a',
+              background: '#f7f8fa', border: '1px solid #e5e7eb', color: '#1a1a1a',
               padding: '4px 8px', fontFamily: 'DM Mono', fontSize: '13px',
               borderRadius: '3px', width: '110px',
             }}
@@ -8475,7 +8475,7 @@ function OptionsScanner({ positions }) {
       </div>
 
       {/* Results */}
-      <div style={{ border: '1px solid #e5e7eb', background: '#ffffff' }}>
+      <div style={{ border: '1px solid #e5e7eb', background: '#f7f8fa' }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: '60px 1fr 70px 70px 70px 90px 90px 30px',
@@ -8597,7 +8597,7 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
       </div>
 
       {isExpanded && (
-        <div style={{ padding: '12px 16px 16px 16px', background: '#080808', borderTop: '1px solid #f5f5f5' }}>
+        <div style={{ padding: '12px 16px 16px 16px', background: '#f0f2f5', borderTop: '1px solid #f5f5f5' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {showBuyer && (
               <ScannerSignalPanel title="爆噴買方訊號" signals={s.buyer.signals} score={s.buyer.score} grade={s.buyer.grade} accent="#10b981" />
@@ -8870,7 +8870,7 @@ function BacktestPanel() {
   const totalWeight = sliderKeys.reduce((s, k) => s + (customWeights[k] || 0), 0);
 
   return (
-    <div style={{ padding: '16px 24px', background: '#ffffff' }}>
+    <div style={{ padding: '16px 24px', background: '#f7f8fa' }}>
       {/* Mode + actions */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -9112,7 +9112,7 @@ function Bt_TradeForm({ existing, onSubmit, onCancel }) {
   }
 
   const sigKeys = Object.keys(BT_PRESET_WEIGHTS[form.mode]);
-  const inputStyle = { width: '100%', background: '#ffffff', border: '1px solid #e5e7eb', color: '#1a1a1a', padding: '4px 6px', fontFamily: 'DM Mono', fontSize: '13px' };
+  const inputStyle = { width: '100%', background: '#f7f8fa', border: '1px solid #e5e7eb', color: '#1a1a1a', padding: '4px 6px', fontFamily: 'DM Mono', fontSize: '13px' };
 
   return (
     <div style={{ border: '1px solid #10b981', background: '#f5f5f5', padding: '12px', marginBottom: '16px' }}>
@@ -9493,7 +9493,7 @@ function TbLiveRow({ ticker, score, grade, ivr, beta, daysToEarnings, expectedMo
         alignItems: 'center',
         gap: '10px',
         padding: '8px 10px',
-        background: '#ffffff',
+        background: '#f7f8fa',
         border: '1px solid ' + (hasUnusualFlow ? accent + '60' : '#e5e7eb'),
         borderRadius: '4px',
         cursor: onClick ? 'pointer' : 'default',
@@ -9533,7 +9533,7 @@ function TextbookViewer() {
   const accentColor = tab === 'buyer' ? '#10b981' : '#14b8a6';
 
   return (
-    <div style={{ padding: '16px 24px', background: '#ffffff' }}>
+    <div style={{ padding: '16px 24px', background: '#f7f8fa' }}>
       {/* Tab toggle */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
         <button onClick={() => setTab('buyer')} style={{
@@ -9557,7 +9557,7 @@ function TextbookViewer() {
         <p style={{ fontSize: '14px', color: '#525252', lineHeight: 1.7, margin: '0 0 12px 0', fontFamily: 'Noto Sans TC' }}>{data.hero.summary}</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
           {data.hero.stats.map((s, i) => (
-            <div key={i} style={{ border: '1px solid #e5e7eb', padding: '8px', background: '#ffffff' }}>
+            <div key={i} style={{ border: '1px solid #e5e7eb', padding: '8px', background: '#f7f8fa' }}>
               <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', letterSpacing: '0.1em' }}>{s.label}</div>
               <div style={{ fontFamily: 'DM Mono', fontSize: '18px', color: accentColor, fontWeight: 600, marginTop: '2px' }}>{s.value}</div>
             </div>
@@ -9585,7 +9585,7 @@ function Tb_BuyerContent({ data }) {
       <Tb_SectionHeader kicker="ANATOMY · 部位拆解" title="他到底買了什麼" accent="#10b981" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {data.positions.map((p, i) => (
-          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#ffffff' }}>
+          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#f7f8fa' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#1a1a1a', fontWeight: 600 }}>{p.name}</span>
               <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#10b981', fontWeight: 600 }}>+${(p.profit).toLocaleString()} ({p.profitPct >= 0 ? '+' : ''}{p.profitPct}%)</span>
@@ -9605,7 +9605,7 @@ function Tb_BuyerContent({ data }) {
       <Tb_SectionHeader kicker="FRAMEWORK · 5 信號" title="爆噴模型 V2" accent="#10b981" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {data.signals.map(s => (
-          <div key={s.id} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#ffffff' }}>
+          <div key={s.id} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#f7f8fa' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 600 }}>0{s.id} · {s.name}</span>
               <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#10b981' }}>w {s.weight}%</span>
@@ -9632,7 +9632,7 @@ function Tb_SellerContent({ data }) {
       <Tb_SectionHeader kicker="ANATOMY · 4 階段" title={data.winCase.title} accent="#14b8a6" />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
         {data.winCase.phases.map((p, i) => (
-          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#ffffff' }}>
+          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#f7f8fa' }}>
             <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#14b8a6', letterSpacing: '0.1em', marginBottom: '4px' }}>{p.label}</div>
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 600, marginBottom: '4px' }}>{p.title}</div>
             <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252', lineHeight: 1.6 }}>{p.detail}</div>
@@ -9643,7 +9643,7 @@ function Tb_SellerContent({ data }) {
       <Tb_SectionHeader kicker="FRAMEWORK · 7 信號" title="什麼條件下才該賣" accent="#14b8a6" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {data.signals.map(s => (
-          <div key={s.id} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#ffffff' }}>
+          <div key={s.id} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#f7f8fa' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 600 }}>0{s.id} · {s.name}</span>
               <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#14b8a6' }}>w {s.weight}%</span>
@@ -9660,7 +9660,7 @@ function Tb_SellerContent({ data }) {
       <Tb_SectionHeader kicker="STRUCTURES · 4 種結構" title="用哪種結構賣" accent="#14b8a6" />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
         {data.structures.map((s, i) => (
-          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#ffffff' }}>
+          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#f7f8fa' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 600 }}>{s.name}</span>
               <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: s.risk.indexOf('UNDEFINED') >= 0 && s.risk.indexOf('DEFINED') < 0 ? '#ef4444' : '#10b981', padding: '1px 6px', border: '1px solid currentColor' }}>{s.risk}</span>
@@ -9675,7 +9675,7 @@ function Tb_SellerContent({ data }) {
       <Tb_SectionHeader kicker="RISK · 6 條規則" title="不守 = 死" accent="#ef4444" />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
         {data.riskRules.map(r => (
-          <div key={r.id} style={{ border: '1px solid ' + (r.nonNegotiable ? '#ef4444' : '#e5e7eb'), padding: '10px', background: r.nonNegotiable ? '#ef444408' : '#ffffff' }}>
+          <div key={r.id} style={{ border: '1px solid ' + (r.nonNegotiable ? '#ef4444' : '#e5e7eb'), padding: '10px', background: r.nonNegotiable ? '#ef444408' : '#f7f8fa' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 600 }}>0{r.id} · {r.rule}</span>
               {r.nonNegotiable && <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#ef4444' }}>★ 強制</span>}
@@ -9689,13 +9689,13 @@ function Tb_SellerContent({ data }) {
       <div style={{ border: '1px solid #ef4444', background: '#ef444408', padding: '12px' }}>
         <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#525252', lineHeight: 1.7, marginBottom: '10px' }}>{data.lossCase.summary}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '10px' }}>
-          <div style={{ border: '1px solid #e5e7eb', padding: '8px', background: '#ffffff' }}>
+          <div style={{ border: '1px solid #e5e7eb', padding: '8px', background: '#f7f8fa' }}>
             <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#10b981', marginBottom: '4px' }}>進場前看似誘人</div>
             <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252', lineHeight: 1.7 }}>
               Spot ${data.lossCase.pre.spot} · IV {data.lossCase.pre.iv}% (pctl {data.lossCase.pre.ivPctl}) · Implied {data.lossCase.pre.impliedMove}% / Hist {data.lossCase.pre.histMove}% = {data.lossCase.pre.ratio}x
             </div>
           </div>
-          <div style={{ border: '1px solid #ef4444', padding: '8px', background: '#ffffff' }}>
+          <div style={{ border: '1px solid #ef4444', padding: '8px', background: '#f7f8fa' }}>
             <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#ef4444', marginBottom: '4px' }}>18 小時後</div>
             <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252', lineHeight: 1.7 }}>
               Spot ${data.lossCase.post.spot} (+{data.lossCase.post.actualMove}%) · 平倉 ${data.lossCase.post.costToClose.toLocaleString()} · 損益 <span style={{ color: '#ef4444', fontWeight: 600 }}>${data.lossCase.post.profit.toLocaleString()}</span>
@@ -9726,7 +9726,7 @@ function Tb_LessonColumn({ title, color, items }) {
       <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: color, fontWeight: 700, marginBottom: '6px', borderLeft: '3px solid ' + color, paddingLeft: '6px' }}>{title}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {items.map((item, i) => (
-          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '8px', background: '#ffffff' }}>
+          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '8px', background: '#f7f8fa' }}>
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#1a1a1a', fontWeight: 600, marginBottom: '2px' }}>{item.title}</div>
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#525252', lineHeight: 1.6 }}>{item.detail}</div>
           </div>
@@ -10036,7 +10036,7 @@ function App() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: APP_STYLES }} />
-      <div style={{ background: '#ffffff', minHeight: '100vh' }}>
+      <div style={{ background: '#f7f8fa', minHeight: '100vh' }}>
 
         {/* App Header */}
         <AppHeader
@@ -10474,7 +10474,7 @@ function HealthIndicator() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: '#ffffff', border: '1px solid #1a1a1a', borderRadius: '8px',
+              background: '#f7f8fa', border: '1px solid #1a1a1a', borderRadius: '8px',
               padding: '20px 24px', width: '720px', maxWidth: '92vw', maxHeight: '80vh', overflowY: 'auto',
               boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
             }}
@@ -10698,7 +10698,7 @@ function TabNav({ activeTab, setActiveTab }) {
   return (
     <div style={{
       position: 'sticky', top: 0, zIndex: 50,
-      background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)',
+      background: 'rgba(247,248,250,0.95)', backdropFilter: 'blur(8px)',
       borderBottom: '1px solid #e5e7eb',
       padding: '10px 24px',
       display: 'flex', gap: '6px', overflowX: 'auto',
@@ -10713,7 +10713,7 @@ function TabNav({ activeTab, setActiveTab }) {
             style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               padding: '8px 14px',
-              background: isActive ? 'rgba(16,185,129,0.12)' : '#ffffff',
+              background: isActive ? 'rgba(16,185,129,0.12)' : '#f7f8fa',
               border: '1px solid ' + (isActive ? '#10b981' : '#e5e7eb'),
               borderRadius: '6px',
               color: isActive ? '#10b981' : '#525252',
@@ -10761,7 +10761,7 @@ function AppHeader({
     <div style={{
       padding: '16px 24px',
       borderBottom: '1px solid #e5e7eb',
-      background: '#ffffff',
+      background: '#f7f8fa',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -11228,7 +11228,7 @@ function CrossSignalSection({ positions }) {
       </div>
 
       {!collapsed && (
-        <div style={{ background: '#ffffff', padding: '0' }}>
+        <div style={{ background: '#f7f8fa', padding: '0' }}>
           {/* 說明列 */}
           <div style={{
             padding: '10px 16px', borderBottom: '1px solid #f5f5f5',
@@ -11422,7 +11422,7 @@ function CrossLayerBridge({ macroState, positions, portfolioTotal }) {
       padding: '24px',
       borderTop: '1px solid #e5e7eb',
       borderBottom: '1px solid #e5e7eb',
-      background: 'linear-gradient(180deg, #ffffff 0%, #f8f9fa 50%, #ffffff 100%)',
+      background: 'linear-gradient(180deg, #f7f8fa 0%, #f8f9fa 50%, #f7f8fa 100%)',
     }}>
       <div style={{
         display: 'flex',
@@ -11893,7 +11893,7 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
   const realPositions = positions.filter(p => !String(p.id || '').startsWith('mock-'));
 
   return (
-    <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '16px 20px', margin: '12px 24px 0' }}>
+    <div style={{ background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '16px 20px', margin: '12px 24px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Database size={14} className="text-accent" />
@@ -12193,7 +12193,7 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
   );
 
   return (
-    <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '16px 20px', margin: '12px 24px 0' }}>
+    <div style={{ background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '16px 20px', margin: '12px 24px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <BookOpen size={14} className="text-accent" />
@@ -12236,7 +12236,7 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
               placeholder="貼上分析師結論、目標價、風險點、催化劑..."
               rows={8}
               style={{
-                background: '#ffffff', border: '1px solid #e5e7eb', color: '#1a1a1a',
+                background: '#f7f8fa', border: '1px solid #e5e7eb', color: '#1a1a1a',
                 padding: '8px 10px', borderRadius: '3px', fontSize: '14px',
                 fontFamily: 'Noto Sans TC, DM Mono', resize: 'vertical', lineHeight: 1.5,
               }}
@@ -12273,7 +12273,7 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
             const agoStr = ago == null ? '' : (ago < 60 ? ago + 'm ago' : ago < 1440 ? Math.round(ago/60) + 'h ago' : Math.round(ago/1440) + 'd ago');
             const preview = (r.content || '').replace(/\s+/g, ' ').slice(0, 140);
             return (
-              <div key={r.id} style={{ background: '#141414', border: '1px solid #e5e7eb', borderRadius: '4px', padding: '10px 12px' }}>
+              <div key={r.id} style={{ background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '4px', padding: '10px 12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
                     <span style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', fontWeight: 600, color: '#1a1a1a' }}>{r.title}</span>
@@ -12319,14 +12319,14 @@ function FormField({ label, value, onChange, placeholder, type, options, disable
       <label style={{ fontSize: '14px', color: '#525252', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>{label}</label>
       {type === 'select' ? (
         <select value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} style={{
-          background: '#ffffff', border: '1px solid #e5e7eb', color: '#1a1a1a',
+          background: '#f7f8fa', border: '1px solid #e5e7eb', color: '#1a1a1a',
           padding: '6px 8px', borderRadius: '3px', fontSize: '14px', fontFamily: 'DM Mono',
         }}>
           {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       ) : (
         <input type={type || 'text'} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} disabled={disabled} style={{
-          background: '#ffffff', border: '1px solid #e5e7eb', color: '#1a1a1a',
+          background: '#f7f8fa', border: '1px solid #e5e7eb', color: '#1a1a1a',
           padding: '6px 8px', borderRadius: '3px', fontSize: '14px', fontFamily: 'DM Mono',
           opacity: disabled ? 0.4 : 1,
         }} />
@@ -12350,7 +12350,7 @@ function CollapsibleSection({ title, subtitle, icon: Icon, collapsed, setCollaps
           justifyContent: 'space-between',
           transition: 'background 0.15s',
         }}
-        onMouseEnter={(e) => e.currentTarget.style.background = '#1f1f1f'}
+        onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
         onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
