@@ -6772,7 +6772,20 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
           <span style={{ color: palette.mute }}>VIX <b style={{ color: palette.fg }}>{vix ? vix.toFixed(2) : '—'}</b></span>
           <span style={{ color: palette.mute }}>VVIX <b style={{ color: palette.fg }}>{vvix ? vvix.toFixed(1) : '—'}</b></span>
           <span style={{ color: palette.mute }}>SKEW <b style={{ color: skewIdx > 145 ? palette.bear : palette.fg }}>{skewIdx ? skewIdx.toFixed(1) : '—'}</b></span>
-          {macroState && <span style={{ color: palette.mute }}>Macro <b style={{ color: palette.accent }}>{macroState.score?.toFixed(0) || '—'}</b> · {macroState.band || '—'}</span>}
+          {macroState && (() => {
+            // macroState.band can be either a string ('全力進攻') or an object ({label, code, ...})
+            // Same for score (number or wrapper). Be defensive — render only strings/numbers.
+            const score = typeof macroState.score === 'number' ? macroState.score
+                        : (macroState.score && typeof macroState.score.value === 'number' ? macroState.score.value : null);
+            const bandLabel = typeof macroState.band === 'string' ? macroState.band
+                            : (macroState.band && macroState.band.label) ? macroState.band.label
+                            : (macroState.label || '—');
+            return (
+              <span style={{ color: palette.mute }}>
+                Macro <b style={{ color: palette.accent }}>{score != null ? score.toFixed(0) : '—'}</b> · {bandLabel}
+              </span>
+            );
+          })()}
           <span style={{ color: palette.dim, fontSize: '13px' }}>{topData.t ? topData.t.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '⋯'}</span>
         </div>
       </div>
