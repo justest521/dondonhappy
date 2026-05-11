@@ -434,7 +434,7 @@ const styleSheet = [
 '',
 '  .bg-app { background: #ffffff; }',
 '  .bg-card { background: #f5f5f5; }',
-'  .bg-subcard { background: #242424; }',
+'  .bg-subcard { background: #f5f5f5; }',
 '  .bg-deepcard { background: #f8f9fa; }',
 '  .text-accent { color: #10b981; }',
 '  .text-primary { color: #1a1a1a; }',
@@ -3478,7 +3478,7 @@ const styleSheet = [
 '',
 '  .bg-app { background: #ffffff; }',
 '  .bg-card { background: #f5f5f5; }',
-'  .bg-subcard { background: #242424; }',
+'  .bg-subcard { background: #f5f5f5; }',
 '  .bg-deepcard { background: #f8f9fa; }',
 '  .text-accent { color: #10b981; }',
 '  .text-primary { color: #1a1a1a; }',
@@ -5338,7 +5338,7 @@ function StrategyCard({ id, strat, selected, onSelect, badge, recommended }) {
             fontSize: '14px',
             padding: '2px 6px',
             borderRadius: '3px',
-            background: '#242424',
+            background: '#f5f5f5',
             color: '#525252',
             letterSpacing: '0.08em',
           }}
@@ -10698,7 +10698,7 @@ function TabNav({ activeTab, setActiveTab }) {
   return (
     <div style={{
       position: 'sticky', top: 0, zIndex: 50,
-      background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(8px)',
+      background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)',
       borderBottom: '1px solid #e5e7eb',
       padding: '10px 24px',
       display: 'flex', gap: '6px', overflowX: 'auto',
@@ -10713,10 +10713,10 @@ function TabNav({ activeTab, setActiveTab }) {
             style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               padding: '8px 14px',
-              background: isActive ? 'rgba(16,185,129,0.12)' : 'transparent',
+              background: isActive ? 'rgba(16,185,129,0.12)' : '#ffffff',
               border: '1px solid ' + (isActive ? '#10b981' : '#e5e7eb'),
               borderRadius: '6px',
-              color: isActive ? '#10b981' : '#c4c4c4',
+              color: isActive ? '#10b981' : '#525252',
               cursor: 'pointer',
               fontFamily: 'Noto Sans TC',
               fontSize: '14px',
@@ -10977,7 +10977,7 @@ function SetupGuide({ onClose }) {
                 <pre style={{
                   margin: '4px 0',
                   padding: '6px 10px',
-                  background: '#000',
+                  background: '#f5f5f5',
                   border: '1px solid #e5e7eb',
                   borderRadius: '3px',
                   color: '#10b981',
@@ -10993,7 +10993,7 @@ function SetupGuide({ onClose }) {
                 <pre style={{
                   margin: '4px 0',
                   padding: '6px 10px',
-                  background: '#000',
+                  background: '#f5f5f5',
                   border: '1px solid #e5e7eb',
                   borderRadius: '3px',
                   color: '#10b981',
@@ -11170,7 +11170,7 @@ function CrossSignalSection({ positions }) {
         onClick={() => setCollapsed(v => !v)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 16px', background: '#111', cursor: 'pointer',
+          padding: '12px 16px', background: '#f5f5f5', cursor: 'pointer',
           borderBottom: collapsed ? 'none' : '1px solid #e5e7eb',
         }}
       >
@@ -11263,7 +11263,7 @@ function CrossSignalSection({ positions }) {
                 gridTemplateColumns: '80px 90px 130px 130px 80px 60px 1fr',
                 padding: '8px 16px', fontSize: '14px', color: '#444',
                 fontFamily: 'DM Mono', letterSpacing: '0.05em',
-                borderBottom: '1px solid #f5f5f5', background: '#111',
+                borderBottom: '1px solid #f5f5f5', background: '#f5f5f5',
               }}>
                 <span>標的</span>
                 <span>方向</span>
@@ -11279,7 +11279,7 @@ function CrossSignalSection({ positions }) {
                   display: 'grid',
                   gridTemplateColumns: '80px 90px 130px 130px 80px 60px 1fr',
                   padding: '10px 16px',
-                  borderBottom: '1px solid #111',
+                  borderBottom: '1px solid #e5e7eb',
                   alignItems: 'center',
                   background: sig.inPortfolio ? 'rgba(16,185,129,0.04)' : i % 2 === 0 ? '#f8f9fa' : '#080808',
                   borderLeft: sig.inPortfolio ? '3px solid #10b981' : '3px solid transparent',
