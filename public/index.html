@@ -6790,47 +6790,6 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
         </div>
       </div>
 
-      {/* ── Palette switcher ── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '6px',
-        padding: '8px 24px', borderBottom: '1px solid ' + palette.line,
-        background: palette.panel2, flexWrap: 'wrap',
-      }}>
-        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', letterSpacing: '0.18em', color: palette.dim, marginRight: '4px' }}>
-          PALETTE
-        </span>
-        {V6_PALETTES.map(pp => {
-          const active = pp.id === paletteId;
-          return (
-            <button
-              key={pp.id}
-              onClick={() => setPalette(pp.id)}
-              title={pp.label}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '5px',
-                padding: '4px 9px', borderRadius: '999px',
-                border: '1.5px solid ' + (active ? pp.accent : palette.line),
-                background: active ? pp.bg : 'transparent',
-                color: active ? pp.fg : palette.mute,
-                fontFamily: 'JetBrains Mono', fontSize: '12px',
-                cursor: 'pointer', transition: 'all 0.15s',
-                fontWeight: active ? 600 : 400,
-              }}
-            >
-              <span style={{
-                width: '10px', height: '10px', borderRadius: '50%',
-                background: pp.accent, display: 'inline-block',
-                border: '1px solid ' + pp.line,
-              }} />
-              {pp.label}
-            </button>
-          );
-        })}
-        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '12px', color: palette.dim, marginLeft: 'auto' }}>
-          選好按一下，自動存到 localStorage
-        </span>
-      </div>
-
       <div style={{ padding: '14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
 
         {/* ── 01 Portfolio Greeks (real, replaces vol surface for now) ── */}
