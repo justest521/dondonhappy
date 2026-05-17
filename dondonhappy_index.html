@@ -202,7 +202,13 @@
     .theme-dark [style*="background:#f5f5f5"],
     .theme-dark [style*="background: rgb(248, 249, 250)"],
     .theme-dark [style*="background: #f8f9fa"],
-    .theme-dark [style*="background:#f8f9fa"] {
+    .theme-dark [style*="background:#f8f9fa"],
+    .theme-dark [style*="background: rgb(229, 231, 235)"],
+    .theme-dark [style*="background: #e5e7eb"],
+    .theme-dark [style*="background:#e5e7eb"],
+    .theme-dark [style*="background: rgb(203, 213, 225)"],
+    .theme-dark [style*="background: #cbd5e1"],
+    .theme-dark [style*="background:#cbd5e1"] {
       background: var(--v2-dark-panel) !important;
     }
     .theme-dark [style*="color: rgb(26, 26, 26)"],
@@ -238,6 +244,36 @@
       background: var(--v2-dark-panel-2) !important;
       color: var(--v2-dark-fg) !important;
       border-color: var(--v2-dark-line) !important;
+    }
+    .section-shell {
+      margin: 14px 24px 0;
+      border: 1px solid var(--v2-line);
+      border-left: 4px solid var(--v2-accent);
+      border-radius: 8px;
+      overflow: hidden;
+      background: color-mix(in oklab, var(--v2-panel) 88%, #ffffff 12%);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.10);
+    }
+    .section-header {
+      background: color-mix(in oklab, var(--v2-panel-2) 82%, var(--v2-bg) 18%);
+      border-bottom: 1px solid var(--v2-line);
+    }
+    .section-body {
+      padding: 16px;
+      background: color-mix(in oklab, var(--v2-bg) 55%, var(--v2-panel) 45%);
+    }
+    .theme-dark .section-shell {
+      border-color: var(--v2-dark-line);
+      border-left-color: var(--v2-accent);
+      background: var(--v2-dark-panel);
+      box-shadow: 0 16px 30px rgba(0, 0, 0, 0.28);
+    }
+    .theme-dark .section-header {
+      background: color-mix(in oklab, var(--v2-dark-panel) 82%, var(--v2-dark-bg) 18%);
+      border-bottom-color: var(--v2-dark-line);
+    }
+    .theme-dark .section-body {
+      background: color-mix(in oklab, var(--v2-dark-bg) 55%, var(--v2-dark-panel) 45%);
     }
     /* ============================================================ */
 
@@ -7529,7 +7565,7 @@ function RiskDashboard({ positions, portfolioTotal }) {
   const concentrationWarning = sectorBreakdown.length > 0 && sectorBreakdown[0].mv / Math.max(portfolioTotal, 1) > 0.4;
 
   return (
-    <div style={{ padding: '16px 24px', background: '#f7f8fa' }}>
+    <div style={{ padding: 0, background: 'transparent' }}>
       {/* Greeks summary grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
         {[
@@ -8717,10 +8753,12 @@ function OptionsScanner({ positions }) {
         gridTemplateColumns: 'auto 1fr auto',
         gap: '10px',
         alignItems: 'center',
-        marginBottom: '16px',
-        padding: '10px 12px',
-        border: '1px solid #d6dbe3',
-        background: '#fff',
+        marginBottom: '14px',
+        padding: '12px 14px',
+        border: '1px solid #94a3b8',
+        borderLeft: '4px solid #f97316',
+        borderRadius: '6px',
+        background: '#e5e7eb',
       }}>
         <button
           onClick={() => { setScannerPage((scannerPage + SCANNER_PAGES.length - 1) % SCANNER_PAGES.length); setExpandedTicker(null); }}
@@ -8761,7 +8799,7 @@ function OptionsScanner({ positions }) {
       </div>
 
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '14px' }}>
         <ScannerStat label="買方 PREMIUM" value={stats.buyerPremium} color={SCANNER_BUYER_COLOR} />
         <ScannerStat label="買方 STRONG" value={stats.buyerStrong} color={SCANNER_BUYER_COLOR} />
         <ScannerStat label="賣方 PRIME" value={stats.sellerPrime} color={SCANNER_SELLER_COLOR} />
@@ -8769,13 +8807,13 @@ function OptionsScanner({ positions }) {
       </div>
 
       {/* Results */}
-      <div style={{ border: '1px solid #d6dbe3', background: '#f7f8fa' }}>
+      <div style={{ border: '1px solid #94a3b8', borderRadius: '6px', background: '#e5e7eb', overflow: 'hidden' }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: '60px 1fr 70px 70px 70px 90px 90px 30px',
           gap: '8px',
           padding: '8px 12px',
-          background: '#f5f5f5',
+          background: '#cbd5e1',
           borderBottom: '1px solid #d6dbe3',
           fontFamily: 'DM Mono',
           fontSize: '13px',
@@ -8811,7 +8849,18 @@ function OptionsScanner({ positions }) {
       </div>
 
       {/* Footnote */}
-      <div style={{ marginTop: '12px', fontSize: '14px', color: '#6b7280', fontFamily: 'DM Mono', lineHeight: 1.6 }}>
+      <div style={{
+        marginTop: '14px',
+        padding: '10px 12px',
+        fontSize: '13px',
+        color: '#9a3412',
+        fontFamily: 'DM Mono',
+        lineHeight: 1.6,
+        border: '1px solid #94a3b8',
+        borderLeft: '4px solid #f97316',
+        borderRadius: '6px',
+        background: '#cbd5e1',
+      }}>
         資料來源: window.__IVR_CACHE / __EARNINGS_CACHE / __BETA_CACHE (UW + Polygon · 15min cache)。
         目前用分頁掃描：總榜 Top50 / Strong+ / 本週財報 / 30天財報 / IVR70+ / 高IV熱門股 / 11 個 GICS 板塊 top20。
         缺資料的訊號自動跳過，分數依可用訊號重新標準化。
@@ -8823,7 +8872,13 @@ function OptionsScanner({ positions }) {
 
 function ScannerStat({ label, value, color }) {
   return (
-    <div style={{ border: '1px solid ' + color + '40', background: color + '08', padding: '8px 10px' }}>
+    <div style={{
+      border: '1px solid ' + color + '60',
+      borderLeft: '4px solid ' + color,
+      background: color + '10',
+      padding: '10px 12px',
+      borderRadius: '6px',
+    }}>
       <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#374151', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontFamily: 'DM Mono', fontSize: '20px', color: color, fontWeight: 600, marginTop: '2px' }}>{value}</div>
     </div>
@@ -8838,7 +8893,7 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
   const showSeller = mode === 'both' || mode === 'seller';
 
   return (
-    <div style={{ borderBottom: '1px solid #f5f5f5' }}>
+    <div style={{ borderBottom: '1px solid #94a3b8' }}>
       <div
         onClick={onToggle}
         style={{
@@ -8893,7 +8948,7 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
       </div>
 
       {isExpanded && (
-        <div style={{ padding: '12px 16px 16px 16px', background: '#f0f2f5', borderTop: '1px solid #f5f5f5' }}>
+        <div style={{ padding: '14px 16px 16px 16px', background: '#cbd5e1', borderTop: '1px solid #94a3b8' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {showBuyer && (
               <ScannerSignalPanel title="爆噴買方訊號" signals={s.buyer.signals} score={s.buyer.score} grade={s.buyer.grade} accent="#f97316" />
@@ -11506,14 +11561,14 @@ function CrossSignalSection({ positions }) {
   const scoreBar = s => Math.min(100, (s / 8) * 100);
 
   return (
-    <div style={{ margin: '12px 24px 0', border: '1px solid #d6dbe3', borderRadius: '6px', overflow: 'hidden' }}>
+    <div className="section-shell" style={{ borderLeftColor: '#059669' }}>
       {/* Header */}
       <div
         onClick={() => setCollapsed(v => !v)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 16px', background: '#f5f5f5', cursor: 'pointer',
-          borderBottom: collapsed ? 'none' : '1px solid #d6dbe3',
+          padding: '13px 18px', background: '#cbd5e1', cursor: 'pointer',
+          borderBottom: collapsed ? 'none' : '1px solid #94a3b8',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -11570,10 +11625,11 @@ function CrossSignalSection({ positions }) {
       </div>
 
       {!collapsed && (
-        <div style={{ background: '#f7f8fa', padding: '0' }}>
+        <div className="section-body" style={{ padding: 0 }}>
           {/* 說明列 */}
           <div style={{
-            padding: '10px 16px', borderBottom: '1px solid #f5f5f5',
+            padding: '12px 16px', borderBottom: '1px solid #94a3b8',
+            background: '#e5e7eb',
             display: 'flex', gap: '20px', flexWrap: 'wrap',
           }}>
             {[
@@ -11623,7 +11679,7 @@ function CrossSignalSection({ positions }) {
                   padding: '10px 16px',
                   borderBottom: '1px solid #d6dbe3',
                   alignItems: 'center',
-                  background: sig.inPortfolio ? 'rgba(234,88,12,0.04)' : i % 2 === 0 ? '#f8f9fa' : '#f7f8fa',
+                background: sig.inPortfolio ? 'rgba(249,115,22,0.10)' : i % 2 === 0 ? '#e5e7eb' : '#cbd5e1',
                   borderLeft: sig.inPortfolio ? '3px solid #f97316' : '3px solid transparent',
                 }}>
                   <div>
@@ -12679,27 +12735,40 @@ function FormField({ label, value, onChange, placeholder, type, options, disable
 
 function CollapsibleSection({ title, subtitle, icon: Icon, collapsed, setCollapsed, children }) {
   return (
-    <div>
+    <div className="section-shell">
       <div
+        className="section-header"
         onClick={() => setCollapsed(!collapsed)}
         style={{
-          padding: '12px 24px',
-          background: '#f5f5f5',
-          borderBottom: collapsed ? '1px solid #d6dbe3' : 'none',
+          padding: '13px 18px',
+          borderBottom: collapsed ? 'none' : '1px solid var(--v2-line)',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           transition: 'background 0.15s',
         }}
-        onMouseEnter={(e) => e.currentTarget.style.background = '#d6dbe3'}
-        onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {Icon && <Icon size={14} style={{ color: '#f97316' }} />}
+          {Icon && (
+            <span style={{
+              width: '26px',
+              height: '26px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '5px',
+              border: '1px solid currentColor',
+              color: '#f97316',
+              background: 'rgba(249,115,22,0.10)',
+              flexShrink: 0,
+            }}>
+              <Icon size={14} />
+            </span>
+          )}
           <span style={{
             fontFamily: 'Noto Sans TC',
-            fontSize: '13px',
+            fontSize: '14px',
             fontWeight: 700,
             color: '#1a1a1a',
           }}>
@@ -12715,7 +12784,7 @@ function CollapsibleSection({ title, subtitle, icon: Icon, collapsed, setCollaps
         </div>
         {collapsed ? <ChevronDown size={14} style={{ color: '#374151' }} /> : <ChevronUp size={14} style={{ color: '#374151' }} />}
       </div>
-      {!collapsed && <div>{children}</div>}
+      {!collapsed && <div className="section-body">{children}</div>}
     </div>
   );
 }
