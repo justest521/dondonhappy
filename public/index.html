@@ -6637,13 +6637,26 @@ const V6_PALETTES = [
   { id: "ink",    label: "Pure Ink",      bg: "#0a0a0a", panel: "#141414", panel2: "#1c1c1c", line: "#262626", fg: "#fafafa", mute: "#a3a3a3", dim: "#6b6b6b", accent: "#f7f8fa", bull: "#22c55e", bear: "#ef4444", warn: "#eab308", info: "#3b82f6", vio: "#a78bfa" },
 ];
 
+const V6_DEFAULT_PALETTE_ID = 'wg';
+const normalizeV6PaletteId = (id) => id === V6_DEFAULT_PALETTE_ID ? id : V6_DEFAULT_PALETTE_ID;
+
 function VolDeskV6({ positions, portfolioTotal, macroState }) {
   const [refreshTick, setRefreshTick] = useState(0);
   const [topData, setTopData] = useState({});
   const [paletteId, setPaletteId] = useState(() => {
-    try { return localStorage.getItem('v6_palette') || 'wg'; } catch (_) { return 'wg'; }
+    try {
+      const normalized = normalizeV6PaletteId(localStorage.getItem('v6_palette') || V6_DEFAULT_PALETTE_ID);
+      localStorage.setItem('v6_palette', normalized);
+      return normalized;
+    } catch (_) {
+      return V6_DEFAULT_PALETTE_ID;
+    }
   });
-  const setPalette = (id) => { setPaletteId(id); try { localStorage.setItem('v6_palette', id); } catch (_) {} };
+  const setPalette = (id) => {
+    const normalized = normalizeV6PaletteId(id);
+    setPaletteId(normalized);
+    try { localStorage.setItem('v6_palette', normalized); } catch (_) {}
+  };
   const userPalette = V6_PALETTES.find(p => p.id === paletteId) || V6_PALETTES[0];
 
   // Fetch top status bar real-time data
