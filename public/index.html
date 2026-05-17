@@ -6387,9 +6387,9 @@ function scoreFlowSignal(ticker, flowCache) {
   const t = (ticker || '').toUpperCase();
   const matched = flowCache.filter(f => (f.ticker || f.sym || '').toUpperCase() === t);
   if (matched.length === 0) return 50;
-  const callPrem = matched.filter(f => (f.option_type || f.type || '').toLowerCase() === 'call')
+  const callPrem = matched.filter(f => (f.option_type || f.put_call || f.type || '').toLowerCase() === 'call')
     .reduce((s, f) => s + (parseFloat(f.premium) || parseFloat(f.total_premium) || 0), 0);
-  const putPrem = matched.filter(f => (f.option_type || f.type || '').toLowerCase() === 'put')
+  const putPrem = matched.filter(f => (f.option_type || f.put_call || f.type || '').toLowerCase() === 'put')
     .reduce((s, f) => s + (parseFloat(f.premium) || parseFloat(f.total_premium) || 0), 0);
   const total = callPrem + putPrem;
   if (total === 0) return 50;
@@ -8391,7 +8391,15 @@ function OptionsScanner({ positions }) {
     return list;
   }, [scoredList, mode]);
 
-  const displayList = useMemo(() => sortedList.slice(0, 20), [sortedList]);
+  const activeSectorSet = useMemo(
+    () => new Set((activeSector?.tickers || []).map(t => t.toUpperCase())),
+    [activeSector]
+  );
+
+  const displayList = useMemo(
+    () => sortedList.filter(s => activeSectorSet.has(s.ticker)).slice(0, 20),
+    [sortedList, activeSectorSet]
+  );
 
   const handleAddTicker = () => {
     const t = newTicker.toUpperCase().trim();
@@ -8422,14 +8430,14 @@ function OptionsScanner({ positions }) {
   // Stats
   const stats = useMemo(() => {
     const counts = { buyerPremium: 0, buyerStrong: 0, sellerPrime: 0, sellerStrong: 0 };
-    scoredList.forEach(s => {
+    displayList.forEach(s => {
       if (s.buyer.score >= 85) counts.buyerPremium++;
       else if (s.buyer.score >= 70) counts.buyerStrong++;
       if (s.seller.score >= 85) counts.sellerPrime++;
       else if (s.seller.score >= 70) counts.sellerStrong++;
     });
     return counts;
-  }, [scoredList]);
+  }, [displayList]);
 
   return (
     <div style={{ padding: '16px 24px', background: '#f7f8fa' }}>
@@ -8513,7 +8521,7 @@ function OptionsScanner({ positions }) {
             <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3', letterSpacing: '0.12em' }}>SECTOR PAGE {sectorPage + 1}/{SCANNER_SECTOR_UNIVERSE.length}</span>
             <span style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', fontWeight: 700, color: '#111827' }}>{activeSector.name}</span>
             <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#EA580C' }}>{activeSector.etf} · top20 universe</span>
-            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#737373' }}>顯示前 20 / 本頁掃描 {allTickers.length} 檔</span>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#737373' }}>顯示板塊前 {displayList.length} / 本頁掃描 {allTickers.length} 檔</span>
           </div>
           <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '8px' }}>
             {SCANNER_SECTOR_UNIVERSE.map((s, idx) => (
@@ -8593,7 +8601,7 @@ function OptionsScanner({ positions }) {
       {/* Footnote */}
       <div style={{ marginTop: '12px', fontSize: '14px', color: '#a3a3a3', fontFamily: 'DM Mono', lineHeight: 1.6 }}>
         資料來源: window.__IVR_CACHE / __EARNINGS_CACHE / __BETA_CACHE (UW + Polygon · 15min cache)。
-        目前用板塊分頁：每頁載入該 GICS 板塊 top20 universe，加上你的持倉與自訂 watchlist。
+        目前用板塊分頁：每頁顯示該 GICS 板塊 top20 universe；你的持倉與自訂 watchlist 仍會一起載入快取，但只在所屬板塊頁顯示。
         缺資料的訊號自動跳過，分數依可用訊號重新標準化。
         BUYER mode 找「IV 便宜 + 高 beta + 接近財報」；SELLER mode 找「IV 過熱 + 低 beta + 高 implied move」。
       </div>
