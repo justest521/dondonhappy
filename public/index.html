@@ -11068,11 +11068,15 @@ function TabNav({ activeTab, setActiveTab }) {
   ];
   return (
     <div style={{
-      position: 'sticky', top: 0, zIndex: 50,
-      background: 'rgba(247,248,250,0.95)', backdropFilter: 'blur(8px)',
-      borderBottom: '1px solid #d6dbe3',
-      padding: '10px 24px',
-      display: 'flex', gap: '6px', overflowX: 'auto',
+      margin: '14px 24px 0',
+      padding: '10px',
+      background: '#111827',
+      border: '1px solid #334155',
+      borderRadius: '10px',
+      display: 'flex',
+      gap: '8px',
+      overflowX: 'auto',
+      boxShadow: '0 12px 24px rgba(15, 23, 42, 0.14)',
     }}>
       {tabs.map(t => {
         const Icon = t.icon;
@@ -11083,11 +11087,12 @@ function TabNav({ activeTab, setActiveTab }) {
             onClick={() => setActiveTab(t.id)}
             style={{
               display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '8px 14px',
-              background: isActive ? 'rgba(234,88,12,0.12)' : '#f7f8fa',
-              border: '1px solid ' + (isActive ? '#f97316' : '#d6dbe3'),
+              minHeight: '42px',
+              padding: '9px 14px',
+              background: isActive ? 'rgba(249,115,22,0.16)' : '#0f172a',
+              border: '1px solid ' + (isActive ? '#f97316' : '#334155'),
               borderRadius: '6px',
-              color: isActive ? '#f97316' : '#374151',
+              color: isActive ? '#f97316' : '#bbf7d0',
               cursor: 'pointer',
               fontFamily: 'Noto Sans TC',
               fontSize: '14px',
@@ -11100,8 +11105,8 @@ function TabNav({ activeTab, setActiveTab }) {
             <span>{t.label}</span>
             <span style={{
               fontFamily: 'DM Mono',
-              fontSize: '14px',
-              color: isActive ? '#f9731699' : '#4b5563',
+              fontSize: '13px',
+              color: isActive ? '#fdba74' : '#86efac',
               fontWeight: 400,
               letterSpacing: '0.05em',
             }}>{t.sub}</span>
@@ -11131,26 +11136,26 @@ function AppHeader({
 
   return (
     <div style={{
-      padding: '16px 24px',
-      borderBottom: '1px solid #d6dbe3',
-      background: '#f7f8fa',
+      padding: '18px 28px',
+      borderBottom: '1px solid #334155',
+      background: '#111827',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
       flexWrap: 'wrap',
-      gap: '16px',
+      gap: '18px',
       position: 'sticky',
       top: 0,
       zIndex: 100,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <Layers size={20} style={{ color: '#f97316' }} />
+        <Layers size={22} style={{ color: '#f97316' }} />
         <div>
           <div style={{
             fontFamily: 'Noto Sans TC',
-            fontSize: '15px',
+            fontSize: '16px',
             fontWeight: 700,
-            color: '#1a1a1a',
+            color: '#bbf7d0',
             letterSpacing: '0.02em',
           }}>
             MEP Trading System
@@ -11158,7 +11163,7 @@ function AppHeader({
           <div style={{
             fontFamily: 'DM Mono, monospace',
             fontSize: '14px',
-            color: '#374151',
+            color: '#86efac',
             letterSpacing: '0.1em',
           }}>
             L2 MACRO ⊕ L1 HEDGE ⊕ SUPABASE POSITIONS
@@ -11169,16 +11174,16 @@ function AppHeader({
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         {/* Portfolio summary */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <span style={{ color: '#6b7280', fontSize: '13px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>投資組合</span>
-          <span style={{ color: '#1a1a1a', fontSize: '14px', fontFamily: 'DM Mono', fontWeight: 500 }}>
+          <span style={{ color: '#fdba74', fontSize: '13px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>投資組合</span>
+          <span style={{ color: '#bbf7d0', fontSize: '14px', fontFamily: 'DM Mono', fontWeight: 500 }}>
             {formatMoney(portfolioTotal)}
           </span>
-          <span style={{ color: '#6b7280', fontSize: '14px', fontFamily: 'DM Mono' }}>
+          <span style={{ color: '#86efac', fontSize: '14px', fontFamily: 'DM Mono' }}>
             {positionsCount} pos {optionPositionsCount > 0 ? '(' + optionPositionsCount + ' opt)' : ''}
           </span>
         </div>
 
-        <div style={{ width: '1px', height: '32px', background: '#d6dbe3' }} />
+        <div style={{ width: '1px', height: '34px', background: '#334155' }} />
 
         {/* Supabase status badge */}
         <SupabaseStatusBadge
@@ -11188,22 +11193,22 @@ function AppHeader({
           onRefresh={onRefresh}
         />
 
-        <div style={{ width: '1px', height: '32px', background: '#d6dbe3' }} />
+        <div style={{ width: '1px', height: '34px', background: '#334155' }} />
 
         {/* Live integration health (FRED / UW / Polygon / Yahoo) */}
         <HealthIndicator />
 
-        <div style={{ width: '1px', height: '32px', background: '#d6dbe3' }} />
+        <div style={{ width: '1px', height: '34px', background: '#334155' }} />
 
         {/* Auto-refresh toggle */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <span style={{ color: '#6b7280', fontSize: '13px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>自動同步</span>
+          <span style={{ color: '#fdba74', fontSize: '13px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>自動同步</span>
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
             style={{
               background: 'transparent',
-              border: '1px solid ' + (autoRefresh ? '#f97316' : '#555'),
-              color: autoRefresh ? '#f97316' : '#374151',
+              border: '1px solid ' + (autoRefresh ? '#f97316' : '#334155'),
+              color: autoRefresh ? '#f97316' : '#86efac',
               padding: '3px 10px',
               borderRadius: '3px',
               cursor: 'pointer',
@@ -11222,8 +11227,8 @@ function AppHeader({
           onClick={onToggleTheme}
           style={{
             background: themeMode === 'dark' ? '#1f2937' : '#cbd5e1',
-            border: '1px solid ' + (themeMode === 'dark' ? '#334155' : '#94a3b8'),
-            color: themeMode === 'dark' ? '#bbf7d0' : '#064e3b',
+            border: '1px solid #334155',
+            color: themeMode === 'dark' ? '#bbf7d0' : '#fdba74',
             padding: '6px 10px',
             borderRadius: '3px',
             cursor: 'pointer',
@@ -11247,8 +11252,8 @@ function AppHeader({
           onClick={() => setShowSetup(!showSetup)}
           style={{
             background: 'transparent',
-            border: '1px solid #d6dbe3',
-            color: '#374151',
+            border: '1px solid #334155',
+            color: '#86efac',
             padding: '6px 8px',
             borderRadius: '3px',
             cursor: 'pointer',
@@ -11262,7 +11267,7 @@ function AppHeader({
           onClick={() => setShowHelp(true)}
           style={{
             background: 'transparent',
-            border: '1px solid #d6dbe3',
+            border: '1px solid #334155',
             color: '#f97316',
             padding: '6px 10px',
             borderRadius: '3px',
