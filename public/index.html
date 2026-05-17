@@ -113,6 +113,58 @@
     }
     /* Splash dot */
     .splash-dot { background: var(--v2-accent) !important; }
+    .theme-dark {
+      background: #0f172a !important;
+      color: #e5edf8 !important;
+      color-scheme: dark;
+    }
+    .theme-dark [style*="background: rgb(247, 248, 250)"],
+    .theme-dark [style*="background: #f7f8fa"],
+    .theme-dark [style*="background:#f7f8fa"] {
+      background: #0f172a !important;
+    }
+    .theme-dark [style*="background: rgb(245, 245, 245)"],
+    .theme-dark [style*="background: #f5f5f5"],
+    .theme-dark [style*="background:#f5f5f5"],
+    .theme-dark [style*="background: rgb(248, 249, 250)"],
+    .theme-dark [style*="background: #f8f9fa"],
+    .theme-dark [style*="background:#f8f9fa"] {
+      background: #111827 !important;
+    }
+    .theme-dark [style*="color: rgb(26, 26, 26)"],
+    .theme-dark [style*="color: #1a1a1a"],
+    .theme-dark [style*="color:#1a1a1a"] {
+      color: #f8fafc !important;
+    }
+    .theme-dark [style*="color: rgb(55, 65, 81)"],
+    .theme-dark [style*="color: #374151"],
+    .theme-dark [style*="color:#374151"],
+    .theme-dark [style*="color: rgb(75, 85, 99)"],
+    .theme-dark [style*="color: #4b5563"],
+    .theme-dark [style*="color:#4b5563"] {
+      color: #cbd5e1 !important;
+    }
+    .theme-dark [style*="color: rgb(107, 114, 128)"],
+    .theme-dark [style*="color: #6b7280"],
+    .theme-dark [style*="color:#6b7280"] {
+      color: #94a3b8 !important;
+    }
+    .theme-dark [style*="border: 1px solid rgb(214, 219, 227)"],
+    .theme-dark [style*="border: 1px solid #d6dbe3"],
+    .theme-dark [style*="border-color: rgb(214, 219, 227)"],
+    .theme-dark [style*="border-color: #d6dbe3"],
+    .theme-dark [style*="borderBottom: 1px solid #d6dbe3"],
+    .theme-dark [style*="border-bottom: 1px solid rgb(214, 219, 227)"],
+    .theme-dark [style*="border-bottom: 1px solid #d6dbe3"] {
+      border-color: #334155 !important;
+    }
+    .theme-dark input,
+    .theme-dark textarea,
+    .theme-dark select {
+      background: #0b1220 !important;
+      color: #f8fafc !important;
+      border-color: #334155 !important;
+    }
     /* ============================================================ */
 
     * { box-sizing: border-box; }
@@ -280,7 +332,7 @@
       Plus, X, CircleDot,
       // App icons
       Wifi, WifiOff, RefreshCw, AlertCircle, ChevronDown, ChevronUp,
-      Settings, ArrowRight, HelpCircle,
+      Settings, ArrowRight, HelpCircle, Moon, Sun,
     } = Lucide;
 
     // ────────────────────────────────────────────────────────────
@@ -6640,7 +6692,7 @@ const V6_PALETTES = [
 const V6_DEFAULT_PALETTE_ID = 'wg';
 const normalizeV6PaletteId = (id) => id === V6_DEFAULT_PALETTE_ID ? id : V6_DEFAULT_PALETTE_ID;
 
-function VolDeskV6({ positions, portfolioTotal, macroState }) {
+function VolDeskV6({ positions, portfolioTotal, macroState, themeMode = 'light' }) {
   const [refreshTick, setRefreshTick] = useState(0);
   const [topData, setTopData] = useState({});
   const [paletteId, setPaletteId] = useState(() => {
@@ -6658,6 +6710,7 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
     try { localStorage.setItem('v6_palette', normalized); } catch (_) {}
   };
   const userPalette = V6_PALETTES.find(p => p.id === paletteId) || V6_PALETTES[0];
+  const darkPalette = V6_PALETTES.find(p => p.id === 'ice') || userPalette;
 
   // Fetch top status bar real-time data
   useEffect(() => {
@@ -6855,7 +6908,7 @@ function VolDeskV6({ positions, portfolioTotal, macroState }) {
     return sign + prefix + abs.toFixed(0);
   };
 
-  const palette = userPalette;
+  const palette = themeMode === 'dark' ? darkPalette : userPalette;
 
   // Payoff chart geometry
   const chartW = 540, chartH = 200, pad = { l: 50, r: 16, t: 14, b: 26 };
@@ -9929,6 +9982,19 @@ function App() {
 
   // Tab navigation — UI organization (voldesk / home / portfolio / options / textbook / hedge)
   const [activeTab, setActiveTab] = useState('voldesk');  // V6 Vol Desk default
+  const [themeMode, setThemeMode] = useState(() => {
+    try { return localStorage.getItem('mep_theme_mode') || 'light'; } catch (_) { return 'light'; }
+  });
+  const toggleThemeMode = useCallback(() => {
+    setThemeMode(prev => prev === 'dark' ? 'light' : 'dark');
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem('mep_theme_mode', themeMode); } catch (_) {}
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', themeMode);
+    }
+  }, [themeMode]);
 
   // AI portfolio summary — auto-triggered on positions change (debounced 30 min)
   const [aiSummary, setAiSummary] = useState(null);
@@ -10197,7 +10263,7 @@ function App() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: APP_STYLES }} />
-      <div style={{ background: '#f7f8fa', minHeight: '100vh' }}>
+      <div className={themeMode === 'dark' ? 'theme-dark' : 'theme-light'} style={{ background: themeMode === 'dark' ? '#0f172a' : '#f7f8fa', minHeight: '100vh' }}>
 
         {/* App Header */}
         <AppHeader
@@ -10211,6 +10277,8 @@ function App() {
           onRefresh={fetchPositions}
           showSetup={showSetup}
           setShowSetup={setShowSetup}
+          themeMode={themeMode}
+          onToggleTheme={toggleThemeMode}
         />
 
         {/* Setup guide if no API key */}
@@ -10259,7 +10327,7 @@ function App() {
         {/* TAB: Vol Desk (V6) — institutional options PM dashboard */}
         {/* ──────────────────────────────────────────────────── */}
         {activeTab === 'voldesk' && (
-          <VolDeskV6 positions={positions} portfolioTotal={portfolioTotal} macroState={macroState} />
+          <VolDeskV6 positions={positions} portfolioTotal={portfolioTotal} macroState={macroState} themeMode={themeMode} />
         )}
 
         {/* ──────────────────────────────────────────────────── */}
@@ -10906,6 +10974,7 @@ function TabNav({ activeTab, setActiveTab }) {
 function AppHeader({
   supabaseStatus, lastFetch, positionsCount, optionPositionsCount, portfolioTotal,
   autoRefresh, setAutoRefresh, onRefresh, showSetup, setShowSetup,
+  themeMode, onToggleTheme,
 }) {
   const status = STATUS_CONFIG[supabaseStatus] || STATUS_CONFIG.mock;
   const Icon = status.icon;
@@ -11005,6 +11074,31 @@ function AppHeader({
             {autoRefresh ? '✓ 60s' : 'OFF'}
           </button>
         </div>
+
+        {/* Theme toggle */}
+        <button
+          onClick={onToggleTheme}
+          style={{
+            background: themeMode === 'dark' ? '#111827' : 'transparent',
+            border: '1px solid ' + (themeMode === 'dark' ? '#334155' : '#d6dbe3'),
+            color: themeMode === 'dark' ? '#f8fafc' : '#374151',
+            padding: '6px 10px',
+            borderRadius: '3px',
+            cursor: 'pointer',
+            fontFamily: 'DM Mono',
+            fontSize: '13px',
+            letterSpacing: '0.05em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+          title="切換深色 / 淺色"
+        >
+          {themeMode === 'dark'
+            ? (Sun ? <Sun size={14} /> : '☀')
+            : (Moon ? <Moon size={14} /> : '☾')}
+          {themeMode === 'dark' ? '淺色' : '深色'}
+        </button>
 
         {/* Settings button */}
         <button
