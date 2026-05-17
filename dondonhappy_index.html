@@ -4690,6 +4690,10 @@ function VIXHedgeCalculator({
     }
   }, [workerUrl, targetExpiry]);
 
+  useEffect(() => {
+    fetchVIXChain();
+  }, [fetchVIXChain]);
+
   // Stress test: fetch ATM straddle for single stock → derive implied-move %
   const fetchStressStraddle = useCallback(async (ticker) => {
     setStraddleStatus('fetching');
@@ -4794,6 +4798,7 @@ function VIXHedgeCalculator({
   // Strategies (existing logic, unchanged structure)
   // ──────────────────────────────────────────────────────────
   const stratA = useMemo(() => {
+    const minCost = call18Premium * 100;
     const contracts = Math.floor(hedgeBudget / (call18Premium * 100));
     const actualCost = contracts * call18Premium * 100;
     return {
@@ -4803,6 +4808,7 @@ function VIXHedgeCalculator({
       desc: '成本低、槓桿適中、主力保險',
       contracts,
       cost: actualCost,
+      minCost,
       legs: [{ action: 'BUY', qty: contracts, strike: 18, premium: call18Premium }],
       maxLoss: actualCost,
       breakeven: 18 + call18Premium,
@@ -4817,7 +4823,8 @@ function VIXHedgeCalculator({
 
   const stratB = useMemo(() => {
     const netDebit = call16Premium - call20Premium;
-    const contracts = Math.floor(hedgeBudget / (netDebit * 100));
+    const minCost = netDebit > 0 ? netDebit * 100 : Infinity;
+    const contracts = netDebit > 0 ? Math.floor(hedgeBudget / (netDebit * 100)) : 0;
     const actualCost = contracts * netDebit * 100;
     const maxProfitPerContract = (20 - 16 - netDebit) * 100;
     const maxProfit = contracts * maxProfitPerContract;
@@ -4831,6 +4838,7 @@ function VIXHedgeCalculator({
       desc: '配合 200MA 壓力、雙腿抵消 vega',
       contracts,
       cost: actualCost,
+      minCost,
       netDebit,
       legs: [
         { action: 'BUY', qty: contracts, strike: 16, premium: call16Premium },
@@ -4853,6 +4861,7 @@ function VIXHedgeCalculator({
     const mainContracts = Math.floor(mainBudget / (call18Premium * 100));
     const lottoContracts = Math.floor(lottoBudget / (call20Premium * 100));
     const actualCost = mainContracts * call18Premium * 100 + lottoContracts * call20Premium * 100;
+    const minCost = Math.min((call18Premium * 100) / 0.7, (call20Premium * 100) / 0.3);
     const totalDte = daysToEvent + daysAfterEvent;
     const vegaMain = estimateVixVega(vixPrice, 18, totalDte) * mainContracts;
     const vegaLotto = estimateVixVega(vixPrice, 20, totalDte) * lottoContracts;
@@ -4865,6 +4874,7 @@ function VIXHedgeCalculator({
       mainContracts,
       lottoContracts,
       cost: actualCost,
+      minCost,
       legs: [
         { action: 'BUY', qty: mainContracts, strike: 18, premium: call18Premium },
         { action: 'BUY', qty: lottoContracts, strike: 20, premium: call20Premium },
@@ -4879,6 +4889,64 @@ function VIXHedgeCalculator({
   }, [hedgeBudget, call18Premium, call20Premium, vixPrice, daysToEvent, daysAfterEvent]);
 
   const strategies = { single_18: stratA, spread_16_20: stratB, mixed: stratC };
+  const minBpsForCost = useCallback((cost) => {
+    if (!portfolioValue || !isFinite(cost) || cost <= 0) return null;
+    return Math.ceil(((cost / portfolioValue) * 10000) / 5) * 5;
+  }, [portfolioValue]);
+
+  const executableRecommendation = useMemo(() => {
+    if (!recommendation.id) return recommendation;
+    const preferred = strategies[recommendation.id];
+    if (preferred && preferred.contracts > 0) {
+      return { ...recommendation, executable: true, originalId: recommendation.id };
+    }
+
+    const fallbackOrder = recommendation.id === 'spread_16_20'
+      ? [stratA, stratC]
+      : [stratA, stratB, stratC];
+    const fallback = fallbackOrder.find(s => s && s.contracts > 0);
+    const requiredBps = preferred ? minBpsForCost(preferred.minCost) : null;
+
+    if (fallback) {
+      return {
+        ...recommendation,
+        id: fallback.id,
+        label: '可執行：' + fallback.name,
+        confidence: 'EXECUTABLE',
+        tone: recommendation.tone === 'go' ? 'caution' : recommendation.tone,
+        executable: true,
+        originalId: recommendation.id,
+        originalLabel: recommendation.label,
+        reason: recommendation.label + ' 是理論最佳，但目前預算不足只能買 0 口'
+          + (requiredBps ? '（約需 ' + requiredBps + ' bps 才能買 1 組）' : '')
+          + '。目前可下單方案為 ' + fallback.name + ' ' + fallback.contracts + ' 口，支出 ' + formatMoney(fallback.cost) + '。',
+      };
+    }
+
+    const cheapest = [stratA, stratB, stratC]
+      .filter(s => s && isFinite(s.minCost) && s.minCost > 0)
+      .sort((a, b) => a.minCost - b.minCost)[0];
+    const minBps = cheapest ? minBpsForCost(cheapest.minCost) : null;
+    return {
+      id: null,
+      label: '預算不足，暫不下單',
+      reason: '目前避險預算 ' + formatMoney(hedgeBudget) + ' 買不到任何一個 VIX 結構'
+        + (cheapest && minBps ? '；至少調到約 ' + minBps + ' bps 才能買 1 口 ' + cheapest.name + '。' : '。'),
+      confidence: 'WAIT',
+      tone: 'wait',
+      executable: false,
+      originalId: recommendation.id,
+      originalLabel: recommendation.label,
+    };
+  }, [recommendation, strategies, stratA, stratB, stratC, minBpsForCost, hedgeBudget]);
+
+  useEffect(() => {
+    if (!executableRecommendation.id) return;
+    const current = strategies[selectedStructure];
+    if (!current || current.contracts <= 0) {
+      setSelectedStructure(executableRecommendation.id);
+    }
+  }, [executableRecommendation.id, selectedStructure, strategies]);
 
   // ──────────────────────────────────────────────────────────
   // Scenario P&L (modified to support iv_aware mode)
@@ -5248,7 +5316,7 @@ function VIXHedgeCalculator({
 
             {/* ═══════════════════════════════════════ Recommendation Banner */}
             <RecommendationBanner
-              rec={recommendation}
+              rec={executableRecommendation}
               onApply={(id) => id && setSelectedStructure(id)}
               currentSelection={selectedStructure}
               ivr={vixIvRank}
@@ -5273,7 +5341,7 @@ function VIXHedgeCalculator({
                   selected={selectedStructure === 'single_18'}
                   onSelect={setSelectedStructure}
                   badge="A · LINEAR"
-                  recommended={recommendation.id === 'single_18'}
+                  recommended={executableRecommendation.id === 'single_18'}
                 />
                 <StrategyCard
                   id="spread_16_20"
@@ -5281,7 +5349,7 @@ function VIXHedgeCalculator({
                   selected={selectedStructure === 'spread_16_20'}
                   onSelect={setSelectedStructure}
                   badge="B · SPREAD"
-                  recommended={recommendation.id === 'spread_16_20'}
+                  recommended={executableRecommendation.id === 'spread_16_20'}
                 />
                 <StrategyCard
                   id="mixed"
@@ -5289,7 +5357,7 @@ function VIXHedgeCalculator({
                   selected={selectedStructure === 'mixed'}
                   onSelect={setSelectedStructure}
                   badge="C · MIXED"
-                  recommended={recommendation.id === 'mixed'}
+                  recommended={executableRecommendation.id === 'mixed'}
                 />
               </div>
 
@@ -5499,6 +5567,7 @@ function VIXHedgeCalculator({
 
 // ────────────────────────────── Strategy Card (existing, slightly enhanced)
 function StrategyCard({ id, strat, selected, onSelect, badge, recommended }) {
+  const isExecutable = strat.contracts > 0;
   return (
     <div
       onClick={() => onSelect(id)}
@@ -5508,6 +5577,7 @@ function StrategyCard({ id, strat, selected, onSelect, badge, recommended }) {
         padding: '14px 16px',
         cursor: 'pointer',
         position: 'relative',
+        opacity: isExecutable ? 1 : 0.72,
       }}
     >
       {recommended && (
@@ -5547,6 +5617,21 @@ function StrategyCard({ id, strat, selected, onSelect, badge, recommended }) {
           IV crush: {strat.ivCrushRisk}
         </span>
       </div>
+      {!isExecutable && (
+        <div
+          className="font-mono-dm"
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            fontSize: '11px',
+            color: '#ef4444',
+            letterSpacing: '0.08em',
+          }}
+        >
+          預算不足
+        </div>
+      )}
       <div className="font-bold text-sm text-primary mb-1" style={{ fontFamily: 'Noto Sans TC' }}>
         {strat.name}
       </div>
@@ -5638,6 +5723,11 @@ function RecommendationBanner({ rec, onApply, currentSelection, ivr, dte, eventT
           <div className="text-xs text-muted font-tc mt-2" style={{ fontSize: '11.5px', lineHeight: 1.5 }}>
             {rec.reason}
           </div>
+          {rec.originalLabel && rec.originalId !== rec.id && (
+            <div className="text-xs font-mono-dm mt-2" style={{ color: '#9a3412', fontSize: '13px' }}>
+              理論最佳：{rec.originalLabel} · 已改用可執行方案
+            </div>
+          )}
           <div className="flex items-center gap-3 mt-2 text-xs font-mono-dm text-muted-2" style={{ fontSize: '14px' }}>
             <span>IVR <span className="text-accent">{ivr}</span></span>
             <span>·</span>
