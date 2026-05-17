@@ -516,6 +516,14 @@ function recommendStrategy({ ivr, daysToEvent, eventType }) {
   };
 }
 
+function nextWeekdayISO(baseDate, targetDay) {
+  const d = new Date(baseDate);
+  d.setHours(12, 0, 0, 0);
+  const diff = (targetDay - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
 // ============================================================
 // MAIN COMPONENT
 // ============================================================
@@ -569,14 +577,17 @@ export default function VIXHedgeCalculator({
   const [straddleError, setStraddleError] = useState(null);
   const [straddleSyncTime, setStraddleSyncTime] = useState(null);
 
-  // Helper: pick next VIX expiry ~daysToEvent days out
-  // VIX options expire on Wednesdays (third Wednesday of expiry month).
-  // For simplicity, calculate the target date and use ISO format.
-  const targetExpiry = useMemo(() => {
+  const eventDate = useMemo(() => {
     const d = new Date();
-    d.setDate(d.getDate() + daysToEvent + 7);  // a bit beyond event for safety
-    return d.toISOString().slice(0, 10);
+    d.setDate(d.getDate() + daysToEvent);
+    return d;
   }, [daysToEvent]);
+
+  // VIX weekly options usually expire on Wednesdays; single-stock weeklies on Fridays.
+  // Aligning to real option weekdays prevents the Polygon buttons from asking for
+  // weekend expiries such as 2026-05-31.
+  const targetExpiry = useMemo(() => nextWeekdayISO(eventDate, 3), [eventDate]);      // VIX call chain
+  const stockTargetExpiry = useMemo(() => nextWeekdayISO(eventDate, 5), [eventDate]); // stock ATM straddle
 
   const fetchVIXChain = useCallback(async () => {
     setChainStatus('fetching');
@@ -598,18 +609,23 @@ export default function VIXHedgeCalculator({
       const byStrike = {};
       data.contracts.forEach(c => { byStrike[Math.round(c.strike)] = c; });
 
+      let appliedCount = 0;
       const apply = (strike, setter) => {
         const c = byStrike[strike];
-        if (c && c.mid != null && c.mid > 0) {
-          setter(parseFloat(c.mid.toFixed(2)));
-        } else if (c && c.lastPrice != null && c.lastPrice > 0) {
-          setter(parseFloat(c.lastPrice.toFixed(2)));
+        const premium = c?.premium ?? c?.mid ?? c?.lastPrice ?? c?.dayClose ?? c?.fmv;
+        if (premium != null && premium > 0) {
+          setter(parseFloat(premium.toFixed(2)));
+          appliedCount += 1;
         }
       };
       apply(16, setCall16Premium);
       apply(18, setCall18Premium);
       apply(20, setCall20Premium);
       apply(22, setCall22Premium);
+
+      if (appliedCount === 0) {
+        throw new Error('Contracts found for ' + targetExpiry + ', but Polygon returned no bid/ask/last premium.');
+      }
 
       setChainSyncTime(new Date());
       setChainStatus('synced');
@@ -627,7 +643,7 @@ export default function VIXHedgeCalculator({
     try {
       const url = workerUrl + '/api/polygon/atm-straddle'
         + '?underlying=' + encodeURIComponent(ticker)
-        + '&expiry=' + targetExpiry;
+        + '&expiry=' + stockTargetExpiry;
       const res = await fetch(url);
       if (!res.ok) {
         const text = await res.text();
@@ -648,7 +664,7 @@ export default function VIXHedgeCalculator({
       setStraddleError(e.message || String(e));
       setStraddleStatus('error');
     }
-  }, [workerUrl, targetExpiry]);
+  }, [workerUrl, stockTargetExpiry]);
 
   const [selectedStructure, setSelectedStructure] = useState('spread_16_20');
 
@@ -1325,7 +1341,7 @@ export default function VIXHedgeCalculator({
               straddleStatus={straddleStatus}
               straddleError={straddleError}
               straddleSyncTime={straddleSyncTime}
-              targetExpiry={targetExpiry}
+              targetExpiry={stockTargetExpiry}
               stressQQQWeight={stressQQQWeight}
               setStressQQQWeight={setStressQQQWeight}
               stressContagion={stressContagion}

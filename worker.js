@@ -509,7 +509,7 @@ async function polygonSMA(url, env) {
   const timespan = url.searchParams.get('timespan') || 'day';
   if (!ticker) return jsonResponse({ error: 'Missing ticker' }, 400);
 
-  const cacheKey = 'sma-' + ticker + '-' + window + '-' + timespan;
+  const cacheKey = 'sma-v2-' + ticker + '-' + window + '-' + timespan;
   return polygonCachedFetch(cacheKey, 1800, async () => {
     // Indices SMA endpoint
     const isIndex = ticker.startsWith('I:');
@@ -535,9 +535,23 @@ async function polygonSMA(url, env) {
     if (!sma) {
       return jsonResponse({ error: 'No SMA data', ticker }, 404);
     }
-    // Get latest close (from underlying if available, or fetch separately)
-    const latestClose = d.results?.underlying?.aggregates?.[0]?.c
-      || d.results?.values?.[0]?.value; // fallback to SMA itself if no close
+
+    // Polygon's SMA response does not always include the underlying close.
+    // Never compare SMA against itself: fetch recent aggregates and use the
+    // newest close so SPX above/below MA remains a real signal.
+    const aggregateBars = d.results?.underlying?.aggregates || [];
+    let latestClose = aggregateBars[0]?.c ?? aggregateBars[aggregateBars.length - 1]?.c ?? null;
+    let closeTimestamp = aggregateBars[0]?.t ?? aggregateBars[aggregateBars.length - 1]?.t ?? null;
+    let closeSource = latestClose != null ? 'polygon-sma-underlying' : null;
+
+    if (latestClose == null) {
+      const bars = await fetchPolygonAggregateBars(ticker, 10, env);
+      const latestBar = bars[bars.length - 1] || null;
+      latestClose = latestBar?.c ?? null;
+      closeTimestamp = latestBar?.t ?? null;
+      closeSource = latestClose != null ? 'polygon-aggregates' : null;
+    }
+
     return jsonResponse({
       ticker,
       window,
@@ -545,13 +559,29 @@ async function polygonSMA(url, env) {
       latestSMA: sma.value,
       smaTimestamp: sma.timestamp ? new Date(sma.timestamp).toISOString() : null,
       latestClose,
+      closeTimestamp: closeTimestamp ? new Date(closeTimestamp).toISOString() : null,
       aboveMA: latestClose != null ? latestClose > sma.value : null,
       pctFromMA: latestClose != null
         ? ((latestClose - sma.value) / sma.value) * 100
         : null,
+      closeSource,
       source: 'polygon-sma',
     });
   });
+}
+
+async function fetchPolygonAggregateBars(ticker, days, env) {
+  const to = new Date();
+  const from = new Date(Date.now() - days * 2 * 86400000);
+  const fmt = (d) => d.toISOString().slice(0, 10);
+  const polyUrl = 'https://api.polygon.io/v2/aggs/ticker/' + encodeURIComponent(ticker)
+    + '/range/1/day/' + fmt(from) + '/' + fmt(to)
+    + '?adjusted=true&sort=asc&limit=' + (days * 2)
+    + '&apiKey=' + env.POLYGON_API_KEY;
+  const r = await fetch(polyUrl);
+  const d = await r.json();
+  if (!r.ok) return [];
+  return d.results || [];
 }
 
 // ────────────────────────────────────────────────────────────
@@ -566,24 +596,14 @@ async function polygonAggregates(url, env) {
 
   const cacheKey = 'aggs-' + ticker + '-' + days;
   return polygonCachedFetch(cacheKey, 900, async () => {
-    const to = new Date();
-    const from = new Date(Date.now() - days * 2 * 86400000);
-    const fmt = (d) => d.toISOString().slice(0, 10);
-    const polyUrl = 'https://api.polygon.io/v2/aggs/ticker/' + encodeURIComponent(ticker)
-      + '/range/1/day/' + fmt(from) + '/' + fmt(to)
-      + '?adjusted=true&sort=asc&limit=' + (days * 2)
-      + '&apiKey=' + env.POLYGON_API_KEY;
-    const r = await fetch(polyUrl);
-    const d = await r.json();
-    if (!r.ok) {
+    const barsRaw = await fetchPolygonAggregateBars(ticker, days, env);
+    if (barsRaw.length === 0) {
       return jsonResponse({
-        error: 'Aggregates fetch failed',
-        status: r.status,
-        polygonError: d.error || d.message || null,
+        error: 'Aggregates fetch failed or returned no bars',
         ticker,
-      }, r.status);
+      }, 502);
     }
-    const bars = (d.results || []).slice(-days).map(b => ({ t: b.t, c: b.c }));
+    const bars = barsRaw.slice(-days).map(b => ({ t: b.t, c: b.c }));
     return jsonResponse({ ticker, count: bars.length, bars });
   });
 }
@@ -669,6 +689,11 @@ async function polygonOptionChain(url, env) {
       mid: (c.last_quote?.bid != null && c.last_quote?.ask != null)
         ? (c.last_quote.bid + c.last_quote.ask) / 2 : null,
       lastPrice: c.last_trade?.price ?? null,
+      dayClose: c.day?.close ?? c.day?.c ?? null,
+      fmv: c.fmv ?? null,
+      premium: ((c.last_quote?.bid != null && c.last_quote?.ask != null)
+        ? (c.last_quote.bid + c.last_quote.ask) / 2
+        : (c.last_trade?.price ?? c.day?.close ?? c.day?.c ?? c.fmv ?? null)),
       iv: c.implied_volatility ?? null,
       delta: c.greeks?.delta ?? null,
       gamma: c.greeks?.gamma ?? null,
