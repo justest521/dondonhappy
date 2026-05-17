@@ -6308,16 +6308,75 @@ const SCANNER_SECTOR_UNIVERSE = [
   { id: 'xlre', name: '房地產', etf: 'XLRE', tickers: ['PLD', 'AMT', 'EQIX', 'WELL', 'SPG', 'PSA', 'O', 'DLR', 'CCI', 'CBRE', 'VICI', 'AVB', 'EQR', 'EXR', 'IRM', 'WY', 'INVH', 'ESS', 'MAA', 'ARE'] },
 ];
 
+const SCANNER_HOT_TICKERS = [
+  'MSTR', 'COIN', 'HOOD', 'SMCI', 'ARM', 'RIVN', 'SOFI', 'MARA', 'RIOT', 'UPST',
+  'AFRM', 'CVNA', 'DKNG', 'ROKU', 'SNAP', 'U', 'UBER', 'DASH', 'SHOP', 'NET',
+  'DDOG', 'CELH', 'NIO', 'LI', 'BABA',
+];
+
+const SCANNER_SPECIAL_PAGES = [
+  { id: 'top50', name: '全部市場 Top 50', short: 'TOP50', kind: 'top', limit: 50 },
+  { id: 'strong', name: '只看 Strong+', short: 'STRONG+', kind: 'strong', limit: 50 },
+  { id: 'earnings7', name: '本週財報', short: 'EPS 7D', kind: 'earnings', maxDays: 7, limit: 50 },
+  { id: 'earnings30', name: '30天內財報', short: 'EPS 30D', kind: 'earnings', maxDays: 30, limit: 50 },
+  { id: 'ivr70', name: 'IVR 70+', short: 'IVR70+', kind: 'ivr', minIvr: 70, limit: 50 },
+  { id: 'hot', name: '高IV/高成交量熱門股', short: 'HOT', kind: 'hot', limit: 50 },
+];
+
+const SCANNER_PAGES = [
+  ...SCANNER_SPECIAL_PAGES,
+  ...SCANNER_SECTOR_UNIVERSE.map(s => ({ ...s, kind: 'sector', short: s.etf, limit: 20 })),
+];
+
+const SCANNER_ALL_UNIVERSE = Array.from(new Set([
+  ...SCANNER_SECTOR_UNIVERSE.flatMap(s => s.tickers),
+  ...SCANNER_HOT_TICKERS,
+]));
+
 function getScannerSector(ticker) {
   const t = (ticker || '').toUpperCase();
   const sector = SCANNER_SECTOR_UNIVERSE.find(s => s.tickers.includes(t));
   return sector ? sector : null;
 }
 
+function scannerPageTickers(page) {
+  if (!page) return [];
+  if (page.kind === 'sector') return page.tickers || [];
+  if (page.kind === 'hot') return SCANNER_HOT_TICKERS;
+  return SCANNER_ALL_UNIVERSE;
+}
+
 function getScannerSortValue(item, mode) {
   if (mode === 'seller') return item.seller.score || 0;
   if (mode === 'buyer') return item.buyer.score || 0;
   return Math.max(item.buyer.score || 0, item.seller.score || 0);
+}
+
+function scannerPassesPage(item, page, mode) {
+  if (!page) return true;
+  const hasOptionScannerData = item.ivr != null || item.earnDate != null || item.expectedMove != null;
+  if (page.kind === 'sector') {
+    return (page.tickers || []).includes(item.ticker);
+  }
+  if (page.kind === 'hot') {
+    return SCANNER_HOT_TICKERS.includes(item.ticker);
+  }
+  if (page.kind === 'strong') {
+    if (!hasOptionScannerData) return false;
+    if (mode === 'buyer') return (item.buyer.score || 0) >= 70;
+    if (mode === 'seller') return (item.seller.score || 0) >= 70;
+    return (item.buyer.score || 0) >= 70 || (item.seller.score || 0) >= 70;
+  }
+  if (page.kind === 'earnings') {
+    return item.daysToEarnings != null && item.daysToEarnings >= 0 && item.daysToEarnings <= page.maxDays;
+  }
+  if (page.kind === 'ivr') {
+    return item.ivr != null && item.ivr >= page.minIvr;
+  }
+  if (page.kind === 'top') {
+    return hasOptionScannerData;
+  }
+  return true;
 }
 
 // SCANNER scoring helpers
@@ -8325,25 +8384,25 @@ function OptionsScanner({ positions }) {
   const [expandedTicker, setExpandedTicker] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [sectorPage, setSectorPage] = useState(0);
+  const [scannerPage, setScannerPage] = useState(0);
 
-  const activeSector = SCANNER_SECTOR_UNIVERSE[sectorPage] || SCANNER_SECTOR_UNIVERSE[0];
+  const activePage = SCANNER_PAGES[scannerPage] || SCANNER_PAGES[0];
 
   // Persist watchlist
   useEffect(() => {
     try { localStorage.setItem('ddh_scanner_watchlist', JSON.stringify(watchlist)); } catch (_) {}
   }, [watchlist]);
 
-  // Combine positions + watchlist + active sector top20 into unique ticker list.
-  // Each sector is its own page so we can cover all 11 sectors without
-  // hammering UW/Polygon with a full-market scan on every load.
+  // Combine positions + watchlist + active scanner page universe.
+  // Special pages intentionally scan the full built-in universe in chunks;
+  // sector pages stay lighter and scan only that sector's top20.
   const allTickers = useMemo(() => {
     const set = new Set();
-    (activeSector?.tickers || []).forEach(t => set.add(t.toUpperCase()));
+    scannerPageTickers(activePage).forEach(t => set.add(t.toUpperCase()));
     (positions || []).forEach(p => { if (p.ticker) set.add(p.ticker.toUpperCase()); });
     watchlist.forEach(t => set.add(t.toUpperCase()));
     return Array.from(set);
-  }, [positions, watchlist, activeSector]);
+  }, [positions, watchlist, activePage]);
 
   // Auto-warm caches on mount via worker server-side batch (1 fetch vs N×2)
   // — bypasses browser-side flakiness from extensions / SW
@@ -8391,14 +8450,9 @@ function OptionsScanner({ positions }) {
     return list;
   }, [scoredList, mode]);
 
-  const activeSectorSet = useMemo(
-    () => new Set((activeSector?.tickers || []).map(t => t.toUpperCase())),
-    [activeSector]
-  );
-
   const displayList = useMemo(
-    () => sortedList.filter(s => activeSectorSet.has(s.ticker)).slice(0, 20),
-    [sortedList, activeSectorSet]
+    () => sortedList.filter(s => scannerPassesPage(s, activePage, mode)).slice(0, activePage.limit || 50),
+    [sortedList, activePage, mode]
   );
 
   const handleAddTicker = () => {
@@ -8501,7 +8555,7 @@ function OptionsScanner({ positions }) {
         </div>
       </div>
 
-      {/* Sector pager */}
+      {/* Scanner pager */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'auto 1fr auto',
@@ -8513,39 +8567,41 @@ function OptionsScanner({ positions }) {
         background: '#fff',
       }}>
         <button
-          onClick={() => { setSectorPage((sectorPage + SCANNER_SECTOR_UNIVERSE.length - 1) % SCANNER_SECTOR_UNIVERSE.length); setExpandedTicker(null); }}
+          onClick={() => { setScannerPage((scannerPage + SCANNER_PAGES.length - 1) % SCANNER_PAGES.length); setExpandedTicker(null); }}
           style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#525252', padding: '5px 10px', fontFamily: 'DM Mono', fontSize: '12px', cursor: 'pointer', borderRadius: '3px' }}
-        >← 上一板塊</button>
+        >← 上一頁</button>
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3', letterSpacing: '0.12em' }}>SECTOR PAGE {sectorPage + 1}/{SCANNER_SECTOR_UNIVERSE.length}</span>
-            <span style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', fontWeight: 700, color: '#111827' }}>{activeSector.name}</span>
-            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#EA580C' }}>{activeSector.etf} · top20 universe</span>
-            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#737373' }}>顯示板塊前 {displayList.length} / 本頁掃描 {allTickers.length} 檔</span>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3', letterSpacing: '0.12em' }}>SCANNER PAGE {scannerPage + 1}/{SCANNER_PAGES.length}</span>
+            <span style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', fontWeight: 700, color: '#111827' }}>{activePage.name}</span>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#EA580C' }}>
+              {activePage.kind === 'sector' ? activePage.etf + ' · top20 universe' : activePage.short + ' · filtered universe'}
+            </span>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#737373' }}>顯示 {displayList.length} / 本頁掃描 {allTickers.length} 檔</span>
           </div>
           <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '8px' }}>
-            {SCANNER_SECTOR_UNIVERSE.map((s, idx) => (
+            {SCANNER_PAGES.map((s, idx) => (
               <button
                 key={s.id}
-                onClick={() => { setSectorPage(idx); setExpandedTicker(null); }}
+                onClick={() => { setScannerPage(idx); setExpandedTicker(null); }}
                 style={{
-                  background: idx === sectorPage ? '#EA580C14' : 'transparent',
-                  border: '1px solid ' + (idx === sectorPage ? '#EA580C' : '#e5e7eb'),
-                  color: idx === sectorPage ? '#EA580C' : '#737373',
+                  background: idx === scannerPage ? '#EA580C14' : 'transparent',
+                  border: '1px solid ' + (idx === scannerPage ? '#EA580C' : '#e5e7eb'),
+                  color: idx === scannerPage ? '#EA580C' : '#737373',
                   padding: '3px 7px',
                   fontFamily: 'DM Mono',
                   fontSize: '11px',
                   cursor: 'pointer',
                   borderRadius: '3px',
                 }}
-              >{s.etf}</button>
+              >{s.short || s.etf}</button>
             ))}
           </div>
         </div>
         <button
-          onClick={() => { setSectorPage((sectorPage + 1) % SCANNER_SECTOR_UNIVERSE.length); setExpandedTicker(null); }}
+          onClick={() => { setScannerPage((scannerPage + 1) % SCANNER_PAGES.length); setExpandedTicker(null); }}
           style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#525252', padding: '5px 10px', fontFamily: 'DM Mono', fontSize: '12px', cursor: 'pointer', borderRadius: '3px' }}
-        >下一板塊 →</button>
+        >下一頁 →</button>
       </div>
 
       {/* Stats row */}
@@ -8601,7 +8657,7 @@ function OptionsScanner({ positions }) {
       {/* Footnote */}
       <div style={{ marginTop: '12px', fontSize: '14px', color: '#a3a3a3', fontFamily: 'DM Mono', lineHeight: 1.6 }}>
         資料來源: window.__IVR_CACHE / __EARNINGS_CACHE / __BETA_CACHE (UW + Polygon · 15min cache)。
-        目前用板塊分頁：每頁顯示該 GICS 板塊 top20 universe；你的持倉與自訂 watchlist 仍會一起載入快取，但只在所屬板塊頁顯示。
+        目前用分頁掃描：總榜 Top50 / Strong+ / 本週財報 / 30天財報 / IVR70+ / 高IV熱門股 / 11 個 GICS 板塊 top20。
         缺資料的訊號自動跳過，分數依可用訊號重新標準化。
         BUYER mode 找「IV 便宜 + 高 beta + 接近財報」；SELLER mode 找「IV 過熱 + 低 beta + 高 implied move」。
       </div>
