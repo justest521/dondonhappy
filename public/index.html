@@ -36,11 +36,11 @@
       --v2-bg: #f7f8fa;
       --v2-panel: #f7f8fa;
       --v2-panel-2: #f5f5f5;
-      --v2-line: #e5e7eb;
-      --v2-line-2: #d4d4d4;
+      --v2-line: #d6dbe3;
+      --v2-line-2: #b9c0ca;
       --v2-fg: #1a1a1a;
-      --v2-fg-mute: #7a8499;
-      --v2-fg-dim: #4d5468;
+      --v2-fg-mute: #374151;
+      --v2-fg-dim: #4b5563;
       --v2-accent: #EA580C;
       --v2-accent-2: #FB923C;
       --v2-success: #10b981;
@@ -127,7 +127,7 @@
       min-height: 100vh;
       flex-direction: column;
       gap: 16px;
-      color: #888;
+      color: #374151;
       font-family: 'DM Mono', monospace;
       font-size: 13px;
     }
@@ -191,7 +191,7 @@
             '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #444;">' +
             '<div style="color:#fca5a5;font-weight:bold;margin-bottom:4px;">' + prefix + '</div>' +
             '<div style="color:#1a1a1a;margin-bottom:6px;">' + escapeHtml(msg) + '</div>' +
-            (stack ? '<pre style="color:#737373;font-size:11px;margin:0;white-space:pre-wrap;max-height:200px;overflow:auto;">' + escapeHtml(stack) + '</pre>' : '') +
+            (stack ? '<pre style="color:#4b5563;font-size:11px;margin:0;white-space:pre-wrap;max-height:200px;overflow:auto;">' + escapeHtml(stack) + '</pre>' : '') +
             '</div>';
           return;
         }
@@ -201,14 +201,14 @@
         div.innerHTML =
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
           '<div style="color:#ef4444;font-weight:bold;font-size:14px;">⚠️ Runtime error caught — app render failed</div>' +
-          '<button onclick="this.parentNode.parentNode.remove()" style="background:transparent;border:1px solid #888;color:#fff;padding:4px 10px;cursor:pointer;border-radius:3px;">關閉</button>' +
+          '<button onclick="this.parentNode.parentNode.remove()" style="background:transparent;border:1px solid #374151;color:#fff;padding:4px 10px;cursor:pointer;border-radius:3px;">關閉</button>' +
           '</div>' +
           '<div class="__err_list">' +
           '<div style="color:#fca5a5;font-weight:bold;margin-bottom:4px;">' + prefix + '</div>' +
           '<div style="color:#1a1a1a;margin-bottom:6px;">' + escapeHtml(msg) + '</div>' +
-          (stack ? '<pre style="color:#737373;font-size:11px;margin:0;white-space:pre-wrap;max-height:200px;overflow:auto;">' + escapeHtml(stack) + '</pre>' : '') +
+          (stack ? '<pre style="color:#4b5563;font-size:11px;margin:0;white-space:pre-wrap;max-height:200px;overflow:auto;">' + escapeHtml(stack) + '</pre>' : '') +
           '</div>' +
-          '<div style="margin-top:10px;color:#737373;font-size:11px;">截圖此區回報 → 立刻定位問題</div>';
+          '<div style="margin-top:10px;color:#4b5563;font-size:11px;">截圖此區回報 → 立刻定位問題</div>';
         document.body.appendChild(div);
       }
       function escapeHtml(s) {
@@ -300,7 +300,7 @@
               position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
               background: '#f5f5f5', border: '1px solid #1a1a1a', borderRadius: '6px',
               padding: '10px 12px', fontSize: '13px', fontFamily: 'Noto Sans TC',
-              color: '#e5e7eb', lineHeight: '1.7', width: '300px', zIndex: 1000,
+              color: '#1a1a1a', lineHeight: '1.7', width: '300px', zIndex: 1000,
               whiteSpace: 'pre-line', boxShadow: '0 6px 20px rgba(0,0,0,0.6)',
               textAlign: 'left', fontWeight: 'normal', letterSpacing: 'normal',
             }}>{text}</div>
@@ -388,16 +388,16 @@ Anthropic API: docs.claude.com` },
           zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px',
         }}>
           <div onClick={(e) => e.stopPropagation()} style={{
-            background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '8px',
+            background: '#f7f8fa', border: '1px solid #d6dbe3', borderRadius: '8px',
             maxWidth: '720px', width: '100%', maxHeight: '85vh', overflowY: 'auto',
             padding: '28px 32px', boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid #e5e7eb' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid #d6dbe3' }}>
               <div>
                 <div style={{ fontFamily: 'Noto Sans TC', fontSize: '18px', fontWeight: 700, color: '#1a1a1a' }}>📖 MEP Trading System · 使用說明</div>
-                <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', marginTop: '4px', letterSpacing: '0.1em' }}>L2 MACRO · L1 HEDGE · POLYGON · SUPABASE</div>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', marginTop: '4px', letterSpacing: '0.1em' }}>L2 MACRO · L1 HEDGE · POLYGON · SUPABASE</div>
               </div>
-              <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#525252', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '14px' }}>關閉 ESC</button>
+              <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #d6dbe3', color: '#374151', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '14px' }}>關閉 ESC</button>
             </div>
             {sections.map((s, i) => (
               <div key={i} style={{ marginBottom: '24px' }}>
@@ -405,7 +405,7 @@ Anthropic API: docs.claude.com` },
                 <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', lineHeight: '1.8', whiteSpace: 'pre-line', paddingLeft: '4px' }}>{s.body}</div>
               </div>
             ))}
-            <div style={{ marginTop: '20px', paddingTop: '14px', borderTop: '1px solid #e5e7eb', fontFamily: 'DM Mono', fontSize: '14px', color: '#a3a3a3', textAlign: 'center' }}>完整說明請見 GitHub README · 點背景或按 ESC 關閉</div>
+            <div style={{ marginTop: '20px', paddingTop: '14px', borderTop: '1px solid #d6dbe3', fontFamily: 'DM Mono', fontSize: '14px', color: '#6b7280', textAlign: 'center' }}>完整說明請見 GitHub README · 點背景或按 ESC 關閉</div>
           </div>
         </div>
       );
@@ -442,7 +442,7 @@ const styleSheet = [
 '  .bg-deepcard { background: #f8f9fa; }',
 '  .text-accent { color: #EA580C; }',
 '  .text-primary { color: #1a1a1a; }',
-'  .text-muted { color: #888; }',
+'  .text-muted { color: #374151; }',
 '  .text-muted-2 { color: #555; }',
 '  .text-green { color: #10b981; }',
 '  .text-red { color: #ef4444; }',
@@ -450,17 +450,17 @@ const styleSheet = [
 '  .text-purple { color: #EA580C; }',
 '  .text-orange { color: #fb923c; }',
 '',
-'  .hair-border { border: 1px solid #e5e7eb; }',
-'  .hair-border-b { border-bottom: 1px solid #e5e7eb; }',
-'  .hair-border-t { border-top: 1px solid #e5e7eb; }',
-'  .hair-border-l { border-left: 1px solid #e5e7eb; }',
-'  .hair-border-r { border-right: 1px solid #e5e7eb; }',
+'  .hair-border { border: 1px solid #d6dbe3; }',
+'  .hair-border-b { border-bottom: 1px solid #d6dbe3; }',
+'  .hair-border-t { border-top: 1px solid #d6dbe3; }',
+'  .hair-border-l { border-left: 1px solid #d6dbe3; }',
+'  .hair-border-r { border-right: 1px solid #d6dbe3; }',
 '',
 '  input[type="range"] {',
 '    -webkit-appearance: none;',
 '    appearance: none;',
 '    height: 4px;',
-'    background: #e5e7eb;',
+'    background: #d6dbe3;',
 '    border-radius: 2px;',
 '    outline: none;',
 '  }',
@@ -477,7 +477,7 @@ const styleSheet = [
 '',
 '  .num-input, .text-input, select.num-input {',
 '    background: transparent;',
-'    border: 1px solid #e5e7eb;',
+'    border: 1px solid #d6dbe3;',
 '    color: #1a1a1a;',
 '    padding: 8px 10px;',
 '    border-radius: 4px;',
@@ -497,14 +497,14 @@ const styleSheet = [
 '',
 '  .toggle-pill {',
 '    display: inline-flex;',
-'    border: 1px solid #e5e7eb;',
+'    border: 1px solid #d6dbe3;',
 '    border-radius: 4px;',
 '    overflow: hidden;',
 '  }',
 '  .toggle-pill button {',
 '    background: transparent;',
 '    border: none;',
-'    color: #888;',
+'    color: #374151;',
 '    padding: 6px 12px;',
 '    cursor: pointer;',
 '    font-family: \'DM Mono\', monospace;',
@@ -520,8 +520,8 @@ const styleSheet = [
 '',
 '  .icon-btn {',
 '    background: transparent;',
-'    border: 1px solid #e5e7eb;',
-'    color: #888;',
+'    border: 1px solid #d6dbe3;',
+'    color: #374151;',
 '    border-radius: 4px;',
 '    padding: 4px 8px;',
 '    cursor: pointer;',
@@ -553,7 +553,7 @@ const styleSheet = [
 '    gap: 8px;',
 '    margin-bottom: 14px;',
 '    padding-bottom: 10px;',
-'    border-bottom: 1px solid #e5e7eb;',
+'    border-bottom: 1px solid #d6dbe3;',
 '  }',
 '',
 '  .scoreboard-glow {',
@@ -597,7 +597,7 @@ const styleSheet = [
 '',
 '  .gauge-bar {',
 '    height: 8px;',
-'    background: #e5e7eb;',
+'    background: #d6dbe3;',
 '    border-radius: 4px;',
 '    overflow: hidden;',
 '    position: relative;',
@@ -629,8 +629,8 @@ const styleSheet = [
 '    flex: 1;',
 '    padding: 10px 14px;',
 '    background: transparent;',
-'    border: 1px solid #e5e7eb;',
-'    color: #888;',
+'    border: 1px solid #d6dbe3;',
+'    color: #374151;',
 '    cursor: pointer;',
 '    transition: all 0.15s;',
 '    font-family: \'Noto Sans TC\';',
@@ -1391,7 +1391,7 @@ const AUTO_BADGE = (
   </span>
 );
 const MANUAL_BADGE = (
-  <span style={{ marginLeft: '6px', fontSize: '8.5px', color: '#525252', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>
+  <span style={{ marginLeft: '6px', fontSize: '8.5px', color: '#374151', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>
     ✎ MANUAL
   </span>
 );
@@ -1732,14 +1732,14 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
                   {weightedTotal.toFixed(0)}
                 </span>
               </div>
-              <div style={{ width: '1px', height: '24px', background: '#e5e7eb' }} />
+              <div style={{ width: '1px', height: '24px', background: '#d6dbe3' }} />
               <div className="flex flex-col items-end">
                 <span className="text-muted-2" style={{ fontSize: '13px', letterSpacing: '0.1em' }}>BAND</span>
                 <span style={{ color: positionBand.color, fontSize: '13px', fontWeight: 700 }} className="font-tc">
                   {positionBand.label}
                 </span>
               </div>
-              <div style={{ width: '1px', height: '24px', background: '#e5e7eb' }} />
+              <div style={{ width: '1px', height: '24px', background: '#d6dbe3' }} />
               <div className="flex flex-col items-end">
                 <span className="text-muted-2" style={{ fontSize: '13px', letterSpacing: '0.1em' }}>ALERTS</span>
                 <span style={{
@@ -1750,7 +1750,7 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
                   {redAlerts.length > 0 ? redAlerts.length + ' 紅燈' : 'CLEAR'}
                 </span>
               </div>
-              <div style={{ width: '1px', height: '24px', background: '#e5e7eb' }} />
+              <div style={{ width: '1px', height: '24px', background: '#d6dbe3' }} />
               <div className="flex flex-col items-end">
                 <span className="text-muted-2" style={{ fontSize: '13px', letterSpacing: '0.1em' }}>L1 HEDGE</span>
                 <span className="text-accent" style={{ fontSize: '13px', fontWeight: 700 }}>
@@ -1983,7 +1983,7 @@ function L2MacroDashboard({ onScoreChange = null, portfolioTotal = null }) {
 
             <div className="mb-3">
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs text-primary font-tc">ISM PMI{AUTO_BADGE}<span style={{ marginLeft: '4px', fontSize: '8.5px', color: '#737373', fontFamily: 'DM Mono' }}>(CFNAI 代理)</span></label>
+                <label className="text-xs text-primary font-tc">ISM PMI{AUTO_BADGE}<span style={{ marginLeft: '4px', fontSize: '8.5px', color: '#4b5563', fontFamily: 'DM Mono' }}>(CFNAI 代理)</span></label>
                 <span className="font-mono-dm tabular" style={{
                   fontSize: '13px',
                   color: pmiValue >= 50 ? '#10b981' : '#ef4444',
@@ -2217,7 +2217,7 @@ function TodayCallHero({ score, band, redAlerts, l1HedgeBudgetBps, l1HedgeBudget
           </div>
           <div className="flex flex-col gap-2">
             <AllocationBar label="股票部位" pct={100 - band.cashPct} color={band.color} />
-            <AllocationBar label="現金 (SGOV)" pct={band.cashPct} color="#888" />
+            <AllocationBar label="現金 (SGOV)" pct={band.cashPct} color="#374151" />
           </div>
           <div className="flex items-center gap-2 mt-3 text-xs font-mono-dm">
             <span style={{
@@ -2446,7 +2446,7 @@ function RedAlertSection({
     <div className="bg-card hair-border" style={{
       borderRadius: '6px',
       padding: '18px',
-      borderColor: overallStatus === 'safe' ? '#e5e7eb' : overallStatus === 'caution' ? '#EA580C60' : '#ef444460',
+      borderColor: overallStatus === 'safe' ? '#d6dbe3' : overallStatus === 'caution' ? '#EA580C60' : '#ef444460',
     }}>
       <div className="section-title">
         <Bell size={14} className={overallStatus === 'safe' ? 'text-green' : overallStatus === 'caution' ? 'text-accent' : 'text-red'} />
@@ -2498,7 +2498,7 @@ function AlertRow({ name, check, detail, action, severity }) {
       style={{
         borderRadius: '4px',
         padding: '12px 14px',
-        borderColor: check ? (severity === 'critical' ? '#ef444460' : '#fb923c60') : '#e5e7eb',
+        borderColor: check ? (severity === 'critical' ? '#ef444460' : '#fb923c60') : '#d6dbe3',
         background: check ? (severity === 'critical' ? 'rgba(239,68,68,0.04)' : 'rgba(251,146,60,0.04)') : 'transparent',
       }}
     >
@@ -2652,14 +2652,14 @@ function QuadrantCell({ q, active }) {
         borderRadius: '4px',
         padding: '8px 10px',
         background: active ? 'rgba(234,88,12,0.08)' : 'transparent',
-        borderColor: active ? '#EA580C' : '#e5e7eb',
+        borderColor: active ? '#EA580C' : '#d6dbe3',
         transition: 'all 0.15s',
       }}
     >
       <div className="font-tc" style={{
         fontSize: '14px',
         fontWeight: active ? 700 : 500,
-        color: active ? '#EA580C' : '#888',
+        color: active ? '#EA580C' : '#374151',
       }}>
         {q.label}
       </div>
@@ -2880,8 +2880,8 @@ function ScenarioPlannerSection({
               onClick={() => setSelectedEvent(ev.id)}
               className={selectedEvent === ev.id ? 'icon-btn' : 'icon-btn'}
               style={{
-                borderColor: selectedEvent === ev.id ? '#EA580C' : '#e5e7eb',
-                color: selectedEvent === ev.id ? '#EA580C' : '#888',
+                borderColor: selectedEvent === ev.id ? '#EA580C' : '#d6dbe3',
+                color: selectedEvent === ev.id ? '#EA580C' : '#374151',
                 background: selectedEvent === ev.id ? 'rgba(234,88,12,0.08)' : 'transparent',
                 fontSize: '13px',
               }}
@@ -2899,8 +2899,8 @@ function ScenarioPlannerSection({
           onClick={() => setScenarioMode('bullish')}
           style={{
             background: scenarioMode === 'bullish' ? 'rgba(234,88,12,0.08)' : 'transparent',
-            borderColor: scenarioMode === 'bullish' ? '#EA580C' : '#e5e7eb',
-            color: scenarioMode === 'bullish' ? '#EA580C' : '#888',
+            borderColor: scenarioMode === 'bullish' ? '#EA580C' : '#d6dbe3',
+            color: scenarioMode === 'bullish' ? '#EA580C' : '#374151',
           }}
         >
           <TrendingUp size={12} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
@@ -2911,8 +2911,8 @@ function ScenarioPlannerSection({
           onClick={() => setScenarioMode('bearish')}
           style={{
             background: scenarioMode === 'bearish' ? 'rgba(239,68,68,0.08)' : 'transparent',
-            borderColor: scenarioMode === 'bearish' ? '#ef4444' : '#e5e7eb',
-            color: scenarioMode === 'bearish' ? '#ef4444' : '#888',
+            borderColor: scenarioMode === 'bearish' ? '#ef4444' : '#d6dbe3',
+            color: scenarioMode === 'bearish' ? '#ef4444' : '#374151',
           }}
         >
           <TrendingDown size={12} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
@@ -3066,7 +3066,7 @@ function L1IntegrationSection({ weightedTotal, positionBand, redAlerts, l1HedgeB
           <BreakdownRow
             label={'基礎預算 (' + positionBand.label + ')'}
             value={baseFromBand + ' bps'}
-            color="#888"
+            color="#374151"
           />
           {triggers.map((t, i) => (
             <BreakdownRow
@@ -3097,11 +3097,11 @@ function L1IntegrationSection({ weightedTotal, positionBand, redAlerts, l1HedgeB
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }} className="font-mono-dm tabular">
             <thead>
               <tr className="hair-border-b">
-                <th style={{ textAlign: 'left', padding: '6px 6px', color: '#525252', fontWeight: 500 }}>L2 Score</th>
-                <th style={{ textAlign: 'left', padding: '6px 6px', color: '#525252', fontWeight: 500 }}>Band</th>
-                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#525252', fontWeight: 500 }}>Base bps</th>
-                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#525252', fontWeight: 500 }}>槓桿</th>
-                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#525252', fontWeight: 500 }}>現金 %</th>
+                <th style={{ textAlign: 'left', padding: '6px 6px', color: '#374151', fontWeight: 500 }}>L2 Score</th>
+                <th style={{ textAlign: 'left', padding: '6px 6px', color: '#374151', fontWeight: 500 }}>Band</th>
+                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#374151', fontWeight: 500 }}>Base bps</th>
+                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#374151', fontWeight: 500 }}>槓桿</th>
+                <th style={{ textAlign: 'right', padding: '6px 6px', color: '#374151', fontWeight: 500 }}>現金 %</th>
               </tr>
             </thead>
             <tbody>
@@ -3123,7 +3123,7 @@ function L1IntegrationSection({ weightedTotal, positionBand, redAlerts, l1HedgeB
                     <td style={{ padding: '6px', textAlign: 'right', color: b.leverageOk ? '#10b981' : '#ef4444' }}>
                       {b.leverageOk ? '✓' : '✗'}
                     </td>
-                    <td style={{ padding: '6px', textAlign: 'right', color: '#525252' }}>
+                    <td style={{ padding: '6px', textAlign: 'right', color: '#374151' }}>
                       {b.cashPct}%
                     </td>
                   </tr>
@@ -3218,7 +3218,7 @@ function ModelingNotesSection() {
 // ────────────────────────────── FREDSyncBar (NEW: auto-sync from FRED)
 function FREDSyncBar({ status, syncTime, error, details, onSync }) {
   const colorMap = {
-    idle:     { color: '#525252',    label: 'IDLE' },
+    idle:     { color: '#374151',    label: 'IDLE' },
     fetching: { color: '#EA580C', label: 'FETCHING' },
     synced:   { color: '#10b981', label: 'SYNCED' },
     error:    { color: '#ef4444', label: '錯誤' },
@@ -3287,7 +3287,7 @@ function FREDSyncBar({ status, syncTime, error, details, onSync }) {
 
       {/* Show derived stats */}
       {details && status === 'synced' && (
-        <div style={{ marginTop: '8px', fontSize: '9.5px', color: '#737373', fontFamily: 'DM Mono' }}>
+        <div style={{ marginTop: '8px', fontSize: '9.5px', color: '#4b5563', fontFamily: 'DM Mono' }}>
           <div className="flex justify-between" style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>淨流動性 vs 20MA</span>
             <span style={{ color: details.netLiq?.aboveMA ? '#10b981' : '#ef4444' }}>
@@ -3323,7 +3323,7 @@ function FREDSyncBar({ status, syncTime, error, details, onSync }) {
 // ────────────────────────────── PolygonSyncBar (SPX 20MA + VIX/SPY)
 function PolygonSyncBar({ status, syncTime, error, details, onSync }) {
   const colorMap = {
-    idle:     { color: '#525252',    label: 'IDLE' },
+    idle:     { color: '#374151',    label: 'IDLE' },
     fetching: { color: '#EA580C', label: 'FETCHING' },
     synced:   { color: '#10b981', label: 'SYNCED' },
     error:    { color: '#ef4444', label: '錯誤' },
@@ -3400,11 +3400,11 @@ function PolygonSyncBar({ status, syncTime, error, details, onSync }) {
       )}
 
       {details && status !== 'error' && (
-        <div style={{ marginTop: '8px', fontSize: '9.5px', color: '#737373', fontFamily: 'DM Mono' }}>
+        <div style={{ marginTop: '8px', fontSize: '9.5px', color: '#4b5563', fontFamily: 'DM Mono' }}>
           {/* SPX 20MA */}
           <div className="flex justify-between" style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>SPX 20MA</span>
-            <span style={{ color: details.spxSMA ? (details.spxSMA.aboveMA ? '#10b981' : '#ef4444') : '#666' }}>
+            <span style={{ color: details.spxSMA ? (details.spxSMA.aboveMA ? '#10b981' : '#ef4444') : '#4b5563' }}>
               {details.spxSMA
                 ? (details.spxSMA.aboveMA ? '✓ above ' : '✗ below ') + (details.spxSMA.pctFromMA?.toFixed(1) || '?') + '%'
                 : (details.spxSMAError ? 'error' : '—')}
@@ -3424,7 +3424,7 @@ function PolygonSyncBar({ status, syncTime, error, details, onSync }) {
           {/* SPY */}
           <div className="flex justify-between" style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>SPY</span>
-            <span style={{ color: details.spy?.changePct != null ? (details.spy.changePct >= 0 ? '#10b981' : '#ef4444') : '#666' }}>
+            <span style={{ color: details.spy?.changePct != null ? (details.spy.changePct >= 0 ? '#10b981' : '#ef4444') : '#4b5563' }}>
               {details.spy
                 ? '$' + (details.spy.price?.toFixed(2) || '?') + ' ' + ((details.spy.changePct ?? 0) >= 0 ? '+' : '') + (details.spy.changePct?.toFixed(2) || '?') + '%'
                 : (details.spyError ? 'error' : '—')}
@@ -3494,7 +3494,7 @@ const styleSheet = [
 '  .bg-deepcard { background: #f8f9fa; }',
 '  .text-accent { color: #EA580C; }',
 '  .text-primary { color: #1a1a1a; }',
-'  .text-muted { color: #888; }',
+'  .text-muted { color: #374151; }',
 '  .text-muted-2 { color: #555; }',
 '  .text-green { color: #10b981; }',
 '  .text-red { color: #ef4444; }',
@@ -3502,17 +3502,17 @@ const styleSheet = [
 '  .text-purple { color: #EA580C; }',
 '  .text-orange { color: #fb923c; }',
 '',
-'  .hair-border { border: 1px solid #e5e7eb; }',
-'  .hair-border-b { border-bottom: 1px solid #e5e7eb; }',
-'  .hair-border-t { border-top: 1px solid #e5e7eb; }',
-'  .hair-border-l { border-left: 1px solid #e5e7eb; }',
-'  .hair-border-r { border-right: 1px solid #e5e7eb; }',
+'  .hair-border { border: 1px solid #d6dbe3; }',
+'  .hair-border-b { border-bottom: 1px solid #d6dbe3; }',
+'  .hair-border-t { border-top: 1px solid #d6dbe3; }',
+'  .hair-border-l { border-left: 1px solid #d6dbe3; }',
+'  .hair-border-r { border-right: 1px solid #d6dbe3; }',
 '',
 '  input[type="range"] {',
 '    -webkit-appearance: none;',
 '    appearance: none;',
 '    height: 4px;',
-'    background: #e5e7eb;',
+'    background: #d6dbe3;',
 '    border-radius: 2px;',
 '    outline: none;',
 '  }',
@@ -3529,7 +3529,7 @@ const styleSheet = [
 '',
 '  .num-input {',
 '    background: transparent;',
-'    border: 1px solid #e5e7eb;',
+'    border: 1px solid #d6dbe3;',
 '    color: #1a1a1a;',
 '    padding: 8px 10px;',
 '    border-radius: 4px;',
@@ -3550,7 +3550,7 @@ const styleSheet = [
 '',
 '  .text-input {',
 '    background: transparent;',
-'    border: 1px solid #e5e7eb;',
+'    border: 1px solid #d6dbe3;',
 '    color: #1a1a1a;',
 '    padding: 6px 10px;',
 '    border-radius: 4px;',
@@ -3601,8 +3601,8 @@ const styleSheet = [
 '',
 '  .icon-btn {',
 '    background: transparent;',
-'    border: 1px solid #e5e7eb;',
-'    color: #888;',
+'    border: 1px solid #d6dbe3;',
+'    color: #374151;',
 '    border-radius: 4px;',
 '    padding: 4px 8px;',
 '    cursor: pointer;',
@@ -3631,14 +3631,14 @@ const styleSheet = [
 '',
 '  .toggle-pill {',
 '    display: inline-flex;',
-'    border: 1px solid #e5e7eb;',
+'    border: 1px solid #d6dbe3;',
 '    border-radius: 4px;',
 '    overflow: hidden;',
 '  }',
 '  .toggle-pill button {',
 '    background: transparent;',
 '    border: none;',
-'    color: #888;',
+'    color: #374151;',
 '    padding: 6px 12px;',
 '    cursor: pointer;',
 '    font-family: \'DM Mono\', monospace;',
@@ -3658,7 +3658,7 @@ const styleSheet = [
 '    gap: 8px;',
 '    margin-bottom: 14px;',
 '    padding-bottom: 10px;',
-'    border-bottom: 1px solid #e5e7eb;',
+'    border-bottom: 1px solid #d6dbe3;',
 '  }',
 ''
 ].join('\n');
@@ -4997,7 +4997,7 @@ function VIXHedgeCalculator({
                   value={vixIvAfter}
                   onChange={(e) => setVixIvAfter(Number(e.target.value))}
                   className="num-input"
-                  style={{ borderColor: vixIvAfter < vixIvBefore - 20 ? '#ef4444' : '#e5e7eb' }}
+                  style={{ borderColor: vixIvAfter < vixIvBefore - 20 ? '#ef4444' : '#d6dbe3' }}
                 />
               </div>
             </div>
@@ -5030,7 +5030,7 @@ function VIXHedgeCalculator({
                   fontSize: '14px',
                   padding: '3px 8px',
                   borderRadius: '3px',
-                  border: '1px solid ' + (chainStatus === 'error' ? '#ef4444' : chainStatus === 'synced' ? '#10b981' : '#e5e7eb'),
+                  border: '1px solid ' + (chainStatus === 'error' ? '#ef4444' : chainStatus === 'synced' ? '#10b981' : '#d6dbe3'),
                   background: 'transparent',
                   color: chainStatus === 'error' ? '#ef4444' : chainStatus === 'synced' ? '#10b981' : '#EA580C',
                   cursor: chainStatus === 'fetching' ? 'wait' : 'pointer',
@@ -5043,7 +5043,7 @@ function VIXHedgeCalculator({
               </button>
             </div>
             {chainStatus === 'synced' && chainSyncTime && (
-              <div style={{ fontSize: '14px', color: '#525252', fontFamily: 'DM Mono', marginTop: '4px', marginBottom: '6px' }}>
+              <div style={{ fontSize: '14px', color: '#374151', fontFamily: 'DM Mono', marginTop: '4px', marginBottom: '6px' }}>
                 expiry {targetExpiry} · {Math.round((Date.now() - chainSyncTime.getTime()) / 1000)}s ago
               </div>
             )}
@@ -5147,12 +5147,12 @@ function VIXHedgeCalculator({
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }} className="font-mono-dm tabular">
                   <thead>
                     <tr className="hair-border-b">
-                      <th style={{ textAlign: 'left', padding: '8px 6px', color: '#525252', fontWeight: 500 }}>情境</th>
-                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#525252', fontWeight: 500 }}>VIX 收</th>
-                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#525252', fontWeight: 500 }}>組合衝擊</th>
-                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#525252', fontWeight: 500 }}>A 純買</th>
-                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#525252', fontWeight: 500 }}>B Spread</th>
-                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#525252', fontWeight: 500 }}>C 混搭</th>
+                      <th style={{ textAlign: 'left', padding: '8px 6px', color: '#374151', fontWeight: 500 }}>情境</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#374151', fontWeight: 500 }}>VIX 收</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#374151', fontWeight: 500 }}>組合衝擊</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#374151', fontWeight: 500 }}>A 純買</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#374151', fontWeight: 500 }}>B Spread</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', color: '#374151', fontWeight: 500 }}>C 混搭</th>
                       <th style={{ textAlign: 'right', padding: '8px 6px', color: '#EA580C', fontWeight: 500 }}>淨 (選中)</th>
                     </tr>
                   </thead>
@@ -5365,7 +5365,7 @@ function StrategyCard({ id, strat, selected, onSelect, badge, recommended }) {
             padding: '2px 6px',
             borderRadius: '3px',
             background: '#f5f5f5',
-            color: '#525252',
+            color: '#374151',
             letterSpacing: '0.08em',
           }}
         >
@@ -5406,7 +5406,7 @@ function RecommendationBanner({ rec, onApply, currentSelection, ivr, dte, eventT
   const isApplied = rec.id === currentSelection;
 
   const bgClass = isWait ? 'rec-banner-wait' : 'rec-banner';
-  const iconColor = isWait ? '#888' : isCaution ? '#fb923c' : '#EA580C';
+  const iconColor = isWait ? '#374151' : isCaution ? '#fb923c' : '#EA580C';
   const Icon = isWait ? Clock : isCaution ? AlertTriangle : Sparkles;
 
   return (
@@ -5436,7 +5436,7 @@ function RecommendationBanner({ rec, onApply, currentSelection, ivr, dte, eventT
                               rec.tone === 'caution' ? 'rgba(251,146,60,0.15)' :
                               'rgba(136,136,136,0.15)',
                   color: rec.tone === 'go' ? '#EA580C' :
-                         rec.tone === 'caution' ? '#fb923c' : '#888',
+                         rec.tone === 'caution' ? '#fb923c' : '#374151',
                   letterSpacing: '0.08em',
                 }}
               >
@@ -5564,12 +5564,12 @@ function PortfolioBetaSection({
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }} className="font-mono-dm tabular">
           <thead>
             <tr className="hair-border-b">
-              <th style={{ textAlign: 'left', padding: '8px 6px', color: '#525252', fontWeight: 500 }}>Ticker</th>
-              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#525252', fontWeight: 500 }}>金額</th>
-              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#525252', fontWeight: 500 }}>權重</th>
-              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#525252', fontWeight: 500 }}>β (vs SPY)</th>
-              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#525252', fontWeight: 500 }}>β-貢獻</th>
-              <th style={{ textAlign: 'center', padding: '8px 6px', color: '#525252', fontWeight: 500, width: '40px' }}></th>
+              <th style={{ textAlign: 'left', padding: '8px 6px', color: '#374151', fontWeight: 500 }}>Ticker</th>
+              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#374151', fontWeight: 500 }}>金額</th>
+              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#374151', fontWeight: 500 }}>權重</th>
+              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#374151', fontWeight: 500 }}>β (vs SPY)</th>
+              <th style={{ textAlign: 'right', padding: '8px 6px', color: '#374151', fontWeight: 500 }}>β-貢獻</th>
+              <th style={{ textAlign: 'center', padding: '8px 6px', color: '#374151', fontWeight: 500, width: '40px' }}></th>
             </tr>
           </thead>
           <tbody>
@@ -5601,7 +5601,7 @@ function PortfolioBetaSection({
                       style={{ width: '100px', padding: '4px 8px', textAlign: 'right' }}
                     />
                   </td>
-                  <td style={{ padding: '6px', textAlign: 'right', color: '#525252' }}>
+                  <td style={{ padding: '6px', textAlign: 'right', color: '#374151' }}>
                     {(weight * 100).toFixed(1)}%
                   </td>
                   <td style={{ padding: '6px', textAlign: 'right', color: beta > 1.3 ? '#ef4444' : beta > 1.0 ? '#fb923c' : beta < 0.7 ? '#10b981' : '#1a1a1a' }}>
@@ -5694,7 +5694,7 @@ function StockStressSection({
             fontSize: '14px',
             padding: '3px 8px',
             borderRadius: '3px',
-            border: '1px solid ' + (straddleStatus === 'error' ? '#ef4444' : straddleStatus === 'synced' ? '#10b981' : '#e5e7eb'),
+            border: '1px solid ' + (straddleStatus === 'error' ? '#ef4444' : straddleStatus === 'synced' ? '#10b981' : '#d6dbe3'),
             background: 'transparent',
             color: straddleStatus === 'error' ? '#ef4444' : straddleStatus === 'synced' ? '#10b981' : '#EA580C',
             cursor: straddleStatus === 'fetching' ? 'wait' : 'pointer',
@@ -5713,7 +5713,7 @@ function StockStressSection({
         ▸ 把單一重倉股（NVDA）的下跌情境放大到整個持倉，並建議用 QQQ Put 對沖規模。
       </div>
       {straddleStatus === 'synced' && straddleSyncTime && (
-        <div style={{ fontSize: '14px', color: '#525252', fontFamily: 'DM Mono', marginTop: '-8px', marginBottom: '10px' }}>
+        <div style={{ fontSize: '14px', color: '#374151', fontFamily: 'DM Mono', marginTop: '-8px', marginBottom: '10px' }}>
           {stressTicker} expiry {targetExpiry} · {Math.round((Date.now() - straddleSyncTime.getTime()) / 1000)}s ago
         </div>
       )}
@@ -5968,7 +5968,7 @@ function PremiumInput({ label, value, onChange, accent, muted }) {
         className="block mb-1 font-mono-dm"
         style={{
           fontSize: '14px',
-          color: accent ? '#EA580C' : muted ? '#555' : '#888',
+          color: accent ? '#EA580C' : muted ? '#555' : '#374151',
           letterSpacing: '0.05em',
         }}
       >
@@ -5983,7 +5983,7 @@ function PremiumInput({ label, value, onChange, accent, muted }) {
         style={{
           padding: '6px 8px',
           fontSize: '13px',
-          borderColor: accent ? '#EA580C' : '#e5e7eb',
+          borderColor: accent ? '#EA580C' : '#d6dbe3',
         }}
       />
     </div>
@@ -6013,14 +6013,14 @@ function TimingRow({ label, status, tip }) {
     <div className="flex items-start gap-3 hair-border" style={{
       padding: '8px 12px',
       borderRadius: '4px',
-      borderColor: status ? '#EA580C40' : '#e5e7eb',
+      borderColor: status ? '#EA580C40' : '#d6dbe3',
     }}>
       <div
         style={{
           width: '14px',
           height: '14px',
           borderRadius: '50%',
-          background: status ? '#EA580C30' : '#e5e7eb',
+          background: status ? '#EA580C30' : '#d6dbe3',
           border: '1.5px solid ' + (status ? '#EA580C' : '#555'),
           flexShrink: 0,
           marginTop: '2px',
@@ -6266,7 +6266,7 @@ const STATUS_CONFIG = {
   connected:  { label: '已連線',  color: '#10b981', icon: Wifi,      animate: null   },
   error:      { label: '錯誤',      color: '#ef4444', icon: AlertCircle, animate: null },
   no_key:     { label: '缺 API KEY', color: '#fb923c', icon: WifiOff,   animate: null   },
-  mock:       { label: '示範資料',  color: '#525252',    icon: Database,  animate: null   },
+  mock:       { label: '示範資料',  color: '#374151',    icon: Database,  animate: null   },
 };
 
 const formatTimestamp = (date) => {
@@ -6627,14 +6627,14 @@ async function fetchSpotPrice(ticker) {
 // ============================================================
 // V6 palette presets — port from L2_Templates v6-top-tier.jsx + custom 'wg' (user pref)
 const V6_PALETTES = [
-  { id: "wg",     label: "White Orange ✓", bg: "#f7f8fa", panel: "#f7f8fa", panel2: "#f5f5f5", line: "#e5e7eb", fg: "#1a1a1a", mute: "#525252", dim: "#a3a3a3", accent: "#EA580C", bull: "#10b981", bear: "#ef4444", warn: "#f59e0b", info: "#3b82f6", vio: "#a78bfa" },
+  { id: "wg",     label: "White Orange ✓", bg: "#f7f8fa", panel: "#f7f8fa", panel2: "#f5f5f5", line: "#d6dbe3", fg: "#1a1a1a", mute: "#374151", dim: "#6b7280", accent: "#EA580C", bull: "#10b981", bear: "#ef4444", warn: "#f59e0b", info: "#3b82f6", vio: "#a78bfa" },
   { id: "paper",  label: "Paper Light",   bg: "#f5f3ee", panel: "#f7f8fa", panel2: "#ebe7df", line: "#d9d4c9", fg: "#1a1814", mute: "#5e564a", dim: "#94897a", accent: "#2d4a8a", bull: "#15803d", bear: "#b91c1c", warn: "#b45309", info: "#0369a1", vio: "#7c3aed" },
   { id: "matrix", label: "Matrix Green",  bg: "#050a07", panel: "#0a130d", panel2: "#0e1a13", line: "#16261c", fg: "#d1f5dc", mute: "#7ba88a", dim: "#4a6b56", accent: "#22c55e", bull: "#4ade80", bear: "#ef4444", warn: "#fbbf24", info: "#60a5fa", vio: "#a78bfa" },
   { id: "cyan",   label: "Vol Desk Cyan", bg: "#07090d", panel: "#0f1319", panel2: "#161c25", line: "#1e2733", fg: "#e8eef5", mute: "#8a99ab", dim: "#5a6776", accent: "#22d3ee", bull: "#22c55e", bear: "#ef4444", warn: "#f59e0b", info: "#60a5fa", vio: "#a78bfa" },
   { id: "ice",    label: "Citadel Ice",   bg: "#0a0f1a", panel: "#10172a", panel2: "#161f38", line: "#1f2a44", fg: "#e6edff", mute: "#8a9ab8", dim: "#566480", accent: "#60a5fa", bull: "#4ade80", bear: "#f87171", warn: "#fbbf24", info: "#a78bfa", vio: "#c084fc" },
   { id: "violet", label: "SIG Violet",    bg: "#0d0a14", panel: "#16111f", panel2: "#1d1729", line: "#2a2238", fg: "#ede8f7", mute: "#9b8fb5", dim: "#665a80", accent: "#a78bfa", bull: "#34d399", bear: "#fb7185", warn: "#fbbf24", info: "#60a5fa", vio: "#c084fc" },
   { id: "amber",  label: "Bloomberg",     bg: "#0a0807", panel: "#13100d", panel2: "#1a1612", line: "#2a221c", fg: "#f5e8d0", mute: "#a89880", dim: "#6e6050", accent: "#f5a524", bull: "#86efac", bear: "#fca5a5", warn: "#fde047", info: "#fbbf24", vio: "#f97316" },
-  { id: "ink",    label: "Pure Ink",      bg: "#0a0a0a", panel: "#141414", panel2: "#1c1c1c", line: "#262626", fg: "#fafafa", mute: "#a3a3a3", dim: "#6b6b6b", accent: "#f7f8fa", bull: "#22c55e", bear: "#ef4444", warn: "#eab308", info: "#3b82f6", vio: "#a78bfa" },
+  { id: "ink",    label: "Pure Ink",      bg: "#0a0a0a", panel: "#141414", panel2: "#1c1c1c", line: "#262626", fg: "#fafafa", mute: "#6b7280", dim: "#6b6b6b", accent: "#f7f8fa", bull: "#22c55e", bear: "#ef4444", warn: "#eab308", info: "#3b82f6", vio: "#a78bfa" },
 ];
 
 const V6_DEFAULT_PALETTE_ID = 'wg';
@@ -7404,22 +7404,22 @@ function RiskDashboard({ positions, portfolioTotal }) {
           { label: 'Net Θ (per day)', value: fmt(agg.netTheta), sub: agg.netTheta >= 0 ? 'theta 順風（收 premium）' : 'theta 逆風（時間虧）', color: agg.netTheta >= 0 ? '#EA580C' : '#EA580C' },
         ].map((m, i) => (
           <div key={i} style={{
-            padding: '14px', background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px',
+            padding: '14px', background: '#f7f8fa', border: '1px solid #d6dbe3', borderRadius: '6px',
           }}>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', letterSpacing: '0.05em', marginBottom: '4px' }}>{m.label}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', letterSpacing: '0.05em', marginBottom: '4px' }}>{m.label}</div>
             <div style={{ fontFamily: 'DM Mono', fontSize: '22px', color: m.color, fontWeight: 700, marginBottom: '2px' }}>{m.value}</div>
-            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#a3a3a3' }}>{m.sub}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#6b7280' }}>{m.sub}</div>
           </div>
         ))}
       </div>
 
       {/* Sector concentration */}
-      <div style={{ background: '#f7f8fa', border: '1px solid ' + (concentrationWarning ? '#ef4444' : '#e5e7eb'), borderRadius: '6px', padding: '14px', marginBottom: '16px' }}>
+      <div style={{ background: '#f7f8fa', border: '1px solid ' + (concentrationWarning ? '#ef4444' : '#d6dbe3'), borderRadius: '6px', padding: '14px', marginBottom: '16px' }}>
         <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#1a1a1a', fontWeight: 700, marginBottom: '10px' }}>
           {concentrationWarning ? '⚠️ ' : ''}產業集中度（按 delta 曝險排序）
         </div>
         {sectorBreakdown.length === 0 ? (
-          <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#a3a3a3' }}>
+          <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#6b7280' }}>
             (尚未取得 ticker profiles — 進選擇權掃描器後 30s 內會載入)
           </div>
         ) : (
@@ -7433,8 +7433,8 @@ function RiskDashboard({ positions, portfolioTotal }) {
                   <div style={{ background: '#f5f5f5', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
                     <div style={{ width: Math.min(100, pct) + '%', height: '100%', background: tooHigh ? '#ef4444' : '#10b981' }} />
                   </div>
-                  <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: tooHigh ? '#ef4444' : '#525252' }}>{pct.toFixed(1)}% 帳戶</span>
-                  <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#a3a3a3' }}>{s.tickers.slice(0, 3).join(', ')}{s.tickers.length > 3 ? '...' : ''}</span>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: tooHigh ? '#ef4444' : '#374151' }}>{pct.toFixed(1)}% 帳戶</span>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#6b7280' }}>{s.tickers.slice(0, 3).join(', ')}{s.tickers.length > 3 ? '...' : ''}</span>
                 </div>
               );
             })}
@@ -7443,7 +7443,7 @@ function RiskDashboard({ positions, portfolioTotal }) {
       </div>
 
       {/* Stress test */}
-      <div style={{ background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '14px' }}>
+      <div style={{ background: '#f7f8fa', border: '1px solid #d6dbe3', borderRadius: '6px', padding: '14px' }}>
         <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#1a1a1a', fontWeight: 700, marginBottom: '10px' }}>
           壓力測試 · 情境 P&L (delta + gamma + vega 一階近似)
         </div>
@@ -7452,9 +7452,9 @@ function RiskDashboard({ positions, portfolioTotal }) {
             const pctOfAccount = portfolioTotal > 0 ? (s.pnl / portfolioTotal) * 100 : 0;
             const sevColor = s.pnl >= 0 ? '#10b981' : (Math.abs(pctOfAccount) > 5 ? '#ef4444' : '#EA580C');
             return (
-              <div key={s.name} style={{ padding: '12px', background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '4px', borderLeft: '3px solid ' + s.color }}>
-                <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', marginBottom: '4px' }}>{s.label}</div>
-                <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#a3a3a3', marginBottom: '6px' }}>{s.name}</div>
+              <div key={s.name} style={{ padding: '12px', background: '#f7f8fa', border: '1px solid #d6dbe3', borderRadius: '4px', borderLeft: '3px solid ' + s.color }}>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', marginBottom: '4px' }}>{s.label}</div>
+                <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#6b7280', marginBottom: '6px' }}>{s.name}</div>
                 <div style={{ fontFamily: 'DM Mono', fontSize: '18px', color: sevColor, fontWeight: 700 }}>{fmt(s.pnl)}</div>
                 <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: sevColor }}>
                   {pctOfAccount >= 0 ? '+' : ''}{pctOfAccount.toFixed(2)}% 帳戶
@@ -7463,7 +7463,7 @@ function RiskDashboard({ positions, portfolioTotal }) {
             );
           })}
         </div>
-        <div style={{ marginTop: '10px', fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3', lineHeight: 1.6 }}>
+        <div style={{ marginTop: '10px', fontFamily: 'DM Mono', fontSize: '12px', color: '#6b7280', lineHeight: 1.6 }}>
           ⚠️ 一階近似 — 用 BS Greeks。實際非線性 (gamma scalping、IV smile、early exercise) 會偏差 10-20%。
           IV 用 UW IVR 30 天年化值；缺資料 fallback 30%。
         </div>
@@ -7615,11 +7615,11 @@ ${summary}
   };
 
   const inputStyle = {
-    background: '#f5f5f5', border: '1px solid #e5e7eb', color: '#1a1a1a',
+    background: '#f5f5f5', border: '1px solid #d6dbe3', color: '#1a1a1a',
     padding: '6px 10px', fontFamily: 'DM Mono', fontSize: '13px',
     borderRadius: '4px', width: '100%',
   };
-  const labelStyle = { fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', display: 'block', marginBottom: '3px' };
+  const labelStyle = { fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', display: 'block', marginBottom: '3px' };
 
   return (
     <div style={{ padding: '16px 24px', background: '#f7f8fa' }}>
@@ -7633,8 +7633,8 @@ ${summary}
             { label: 'R/R', value: stats.avgLoss < 0 ? Math.abs(stats.avgWin / stats.avgLoss).toFixed(2) : '∞', color: '#EA580C' },
             { label: '期望值/筆', value: '$' + Math.round(stats.expectancy).toLocaleString(), color: stats.expectancy >= 0 ? '#10b981' : '#ef4444' },
           ].map((m, i) => (
-            <div key={i} style={{ padding: '10px', background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '4px' }}>
-              <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3' }}>{m.label}</div>
+            <div key={i} style={{ padding: '10px', background: '#f7f8fa', border: '1px solid #d6dbe3', borderRadius: '4px' }}>
+              <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#6b7280' }}>{m.label}</div>
               <div style={{ fontFamily: 'DM Mono', fontSize: '15px', fontWeight: 700, color: m.color, marginTop: '2px' }}>{m.value}</div>
             </div>
           ))}
@@ -7644,14 +7644,14 @@ ${summary}
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
         <button onClick={() => setShowForm(!showForm)} style={{
-          background: showForm ? '#a3a3a314' : '#EA580C14', border: '1px solid ' + (showForm ? '#a3a3a3' : '#EA580C'),
-          color: showForm ? '#a3a3a3' : '#EA580C', padding: '8px 16px', borderRadius: '4px',
+          background: showForm ? '#6b728014' : '#EA580C14', border: '1px solid ' + (showForm ? '#6b7280' : '#EA580C'),
+          color: showForm ? '#6b7280' : '#EA580C', padding: '8px 16px', borderRadius: '4px',
           fontFamily: 'DM Mono', fontSize: '14px', fontWeight: 600, cursor: 'pointer',
         }}>{showForm ? '✕ 取消' : '＋ 新增交易紀錄'}</button>
         <button onClick={runAIPostmortem} disabled={aiLoading || entries.length < 3} style={{
-          background: aiLoading || entries.length < 3 ? '#e5e7eb' : '#EA580C14',
+          background: aiLoading || entries.length < 3 ? '#d6dbe3' : '#EA580C14',
           border: '1px solid ' + (aiLoading || entries.length < 3 ? '#1a1a1a' : '#EA580C'),
-          color: aiLoading || entries.length < 3 ? '#a3a3a3' : '#EA580C',
+          color: aiLoading || entries.length < 3 ? '#6b7280' : '#EA580C',
           padding: '8px 16px', borderRadius: '4px',
           fontFamily: 'DM Mono', fontSize: '14px', fontWeight: 600,
           cursor: aiLoading || entries.length < 3 ? 'not-allowed' : 'pointer',
@@ -7700,7 +7700,7 @@ ${summary}
             <textarea style={{...inputStyle, minHeight: '40px'}} value={draft.notes} onChange={e => setDraft({...draft, notes: e.target.value})} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#737373' }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#4b5563' }}>
               預估 P&L: <b style={{ color: '#1a1a1a' }}>${(computePnL(draft).dollars || 0).toLocaleString()}</b> ({computePnL(draft).pct || 0}%)
             </div>
             <button onClick={handleAdd} style={{
@@ -7726,7 +7726,7 @@ ${summary}
 
       {/* Entries list */}
       {entries.length === 0 ? (
-        <div style={{ padding: '24px', textAlign: 'center', fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#a3a3a3', border: '1px dashed #e5e7eb', borderRadius: '6px' }}>
+        <div style={{ padding: '24px', textAlign: 'center', fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#6b7280', border: '1px dashed #d6dbe3', borderRadius: '6px' }}>
           📓 還沒有交易紀錄。點 ＋ 新增第一筆。
         </div>
       ) : (
@@ -7734,20 +7734,20 @@ ${summary}
           {entries.slice().reverse().slice(0, 50).map((e) => {
             const pnlColor = (e.pnl_dollars || 0) >= 0 ? '#10b981' : '#ef4444';
             return (
-              <div key={e.id} style={{ padding: '10px 12px', background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '4px' }}>
+              <div key={e.id} style={{ padding: '10px 12px', background: '#f7f8fa', border: '1px solid #d6dbe3', borderRadius: '4px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
                   <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#1a1a1a', fontWeight: 700 }}>{e.ticker}</span>
-                  <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373' }}>{e.side}</span>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563' }}>{e.side}</span>
                   <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: pnlColor, fontWeight: 700 }}>${(e.pnl_dollars || 0).toLocaleString()} ({e.pnl_pct || 0}%)</span>
-                  <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3' }}>{e.exit_date}</span>
-                  <span style={{ marginLeft: 'auto', fontFamily: 'DM Mono', fontSize: '13px', color: e.exit_reason === 'panic' ? '#ef4444' : '#737373' }}>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#6b7280' }}>{e.exit_date}</span>
+                  <span style={{ marginLeft: 'auto', fontFamily: 'DM Mono', fontSize: '13px', color: e.exit_reason === 'panic' ? '#ef4444' : '#4b5563' }}>
                     {e.exit_reason === 'target' ? '🎯' : e.exit_reason === 'stop' ? '✗' : e.exit_reason === 'panic' ? '😱' : ''} {e.exit_reason}
                   </span>
                   <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#EA580C' }}>{'★'.repeat(e.satisfaction || 0)}</span>
-                  <button onClick={() => handleDelete(e.id)} style={{ background: 'transparent', border: 'none', color: '#a3a3a3', cursor: 'pointer', fontSize: '14px', padding: '2px 6px' }}>🗑</button>
+                  <button onClick={() => handleDelete(e.id)} style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '14px', padding: '2px 6px' }}>🗑</button>
                 </div>
                 {e.thesis && (
-                  <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#525252', marginTop: '2px' }}>{e.thesis}</div>
+                  <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#374151', marginTop: '2px' }}>{e.thesis}</div>
                 )}
               </div>
             );
@@ -7755,7 +7755,7 @@ ${summary}
         </div>
       )}
 
-      <div style={{ marginTop: '12px', fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3' }}>
+      <div style={{ marginTop: '12px', fontFamily: 'DM Mono', fontSize: '12px', color: '#6b7280' }}>
         📌 存於 localStorage (近 200 筆)。AI 復盤需 ≥3 筆才有意義。
       </div>
     </div>
@@ -7846,16 +7846,16 @@ function EventRadar({ positions }) {
   return (
     <div style={{ padding: '14px 24px', background: '#f7f8fa' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#525252', fontWeight: 600 }}>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#374151', fontWeight: 600 }}>
           未來 14 天 · {allEvents.length} 個事件 · {macroEvents.length} 宏觀 + {earnings.length} 財報
         </div>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#a3a3a3' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#6b7280' }}>
           🏛️ 宏觀 · 📊 持倉財報
         </div>
       </div>
 
       {allEvents.length === 0 ? (
-        <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#EA580C', border: '1px dashed #e5e7eb', borderRadius: '6px' }}>
+        <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#EA580C', border: '1px dashed #d6dbe3', borderRadius: '6px' }}>
           ✓ 未來 14 天內無重大事件 — 安全交易窗口
         </div>
       ) : (
@@ -7868,24 +7868,24 @@ function EventRadar({ positions }) {
               <div key={i} style={{
                 display: 'grid', gridTemplateColumns: '70px 24px 1fr', gap: '12px', alignItems: 'center',
                 padding: '8px 12px', background: '#f7f8fa',
-                border: '1px solid ' + (isClose ? colorOf(e.sev) + '60' : '#e5e7eb'),
+                border: '1px solid ' + (isClose ? colorOf(e.sev) + '60' : '#d6dbe3'),
                 borderLeft: '3px solid ' + colorOf(e.sev),
                 borderRadius: '4px',
               }}>
                 <div>
                   <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: colorOf(e.sev), fontWeight: 700 }}>{dayLabel}</div>
-                  <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3' }}>{e.date.slice(5)}</div>
+                  <div style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#6b7280' }}>{e.date.slice(5)}</div>
                 </div>
                 <span style={{ fontSize: '16px' }}>{iconOf(e.type, e.ticker)}</span>
                 <div>
                   <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#1a1a1a', fontWeight: 600 }}>{e.name}</div>
                   {e.detail && (
-                    <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#737373', marginTop: '2px' }}>{e.detail}</div>
+                    <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#4b5563', marginTop: '2px' }}>{e.detail}</div>
                   )}
                   {e.tags && e.tags.length > 0 && (
                     <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
                       {e.tags.map((tag, j) => (
-                        <span key={j} style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#a3a3a3', padding: '1px 6px', background: '#f5f5f5', borderRadius: '8px' }}>{tag}</span>
+                        <span key={j} style={{ fontFamily: 'DM Mono', fontSize: '11px', color: '#6b7280', padding: '1px 6px', background: '#f5f5f5', borderRadius: '8px' }}>{tag}</span>
                       ))}
                     </div>
                   )}
@@ -7896,7 +7896,7 @@ function EventRadar({ positions }) {
         </div>
       )}
 
-      <div style={{ marginTop: '10px', fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3' }}>
+      <div style={{ marginTop: '10px', fontFamily: 'DM Mono', fontSize: '12px', color: '#6b7280' }}>
         📌 宏觀事件 hardcoded（年度更新一次）；持倉財報從 UW 即時拉。
       </div>
     </div>
@@ -7948,11 +7948,11 @@ function AlertsPanel() {
     finally { setLoading(false); }
   };
 
-  const cardStyle = { padding: '12px 14px', background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px' };
+  const cardStyle = { padding: '12px 14px', background: '#f7f8fa', border: '1px solid #d6dbe3', borderRadius: '6px' };
   const btnStyle = (color, dis) => ({
-    background: dis ? '#e5e7eb' : color + '14',
+    background: dis ? '#d6dbe3' : color + '14',
     border: '1px solid ' + (dis ? '#1a1a1a' : color),
-    color: dis ? '#a3a3a3' : color,
+    color: dis ? '#6b7280' : color,
     padding: '8px 16px', borderRadius: '4px',
     fontFamily: 'DM Mono', fontSize: '14px', fontWeight: 600,
     cursor: dis ? 'not-allowed' : 'pointer',
@@ -7966,10 +7966,10 @@ function AlertsPanel() {
           <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#1a1a1a', fontWeight: 700 }}>
             🔔 Telegram Push 設定狀態
           </div>
-          <button onClick={refreshStatus} style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#525252', padding: '4px 10px', borderRadius: '3px', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '13px' }}>↻</button>
+          <button onClick={refreshStatus} style={{ background: 'transparent', border: '1px solid #d6dbe3', color: '#374151', padding: '4px 10px', borderRadius: '3px', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '13px' }}>↻</button>
         </div>
         {status == null ? (
-          <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#a3a3a3' }}>檢查中⋯</div>
+          <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#6b7280' }}>檢查中⋯</div>
         ) : status.error ? (
           <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#ef4444' }}>❌ {status.error}</div>
         ) : (
@@ -8003,7 +8003,7 @@ function AlertsPanel() {
           <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: testResult.ok ? '#10b981' : '#ef4444', fontWeight: 700, marginBottom: '4px' }}>
             {testResult.ok ? '✅ 測試訊息已送' : '❌ 失敗'}
           </div>
-          <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#525252', wordBreak: 'break-all' }}>
+          <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#374151', wordBreak: 'break-all' }}>
             {testResult.ok ? '檢查你的 Telegram，應該收到 "🧪 MEP Trading System · 測試訊息"' : (testResult.error || JSON.stringify(testResult.response || testResult))}
           </div>
         </div>
@@ -8038,10 +8038,10 @@ function AlertsPanel() {
 
       {/* Setup instructions */}
       <div style={{ ...cardStyle, marginTop: '14px', background: '#f7f8fa', borderColor: '#f5f5f5' }}>
-        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#525252', fontWeight: 600, marginBottom: '6px' }}>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#374151', fontWeight: 600, marginBottom: '6px' }}>
           📖 首次設定（5 分鐘）
         </div>
-        <ol style={{ margin: 0, paddingLeft: '20px', fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', lineHeight: 1.8 }}>
+        <ol style={{ margin: 0, paddingLeft: '20px', fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', lineHeight: 1.8 }}>
           <li>Telegram 找 <b style={{ color: '#14b8a6' }}>@BotFather</b> → 輸入 <code>/newbot</code> → 取得 HTTP API token</li>
           <li>傳任何訊息給你的新 bot（例如 "hi"）</li>
           <li>瀏覽器打開：<code style={{ color: '#EA580C' }}>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> → 找到 <code>chat.id</code></li>
@@ -8260,13 +8260,13 @@ function PreTradeChecklist({ positions, portfolioTotal }) {
   };
 
   const inputStyle = {
-    background: '#f5f5f5', border: '1px solid #e5e7eb', color: '#1a1a1a',
+    background: '#f5f5f5', border: '1px solid #d6dbe3', color: '#1a1a1a',
     padding: '6px 10px', fontFamily: 'DM Mono', fontSize: '13px',
     borderRadius: '4px', width: '100%',
   };
-  const labelStyle = { fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', display: 'block', marginBottom: '4px' };
+  const labelStyle = { fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', display: 'block', marginBottom: '4px' };
 
-  const colorOf = (s) => s === 'ok' ? '#10b981' : s === 'warn' ? '#EA580C' : s === 'red' ? '#ef4444' : '#a3a3a3';
+  const colorOf = (s) => s === 'ok' ? '#10b981' : s === 'warn' ? '#EA580C' : s === 'red' ? '#ef4444' : '#6b7280';
   const iconOf = (s) => s === 'ok' ? '✅' : s === 'warn' ? '⚠️' : s === 'red' ? '❌' : '⋯';
 
   return (
@@ -8323,7 +8323,7 @@ function PreTradeChecklist({ positions, portfolioTotal }) {
           <label style={labelStyle}>Open Interest (人工填，看 broker chain)</label>
           <input type="number" style={inputStyle} value={oi} onChange={e => setOi(e.target.value)} placeholder="12450" />
         </div>
-        <div style={{ alignSelf: 'end', fontFamily: 'DM Mono', fontSize: '14px', color: '#737373' }}>
+        <div style={{ alignSelf: 'end', fontFamily: 'DM Mono', fontSize: '14px', color: '#4b5563' }}>
           總成本: <b style={{ color: '#1a1a1a' }}>${totalCost.toLocaleString()}</b> ({sizePct.toFixed(2)}% 帳戶)
         </div>
       </div>
@@ -8338,18 +8338,18 @@ function PreTradeChecklist({ positions, portfolioTotal }) {
       </div>
 
       {/* Checks list */}
-      <div style={{ background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '12px', marginBottom: '14px' }}>
+      <div style={{ background: '#f7f8fa', border: '1px solid #d6dbe3', borderRadius: '6px', padding: '12px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 700 }}>
             自動檢查 · {okCount}/8 ✅ · {warnCount} ⚠️ · {redCount} ❌ · {pendingCount} ⋯
           </div>
         </div>
         {checks.map(c => (
-          <div key={c.id} style={{ padding: '8px 0', borderTop: '1px solid #e5e7eb', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+          <div key={c.id} style={{ padding: '8px 0', borderTop: '1px solid #d6dbe3', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
             <span style={{ fontSize: '15px' }}>{iconOf(c.status)}</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: colorOf(c.status), fontWeight: 700 }}>{c.label}</div>
-              <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#525252', marginTop: '2px' }}>{c.detail}</div>
+              <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#374151', marginTop: '2px' }}>{c.detail}</div>
               {(c.status === 'red' || c.status === 'warn') && (
                 <input
                   style={{ ...inputStyle, marginTop: '6px', borderColor: (overrides[c.id] || '').trim().length >= 10 ? '#10b981' : '#ef4444' }}
@@ -8369,9 +8369,9 @@ function PreTradeChecklist({ positions, portfolioTotal }) {
           onClick={handlePass}
           disabled={!canPass}
           style={{
-            background: canPass ? '#EA580C22' : '#e5e7eb',
+            background: canPass ? '#EA580C22' : '#d6dbe3',
             border: '1px solid ' + (canPass ? '#EA580C' : '#1a1a1a'),
-            color: canPass ? '#EA580C' : '#a3a3a3',
+            color: canPass ? '#EA580C' : '#6b7280',
             padding: '10px 24px',
             fontFamily: 'DM Mono', fontSize: '13px', fontWeight: 700,
             borderRadius: '4px',
@@ -8385,7 +8385,7 @@ function PreTradeChecklist({ positions, portfolioTotal }) {
         )}
       </div>
 
-      <div style={{ marginTop: '12px', fontFamily: 'DM Mono', fontSize: '13px', color: '#a3a3a3', lineHeight: 1.6 }}>
+      <div style={{ marginTop: '12px', fontFamily: 'DM Mono', fontSize: '13px', color: '#6b7280', lineHeight: 1.6 }}>
         💡 通過後存於 localStorage `ddh_pretrade_log` (近 100 筆)。下個 PR 會接 Supabase 做歷史回顧。
       </div>
     </div>
@@ -8519,7 +8519,7 @@ function OptionsScanner({ positions }) {
       {/* Top controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#737373', letterSpacing: '0.1em', textTransform: 'uppercase' }}>MODE</span>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#4b5563', letterSpacing: '0.1em', textTransform: 'uppercase' }}>MODE</span>
           <FreshnessBadge sources={['ivr', 'earnings', 'uwFlow']} label="資料" />
           {[
             { id: 'both', label: '雙邊', color: '#EA580C' },
@@ -8531,8 +8531,8 @@ function OptionsScanner({ positions }) {
               onClick={() => setMode(m.id)}
               style={{
                 background: mode === m.id ? m.color + '14' : 'transparent',
-                border: '1px solid ' + (mode === m.id ? m.color : '#e5e7eb'),
-                color: mode === m.id ? m.color : '#888',
+                border: '1px solid ' + (mode === m.id ? m.color : '#d6dbe3'),
+                color: mode === m.id ? m.color : '#374151',
                 padding: '4px 10px',
                 fontFamily: 'DM Mono',
                 fontSize: '13px',
@@ -8551,7 +8551,7 @@ function OptionsScanner({ positions }) {
             onKeyDown={e => { if (e.key === 'Enter') handleAddTicker(); }}
             placeholder="加入 ticker"
             style={{
-              background: '#f7f8fa', border: '1px solid #e5e7eb', color: '#1a1a1a',
+              background: '#f7f8fa', border: '1px solid #d6dbe3', color: '#1a1a1a',
               padding: '4px 8px', fontFamily: 'DM Mono', fontSize: '13px',
               borderRadius: '3px', width: '110px',
             }}
@@ -8568,7 +8568,7 @@ function OptionsScanner({ positions }) {
             onClick={handleRefreshAll}
             disabled={loading}
             style={{
-              background: 'transparent', border: '1px solid #e5e7eb', color: loading ? '#444' : '#888',
+              background: 'transparent', border: '1px solid #d6dbe3', color: loading ? '#444' : '#374151',
               padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '13px',
               cursor: loading ? 'wait' : 'pointer', borderRadius: '3px',
             }}
@@ -8584,21 +8584,21 @@ function OptionsScanner({ positions }) {
         alignItems: 'center',
         marginBottom: '16px',
         padding: '10px 12px',
-        border: '1px solid #e5e7eb',
+        border: '1px solid #d6dbe3',
         background: '#fff',
       }}>
         <button
           onClick={() => { setScannerPage((scannerPage + SCANNER_PAGES.length - 1) % SCANNER_PAGES.length); setExpandedTicker(null); }}
-          style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#525252', padding: '5px 10px', fontFamily: 'DM Mono', fontSize: '12px', cursor: 'pointer', borderRadius: '3px' }}
+          style={{ background: 'transparent', border: '1px solid #d6dbe3', color: '#374151', padding: '5px 10px', fontFamily: 'DM Mono', fontSize: '12px', cursor: 'pointer', borderRadius: '3px' }}
         >← 上一頁</button>
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3', letterSpacing: '0.12em' }}>SCANNER PAGE {scannerPage + 1}/{SCANNER_PAGES.length}</span>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#6b7280', letterSpacing: '0.12em' }}>SCANNER PAGE {scannerPage + 1}/{SCANNER_PAGES.length}</span>
             <span style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', fontWeight: 700, color: '#111827' }}>{activePage.name}</span>
             <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#EA580C' }}>
               {activePage.kind === 'sector' ? activePage.etf + ' · top20 universe' : activePage.short + ' · filtered universe'}
             </span>
-            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#737373' }}>顯示 {displayList.length} / 本頁掃描 {allTickers.length} 檔</span>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#4b5563' }}>顯示 {displayList.length} / 本頁掃描 {allTickers.length} 檔</span>
           </div>
           <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '8px' }}>
             {SCANNER_PAGES.map((s, idx) => (
@@ -8607,8 +8607,8 @@ function OptionsScanner({ positions }) {
                 onClick={() => { setScannerPage(idx); setExpandedTicker(null); }}
                 style={{
                   background: idx === scannerPage ? '#EA580C14' : 'transparent',
-                  border: '1px solid ' + (idx === scannerPage ? '#EA580C' : '#e5e7eb'),
-                  color: idx === scannerPage ? '#EA580C' : '#737373',
+                  border: '1px solid ' + (idx === scannerPage ? '#EA580C' : '#d6dbe3'),
+                  color: idx === scannerPage ? '#EA580C' : '#4b5563',
                   padding: '3px 7px',
                   fontFamily: 'DM Mono',
                   fontSize: '11px',
@@ -8621,7 +8621,7 @@ function OptionsScanner({ positions }) {
         </div>
         <button
           onClick={() => { setScannerPage((scannerPage + 1) % SCANNER_PAGES.length); setExpandedTicker(null); }}
-          style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#525252', padding: '5px 10px', fontFamily: 'DM Mono', fontSize: '12px', cursor: 'pointer', borderRadius: '3px' }}
+          style={{ background: 'transparent', border: '1px solid #d6dbe3', color: '#374151', padding: '5px 10px', fontFamily: 'DM Mono', fontSize: '12px', cursor: 'pointer', borderRadius: '3px' }}
         >下一頁 →</button>
       </div>
 
@@ -8634,17 +8634,17 @@ function OptionsScanner({ positions }) {
       </div>
 
       {/* Results */}
-      <div style={{ border: '1px solid #e5e7eb', background: '#f7f8fa' }}>
+      <div style={{ border: '1px solid #d6dbe3', background: '#f7f8fa' }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: '60px 1fr 70px 70px 70px 90px 90px 30px',
           gap: '8px',
           padding: '8px 12px',
           background: '#f5f5f5',
-          borderBottom: '1px solid #e5e7eb',
+          borderBottom: '1px solid #d6dbe3',
           fontFamily: 'DM Mono',
           fontSize: '13px',
-          color: '#737373',
+          color: '#4b5563',
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
         }}>
@@ -8669,14 +8669,14 @@ function OptionsScanner({ positions }) {
           />
         ))}
         {displayList.length === 0 && (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#737373', fontFamily: 'DM Mono', fontSize: '13px' }}>
+          <div style={{ padding: '24px', textAlign: 'center', color: '#4b5563', fontFamily: 'DM Mono', fontSize: '13px' }}>
             無 ticker。加入 watchlist 或新增 positions。
           </div>
         )}
       </div>
 
       {/* Footnote */}
-      <div style={{ marginTop: '12px', fontSize: '14px', color: '#a3a3a3', fontFamily: 'DM Mono', lineHeight: 1.6 }}>
+      <div style={{ marginTop: '12px', fontSize: '14px', color: '#6b7280', fontFamily: 'DM Mono', lineHeight: 1.6 }}>
         資料來源: window.__IVR_CACHE / __EARNINGS_CACHE / __BETA_CACHE (UW + Polygon · 15min cache)。
         目前用分頁掃描：總榜 Top50 / Strong+ / 本週財報 / 30天財報 / IVR70+ / 高IV熱門股 / 11 個 GICS 板塊 top20。
         缺資料的訊號自動跳過，分數依可用訊號重新標準化。
@@ -8689,7 +8689,7 @@ function OptionsScanner({ positions }) {
 function ScannerStat({ label, value, color }) {
   return (
     <div style={{ border: '1px solid ' + color + '40', background: color + '08', padding: '8px 10px' }}>
-      <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#525252', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#374151', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontFamily: 'DM Mono', fontSize: '20px', color: color, fontWeight: 600, marginTop: '2px' }}>{value}</div>
     </div>
   );
@@ -8719,12 +8719,12 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
       >
         <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#1a1a1a', fontWeight: 600 }}>{s.ticker}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#525252', fontFamily: 'DM Mono' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#374151', fontFamily: 'DM Mono' }}>
           {s.inPosition && <span style={{ color: '#EA580C', fontSize: '13px' }}>★ 持倉中</span>}
           {s.sector && <span style={{ color: '#14b8a6', fontSize: '12px' }}>{s.sector.etf}</span>}
-          {!s.hasData && <span style={{ color: '#737373' }}>無資料</span>}
+          {!s.hasData && <span style={{ color: '#4b5563' }}>無資料</span>}
           {s.earnDate && (
-            <span style={{ color: s.daysToEarnings <= 7 ? '#EA580C' : '#666' }}>
+            <span style={{ color: s.daysToEarnings <= 7 ? '#EA580C' : '#4b5563' }}>
               EPS {s.earnDate} ({s.daysToEarnings >= 0 ? 'T−' + s.daysToEarnings : '已過'})
             </span>
           )}
@@ -8732,10 +8732,10 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
         <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: s.ivr != null ? (s.ivr > 70 ? '#ef4444' : s.ivr > 40 ? '#10b981' : '#EA580C') : '#444' }}>
           {s.ivr != null ? s.ivr.toFixed(0) : '—'}
         </div>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#525252' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#374151' }}>
           {s.beta != null ? s.beta.toFixed(2) : '—'}
         </div>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#525252' }}>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#374151' }}>
           {s.expectedMove != null ? '±' + s.expectedMove.toFixed(1) + '%' : '—'}
         </div>
         <div style={{ textAlign: 'right', opacity: showBuyer ? 1 : 0.3 }}>
@@ -8754,7 +8754,7 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
             </div>
           ) : <span style={{ color: '#444', fontFamily: 'DM Mono', fontSize: '13px' }}>—</span>}
         </div>
-        <div style={{ color: '#737373', fontFamily: 'DM Mono', fontSize: '14px', textAlign: 'center' }}>{isExpanded ? '−' : '+'}</div>
+        <div style={{ color: '#4b5563', fontFamily: 'DM Mono', fontSize: '14px', textAlign: 'center' }}>{isExpanded ? '−' : '+'}</div>
       </div>
 
       {isExpanded && (
@@ -8769,7 +8769,7 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
           </div>
           {/* Action row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f5f5f5' }}>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#737373' }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#4b5563' }}>
               {s.buyer.score != null && s.seller.score != null ? (
                 s.buyer.score > s.seller.score
                   ? '建議偏向：買方（' + (s.buyer.score - s.seller.score) + ' 分優勢）'
@@ -8811,7 +8811,7 @@ function ScannerSignalPanel({ title, signals, score, grade, accent }) {
         {Object.entries(signals).map(([key, sig]) => (
           <div key={key}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
-              <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252' }}>
+              <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#374151' }}>
                 {sig.label}
                 <span style={{ color: '#444', marginLeft: '6px' }}>w{sig.weight}</span>
               </span>
@@ -8828,7 +8828,7 @@ function ScannerSignalPanel({ title, signals, score, grade, accent }) {
                 transition: 'width 0.4s',
               }}></div>
             </div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#a3a3a3', marginTop: '2px' }}>{sig.detail}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>{sig.detail}</div>
           </div>
         ))}
       </div>
@@ -9035,17 +9035,17 @@ function BacktestPanel() {
       {/* Mode + actions */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#737373', letterSpacing: '0.1em' }}>MODE</span>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#4b5563', letterSpacing: '0.1em' }}>MODE</span>
           {['preEps', 'postEps'].map(m => (
             <button key={m} onClick={() => setMode(m)} style={{
               background: mode === m ? '#EA580C14' : 'transparent',
-              border: '1px solid ' + (mode === m ? '#EA580C' : '#e5e7eb'),
-              color: mode === m ? '#EA580C' : '#888',
+              border: '1px solid ' + (mode === m ? '#EA580C' : '#d6dbe3'),
+              color: mode === m ? '#EA580C' : '#374151',
               padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '13px',
               cursor: 'pointer', borderRadius: '3px',
             }}>{m}</button>
           ))}
-          <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#737373', marginLeft: '12px' }}>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#4b5563', marginLeft: '12px' }}>
             {trades.length} 筆樣本
           </span>
         </div>
@@ -9054,8 +9054,8 @@ function BacktestPanel() {
             background: 'transparent', border: '1px solid #EA580C', color: '#EA580C',
             padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '13px', cursor: 'pointer', borderRadius: '3px',
           }}>{showForm ? '× 取消' : '＋ 新增'}</button>
-          <button onClick={bt_handleExport} style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#525252', padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '13px', cursor: 'pointer', borderRadius: '3px' }}>匯出 JSON</button>
-          <button onClick={bt_handleImport} style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#525252', padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '13px', cursor: 'pointer', borderRadius: '3px' }}>匯入 JSON</button>
+          <button onClick={bt_handleExport} style={{ background: 'transparent', border: '1px solid #d6dbe3', color: '#374151', padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '13px', cursor: 'pointer', borderRadius: '3px' }}>匯出 JSON</button>
+          <button onClick={bt_handleImport} style={{ background: 'transparent', border: '1px solid #d6dbe3', color: '#374151', padding: '4px 10px', fontFamily: 'DM Mono', fontSize: '13px', cursor: 'pointer', borderRadius: '3px' }}>匯入 JSON</button>
         </div>
       </div>
 
@@ -9082,7 +9082,7 @@ function BacktestPanel() {
             <div key={s.grade} style={{ border: '1px solid ' + BT_GRADE_COLORS[s.grade] + '40', background: BT_GRADE_COLORS[s.grade] + '08', padding: '8px 10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
                 <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: BT_GRADE_COLORS[s.grade], fontWeight: 600 }}>{s.grade}</span>
-                <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373' }}>n={s.count}</span>
+                <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563' }}>n={s.count}</span>
               </div>
               {s.count === 0 ? (
                 <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#444' }}>無樣本</div>
@@ -9091,7 +9091,7 @@ function BacktestPanel() {
                   <div style={{ fontFamily: 'DM Mono', fontSize: '20px', color: BT_GRADE_COLORS[s.grade], fontWeight: 600 }}>
                     {s.hitRate.toFixed(0)}%
                   </div>
-                  <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252', marginTop: '4px' }}>
+                  <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#374151', marginTop: '4px' }}>
                     avg {s.avgReturn != null ? (s.avgReturn >= 0 ? '+' : '') + s.avgReturn.toFixed(0) + '%' : '—'}
                   </div>
                 </div>
@@ -9107,7 +9107,7 @@ function BacktestPanel() {
           02 · 信號預測力 (Pearson r)
         </div>
         {corrs.length === 0 ? (
-          <div style={{ padding: '12px', border: '1px solid #e5e7eb', color: '#737373', fontFamily: 'DM Mono', fontSize: '13px' }}>
+          <div style={{ padding: '12px', border: '1px solid #d6dbe3', color: '#4b5563', fontFamily: 'DM Mono', fontSize: '13px' }}>
             樣本不足（需要至少 2 筆有 signals + actualReturn）
           </div>
         ) : (
@@ -9116,7 +9116,7 @@ function BacktestPanel() {
               const absCorr = Math.abs(c.correlation);
               const isPos = c.correlation >= 0;
               return (
-                <div key={c.signal} style={{ border: '1px solid #e5e7eb', padding: '6px 10px' }}>
+                <div key={c.signal} style={{ border: '1px solid #d6dbe3', padding: '6px 10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
                     <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#1a1a1a' }}>{c.label}</span>
                     <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: isPos ? '#10b981' : '#ef4444', fontWeight: 600 }}>
@@ -9138,21 +9138,21 @@ function BacktestPanel() {
         <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#EA580C', letterSpacing: '0.1em', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
           <span>03 · 權重實驗室</span>
           <button onClick={() => setCustomWeights(BT_PRESET_WEIGHTS[mode])} style={{
-            background: 'transparent', border: '1px solid #e5e7eb', color: '#737373',
+            background: 'transparent', border: '1px solid #d6dbe3', color: '#4b5563',
             padding: '2px 8px', fontFamily: 'DM Mono', fontSize: '13px', cursor: 'pointer',
           }}>↺ 重設</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           {/* Sliders */}
-          <div style={{ border: '1px solid #e5e7eb', padding: '12px' }}>
+          <div style={{ border: '1px solid #d6dbe3', padding: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontFamily: 'DM Mono', fontSize: '14px' }}>
-              <span style={{ color: '#737373' }}>{mode} 權重</span>
+              <span style={{ color: '#4b5563' }}>{mode} 權重</span>
               <span style={{ color: Math.abs(totalWeight - 100) < 1 ? '#EA580C' : '#EA580C' }}>合計: {totalWeight.toFixed(0)}%</span>
             </div>
             {sliderKeys.map(k => (
               <div key={k} style={{ marginBottom: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px', fontFamily: 'DM Mono', fontSize: '14px' }}>
-                  <span style={{ color: '#525252' }}>{BT_SIGNAL_LABELS[k] || k}</span>
+                  <span style={{ color: '#374151' }}>{BT_SIGNAL_LABELS[k] || k}</span>
                   <span style={{ color: '#EA580C' }}>{customWeights[k]}%</span>
                 </div>
                 <input
@@ -9165,7 +9165,7 @@ function BacktestPanel() {
           </div>
           {/* Comparison */}
           <div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#737373', marginBottom: '4px' }}>新權重 vs 預設權重</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#4b5563', marginBottom: '4px' }}>新權重 vs 預設權重</div>
             {['PREMIUM', 'STRONG', 'EARLY', 'TRAP'].map(g => {
               const oldS = stats.find(s => s.grade === g);
               const newS = newStats.find(s => s.grade === g);
@@ -9173,14 +9173,14 @@ function BacktestPanel() {
               const newHit = newS && newS.hitRate != null ? newS.hitRate : null;
               const delta = oldHit != null && newHit != null ? newHit - oldHit : null;
               return (
-                <div key={g} style={{ border: '1px solid #e5e7eb', padding: '6px 10px', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={g} style={{ border: '1px solid #d6dbe3', padding: '6px 10px', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: BT_GRADE_COLORS[g], fontWeight: 600 }}>{g}</span>
                   <div style={{ fontFamily: 'DM Mono', fontSize: '13px', display: 'flex', gap: '6px', alignItems: 'baseline' }}>
-                    <span style={{ color: '#737373' }}>{oldHit != null ? oldHit.toFixed(0) + '%' : '—'}</span>
+                    <span style={{ color: '#4b5563' }}>{oldHit != null ? oldHit.toFixed(0) + '%' : '—'}</span>
                     <span style={{ color: '#444' }}>→</span>
                     <span style={{ color: '#1a1a1a' }}>{newHit != null ? newHit.toFixed(0) + '%' : '—'}</span>
                     {delta != null && (
-                      <span style={{ color: delta > 0 ? '#10b981' : delta < 0 ? '#ef4444' : '#666', fontWeight: 600 }}>
+                      <span style={{ color: delta > 0 ? '#10b981' : delta < 0 ? '#ef4444' : '#4b5563', fontWeight: 600 }}>
                         {delta > 0 ? '+' : ''}{delta.toFixed(0)}
                       </span>
                     )}
@@ -9197,46 +9197,46 @@ function BacktestPanel() {
         <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#EA580C', letterSpacing: '0.1em', marginBottom: '8px' }}>
           04 · 交易紀錄
         </div>
-        <div style={{ border: '1px solid #e5e7eb', overflow: 'auto' }}>
+        <div style={{ border: '1px solid #d6dbe3', overflow: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', fontFamily: 'DM Mono' }}>
             <thead>
-              <tr style={{ background: '#f5f5f5', borderBottom: '1px solid #e5e7eb' }}>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#737373', fontSize: '13px', letterSpacing: '0.1em' }}>TICKER</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#737373', fontSize: '13px' }}>MODE</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#737373', fontSize: '13px' }}>DATE</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#737373', fontSize: '13px' }}>SCORE</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#737373', fontSize: '13px' }}>GRADE</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#737373', fontSize: '13px' }}>STOCK%</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#737373', fontSize: '13px' }}>OPT%</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#737373', fontSize: '13px' }}>OUTCOME</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: '#737373', fontSize: '13px' }}></th>
+              <tr style={{ background: '#f5f5f5', borderBottom: '1px solid #d6dbe3' }}>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#4b5563', fontSize: '13px', letterSpacing: '0.1em' }}>TICKER</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#4b5563', fontSize: '13px' }}>MODE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#4b5563', fontSize: '13px' }}>DATE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#4b5563', fontSize: '13px' }}>SCORE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#4b5563', fontSize: '13px' }}>GRADE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#4b5563', fontSize: '13px' }}>STOCK%</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#4b5563', fontSize: '13px' }}>OPT%</th>
+                <th style={{ padding: '6px 8px', textAlign: 'left', color: '#4b5563', fontSize: '13px' }}>OUTCOME</th>
+                <th style={{ padding: '6px 8px', textAlign: 'right', color: '#4b5563', fontSize: '13px' }}></th>
               </tr>
             </thead>
             <tbody>
               {trades.map(t => (
                 <tr key={t.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
                   <td style={{ padding: '6px 8px', color: '#1a1a1a', fontWeight: 600 }}>{t.ticker}</td>
-                  <td style={{ padding: '6px 8px', color: '#525252' }}>{t.mode}</td>
-                  <td style={{ padding: '6px 8px', color: '#525252' }}>{t.tradeDate || t.earningsDate || '—'}</td>
+                  <td style={{ padding: '6px 8px', color: '#374151' }}>{t.mode}</td>
+                  <td style={{ padding: '6px 8px', color: '#374151' }}>{t.tradeDate || t.earningsDate || '—'}</td>
                   <td style={{ padding: '6px 8px', color: '#1a1a1a' }}>{t.predictedScore}</td>
-                  <td style={{ padding: '6px 8px', color: BT_GRADE_COLORS[t.predictedGrade] || '#666' }}>{t.predictedGrade}</td>
+                  <td style={{ padding: '6px 8px', color: BT_GRADE_COLORS[t.predictedGrade] || '#4b5563' }}>{t.predictedGrade}</td>
                   <td style={{ padding: '6px 8px', color: (t.actualMovePct || 0) >= 0 ? '#10b981' : '#ef4444' }}>
                     {t.actualMovePct != null ? (t.actualMovePct >= 0 ? '+' : '') + t.actualMovePct.toFixed(1) : '—'}
                   </td>
                   <td style={{ padding: '6px 8px', color: (t.actualReturn || 0) >= 0 ? '#10b981' : '#ef4444' }}>
                     {t.actualReturn != null ? (t.actualReturn >= 0 ? '+' : '') + t.actualReturn.toFixed(0) : '—'}
                   </td>
-                  <td style={{ padding: '6px 8px', color: t.outcome === 'WIN' ? '#10b981' : t.outcome === 'LOSS' ? '#ef4444' : '#666' }}>
+                  <td style={{ padding: '6px 8px', color: t.outcome === 'WIN' ? '#10b981' : t.outcome === 'LOSS' ? '#ef4444' : '#4b5563' }}>
                     {t.outcome || 'PENDING'}
                   </td>
                   <td style={{ padding: '6px 8px', textAlign: 'right' }}>
-                    <button onClick={() => { setEditingId(t.id); setShowForm(true); }} style={{ background: 'transparent', border: 'none', color: '#737373', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>編輯</button>
+                    <button onClick={() => { setEditingId(t.id); setShowForm(true); }} style={{ background: 'transparent', border: 'none', color: '#4b5563', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>編輯</button>
                     <button onClick={() => { if (window.confirm('刪除 ' + t.ticker + '?')) bt_handleDelete(t.id); }} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>×</button>
                   </td>
                 </tr>
               ))}
               {trades.length === 0 && (
-                <tr><td colSpan="9" style={{ padding: '20px', textAlign: 'center', color: '#737373', fontSize: '14px' }}>無紀錄。點「＋ 新增」開始累積樣本。</td></tr>
+                <tr><td colSpan="9" style={{ padding: '20px', textAlign: 'center', color: '#4b5563', fontSize: '14px' }}>無紀錄。點「＋ 新增」開始累積樣本。</td></tr>
               )}
             </tbody>
           </table>
@@ -9273,7 +9273,7 @@ function Bt_TradeForm({ existing, onSubmit, onCancel }) {
   }
 
   const sigKeys = Object.keys(BT_PRESET_WEIGHTS[form.mode]);
-  const inputStyle = { width: '100%', background: '#f7f8fa', border: '1px solid #e5e7eb', color: '#1a1a1a', padding: '4px 6px', fontFamily: 'DM Mono', fontSize: '13px' };
+  const inputStyle = { width: '100%', background: '#f7f8fa', border: '1px solid #d6dbe3', color: '#1a1a1a', padding: '4px 6px', fontFamily: 'DM Mono', fontSize: '13px' };
 
   return (
     <div style={{ border: '1px solid #EA580C', background: '#f5f5f5', padding: '12px', marginBottom: '16px' }}>
@@ -9298,7 +9298,7 @@ function Bt_TradeForm({ existing, onSubmit, onCancel }) {
         </Bt_Field>
       </div>
       <div style={{ marginBottom: '8px' }}>
-        <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', marginBottom: '4px' }}>Signal Scores (0-100, optional)</div>
+        <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', marginBottom: '4px' }}>Signal Scores (0-100, optional)</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
           {sigKeys.map(k => (
             <Bt_Field key={k} label={BT_SIGNAL_LABELS[k] || k}>
@@ -9312,7 +9312,7 @@ function Bt_TradeForm({ existing, onSubmit, onCancel }) {
       </Bt_Field>
       <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
         <button onClick={handleSave} style={{ background: '#EA580C14', border: '1px solid #EA580C', color: '#EA580C', padding: '4px 12px', fontFamily: 'DM Mono', fontSize: '13px', cursor: 'pointer' }}>儲存</button>
-        <button onClick={onCancel} style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#525252', padding: '4px 12px', fontFamily: 'DM Mono', fontSize: '13px', cursor: 'pointer' }}>取消</button>
+        <button onClick={onCancel} style={{ background: 'transparent', border: '1px solid #d6dbe3', color: '#374151', padding: '4px 12px', fontFamily: 'DM Mono', fontSize: '13px', cursor: 'pointer' }}>取消</button>
       </div>
     </div>
   );
@@ -9321,7 +9321,7 @@ function Bt_TradeForm({ existing, onSubmit, onCancel }) {
 function Bt_Field({ label, children }) {
   return (
     <label style={{ display: 'block' }}>
-      <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', marginBottom: '2px' }}>{label}</div>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', marginBottom: '2px' }}>{label}</div>
       {children}
     </label>
   );
@@ -9542,17 +9542,17 @@ function TextbookLiveMatches({ onJumpToScanner }) {
       margin: '12px 24px 16px',
       padding: '16px 20px',
       background: 'linear-gradient(135deg, rgba(20,184,166,0.06) 0%, rgba(234,88,12,0.06) 100%)',
-      border: '1px solid #e5e7eb',
+      border: '1px solid #d6dbe3',
       borderRadius: '8px',
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', borderBottom: '1px solid #e5e7eb', paddingBottom: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', borderBottom: '1px solid #d6dbe3', paddingBottom: '10px' }}>
         <div>
           <div style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', fontWeight: 700, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             🎯 即時符合教科書條件的標的 · LIVE
             <FreshnessBadge sources={['ivr', 'earnings', 'uwFlow']} label="資料" />
           </div>
-          <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', marginTop: '3px', letterSpacing: '0.05em' }}>
+          <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', marginTop: '3px', letterSpacing: '0.05em' }}>
             掃 {watchlist.length} 檔 watchlist · IVR + earnings + β + UW flow · {ageStr} · auto 60s
           </div>
         </div>
@@ -9580,7 +9580,7 @@ function TextbookLiveMatches({ onJumpToScanner }) {
             🚀 爆噴買方 · 排行榜 (top {buyers.length}{buyerStrongCount > 0 ? ` · ${buyerStrongCount} 檔達 STRONG+` : ' · 無 STRONG+ 命中'})
           </div>
           {buyers.length === 0 ? (
-            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#a3a3a3', padding: '12px', border: '1px dashed #e5e7eb', borderRadius: '4px', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#6b7280', padding: '12px', border: '1px dashed #d6dbe3', borderRadius: '4px', textAlign: 'center' }}>
               {loading ? '掃描中⋯' : 'IVR/earnings 數據還沒到位，等 5-10 秒'}
             </div>
           ) : (
@@ -9610,7 +9610,7 @@ function TextbookLiveMatches({ onJumpToScanner }) {
             💰 IV Crush 賣方 · 排行榜 (top {sellers.length}{sellerStrongCount > 0 ? ` · ${sellerStrongCount} 檔達 STRONG+` : ' · 無 STRONG+ 命中'})
           </div>
           {sellers.length === 0 ? (
-            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#a3a3a3', padding: '12px', border: '1px dashed #e5e7eb', borderRadius: '4px', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#6b7280', padding: '12px', border: '1px dashed #d6dbe3', borderRadius: '4px', textAlign: 'center' }}>
               {loading ? '掃描中⋯' : 'IVR/earnings 數據還沒到位，等 5-10 秒'}
             </div>
           ) : (
@@ -9636,7 +9636,7 @@ function TextbookLiveMatches({ onJumpToScanner }) {
       </div>
 
       {/* Footer hint */}
-      <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #e5e7eb', fontFamily: 'DM Mono', fontSize: '13px', color: '#a3a3a3', display: 'flex', justifyContent: 'space-between' }}>
+      <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #d6dbe3', fontFamily: 'DM Mono', fontSize: '13px', color: '#6b7280', display: 'flex', justifyContent: 'space-between' }}>
         <span>⚡ 標記 = UW 異常流 / sweep / IV rank > 80 / premium > $1M</span>
         <span>watchlist 從「選擇權」tab 編輯，這邊自動同步</span>
       </div>
@@ -9655,7 +9655,7 @@ function TbLiveRow({ ticker, score, grade, ivr, beta, daysToEarnings, expectedMo
         gap: '10px',
         padding: '8px 10px',
         background: '#f7f8fa',
-        border: '1px solid ' + (hasUnusualFlow ? accent + '60' : '#e5e7eb'),
+        border: '1px solid ' + (hasUnusualFlow ? accent + '60' : '#d6dbe3'),
         borderRadius: '4px',
         cursor: onClick ? 'pointer' : 'default',
       }}
@@ -9666,8 +9666,8 @@ function TbLiveRow({ ticker, score, grade, ivr, beta, daysToEarnings, expectedMo
       </div>
       <div style={{
         padding: '2px 8px',
-        background: (grade ? grade.color : '#666') + '22',
-        border: '1px solid ' + (grade ? grade.color : '#666'),
+        background: (grade ? grade.color : '#4b5563') + '22',
+        border: '1px solid ' + (grade ? grade.color : '#4b5563'),
         color: grade ? grade.color : '#999',
         fontFamily: 'DM Mono',
         fontSize: '13px',
@@ -9678,7 +9678,7 @@ function TbLiveRow({ ticker, score, grade, ivr, beta, daysToEarnings, expectedMo
       }}>
         {score} {grade ? grade.label : ''}
       </div>
-      <div style={{ flex: 1, display: 'flex', gap: '10px', fontFamily: 'DM Mono', fontSize: '13px', color: '#525252' }}>
+      <div style={{ flex: 1, display: 'flex', gap: '10px', fontFamily: 'DM Mono', fontSize: '13px', color: '#374151' }}>
         <span>IVR <b style={{ color: '#1a1a1a' }}>{ivr != null ? ivr.toFixed(0) : '—'}</b></span>
         <span>β <b style={{ color: '#1a1a1a' }}>{beta != null ? beta.toFixed(2) : '—'}</b></span>
         <span>T{daysToEarnings != null ? (daysToEarnings >= 0 ? '−' + daysToEarnings : '+' + Math.abs(daysToEarnings)) : '—'}</span>
@@ -9696,17 +9696,17 @@ function TextbookViewer() {
   return (
     <div style={{ padding: '16px 24px', background: '#f7f8fa' }}>
       {/* Tab toggle */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', borderBottom: '1px solid #d6dbe3', paddingBottom: '8px' }}>
         <button onClick={() => setTab('buyer')} style={{
           background: tab === 'buyer' ? '#EA580C14' : 'transparent',
-          border: '1px solid ' + (tab === 'buyer' ? '#EA580C' : '#e5e7eb'),
-          color: tab === 'buyer' ? '#EA580C' : '#888',
+          border: '1px solid ' + (tab === 'buyer' ? '#EA580C' : '#d6dbe3'),
+          color: tab === 'buyer' ? '#EA580C' : '#374151',
           padding: '6px 14px', fontFamily: 'DM Mono', fontSize: '13px', cursor: 'pointer',
         }}>📚 爆噴買方</button>
         <button onClick={() => setTab('seller')} style={{
           background: tab === 'seller' ? '#14b8a614' : 'transparent',
-          border: '1px solid ' + (tab === 'seller' ? '#14b8a6' : '#e5e7eb'),
-          color: tab === 'seller' ? '#14b8a6' : '#888',
+          border: '1px solid ' + (tab === 'seller' ? '#14b8a6' : '#d6dbe3'),
+          color: tab === 'seller' ? '#14b8a6' : '#374151',
           padding: '6px 14px', fontFamily: 'DM Mono', fontSize: '13px', cursor: 'pointer',
         }}>📚 IV Crush 賣方</button>
       </div>
@@ -9715,11 +9715,11 @@ function TextbookViewer() {
       <div style={{ marginBottom: '20px', padding: '14px', border: '1px solid ' + accentColor + '40', background: accentColor + '06' }}>
         <div style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', color: '#1a1a1a', fontWeight: 700, marginBottom: '4px' }}>{data.title}</div>
         <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: accentColor, marginBottom: '8px' }}>{data.subtitle}</div>
-        <p style={{ fontSize: '14px', color: '#525252', lineHeight: 1.7, margin: '0 0 12px 0', fontFamily: 'Noto Sans TC' }}>{data.hero.summary}</p>
+        <p style={{ fontSize: '14px', color: '#374151', lineHeight: 1.7, margin: '0 0 12px 0', fontFamily: 'Noto Sans TC' }}>{data.hero.summary}</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
           {data.hero.stats.map((s, i) => (
-            <div key={i} style={{ border: '1px solid #e5e7eb', padding: '8px', background: '#f7f8fa' }}>
-              <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', letterSpacing: '0.1em' }}>{s.label}</div>
+            <div key={i} style={{ border: '1px solid #d6dbe3', padding: '8px', background: '#f7f8fa' }}>
+              <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', letterSpacing: '0.1em' }}>{s.label}</div>
               <div style={{ fontFamily: 'DM Mono', fontSize: '18px', color: accentColor, fontWeight: 600, marginTop: '2px' }}>{s.value}</div>
             </div>
           ))}
@@ -9746,7 +9746,7 @@ function Tb_BuyerContent({ data }) {
       <Tb_SectionHeader kicker="ANATOMY · 部位拆解" title="他到底買了什麼" accent="#EA580C" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {data.positions.map((p, i) => (
-          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#f7f8fa' }}>
+          <div key={i} style={{ border: '1px solid #d6dbe3', padding: '10px', background: '#f7f8fa' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#1a1a1a', fontWeight: 600 }}>{p.name}</span>
               <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#EA580C', fontWeight: 600 }}>+${(p.profit).toLocaleString()} ({p.profitPct >= 0 ? '+' : ''}{p.profitPct}%)</span>
@@ -9758,7 +9758,7 @@ function Tb_BuyerContent({ data }) {
               <Tb_Cell label="出場" value={'$' + p.exit} />
               <Tb_Cell label="進場 Δ" value={p.deltaAtEntry} />
             </div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252', borderLeft: '2px solid #EA580C', paddingLeft: '8px' }}>{p.note}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#374151', borderLeft: '2px solid #EA580C', paddingLeft: '8px' }}>{p.note}</div>
           </div>
         ))}
       </div>
@@ -9766,12 +9766,12 @@ function Tb_BuyerContent({ data }) {
       <Tb_SectionHeader kicker="FRAMEWORK · 5 信號" title="爆噴模型 V2" accent="#EA580C" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {data.signals.map(s => (
-          <div key={s.id} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#f7f8fa' }}>
+          <div key={s.id} style={{ border: '1px solid #d6dbe3', padding: '10px', background: '#f7f8fa' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 600 }}>0{s.id} · {s.name}</span>
               <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#EA580C' }}>w {s.weight}%</span>
             </div>
-            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#525252', lineHeight: 1.6, marginBottom: '4px' }}>{s.rationale}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#374151', lineHeight: 1.6, marginBottom: '4px' }}>{s.rationale}</div>
             <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#EA580C' }}>★ {s.metric}</div>
           </div>
         ))}
@@ -9793,10 +9793,10 @@ function Tb_SellerContent({ data }) {
       <Tb_SectionHeader kicker="ANATOMY · 4 階段" title={data.winCase.title} accent="#14b8a6" />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
         {data.winCase.phases.map((p, i) => (
-          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#f7f8fa' }}>
+          <div key={i} style={{ border: '1px solid #d6dbe3', padding: '10px', background: '#f7f8fa' }}>
             <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#14b8a6', letterSpacing: '0.1em', marginBottom: '4px' }}>{p.label}</div>
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 600, marginBottom: '4px' }}>{p.title}</div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252', lineHeight: 1.6 }}>{p.detail}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#374151', lineHeight: 1.6 }}>{p.detail}</div>
           </div>
         ))}
       </div>
@@ -9804,12 +9804,12 @@ function Tb_SellerContent({ data }) {
       <Tb_SectionHeader kicker="FRAMEWORK · 7 信號" title="什麼條件下才該賣" accent="#14b8a6" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {data.signals.map(s => (
-          <div key={s.id} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#f7f8fa' }}>
+          <div key={s.id} style={{ border: '1px solid #d6dbe3', padding: '10px', background: '#f7f8fa' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 600 }}>0{s.id} · {s.name}</span>
               <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#14b8a6' }}>w {s.weight}%</span>
             </div>
-            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#525252', lineHeight: 1.6, marginBottom: '4px' }}>{s.detail}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#374151', lineHeight: 1.6, marginBottom: '4px' }}>{s.detail}</div>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#14b8a6' }}>✓ TARGET: {s.target}</span>
               <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#ef4444' }}>⚠ {s.caution}</span>
@@ -9821,12 +9821,12 @@ function Tb_SellerContent({ data }) {
       <Tb_SectionHeader kicker="STRUCTURES · 4 種結構" title="用哪種結構賣" accent="#14b8a6" />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
         {data.structures.map((s, i) => (
-          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '10px', background: '#f7f8fa' }}>
+          <div key={i} style={{ border: '1px solid #d6dbe3', padding: '10px', background: '#f7f8fa' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 600 }}>{s.name}</span>
               <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: s.risk.indexOf('UNDEFINED') >= 0 && s.risk.indexOf('DEFINED') < 0 ? '#ef4444' : '#10b981', padding: '1px 6px', border: '1px solid currentColor' }}>{s.risk}</span>
             </div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252', marginBottom: '4px' }}>{s.alias} · PoP {s.pop}</div>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#374151', marginBottom: '4px' }}>{s.alias} · PoP {s.pop}</div>
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#EA580C', marginBottom: '2px' }}>✓ 用: {s.when}</div>
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#ef4444' }}>✗ 避: {s.avoid}</div>
           </div>
@@ -9836,35 +9836,35 @@ function Tb_SellerContent({ data }) {
       <Tb_SectionHeader kicker="RISK · 6 條規則" title="不守 = 死" accent="#ef4444" />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
         {data.riskRules.map(r => (
-          <div key={r.id} style={{ border: '1px solid ' + (r.nonNegotiable ? '#ef4444' : '#e5e7eb'), padding: '10px', background: r.nonNegotiable ? '#ef444408' : '#f7f8fa' }}>
+          <div key={r.id} style={{ border: '1px solid ' + (r.nonNegotiable ? '#ef4444' : '#d6dbe3'), padding: '10px', background: r.nonNegotiable ? '#ef444408' : '#f7f8fa' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#1a1a1a', fontWeight: 600 }}>0{r.id} · {r.rule}</span>
               {r.nonNegotiable && <span style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#ef4444' }}>★ 強制</span>}
             </div>
-            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#525252', lineHeight: 1.6 }}>{r.detail}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#374151', lineHeight: 1.6 }}>{r.detail}</div>
           </div>
         ))}
       </div>
 
       <Tb_SectionHeader kicker="CAUTIONARY · SNDK 賣方災難" title={data.lossCase.title} accent="#ef4444" />
       <div style={{ border: '1px solid #ef4444', background: '#ef444408', padding: '12px' }}>
-        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#525252', lineHeight: 1.7, marginBottom: '10px' }}>{data.lossCase.summary}</div>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#374151', lineHeight: 1.7, marginBottom: '10px' }}>{data.lossCase.summary}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '10px' }}>
-          <div style={{ border: '1px solid #e5e7eb', padding: '8px', background: '#f7f8fa' }}>
+          <div style={{ border: '1px solid #d6dbe3', padding: '8px', background: '#f7f8fa' }}>
             <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#EA580C', marginBottom: '4px' }}>進場前看似誘人</div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252', lineHeight: 1.7 }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#374151', lineHeight: 1.7 }}>
               Spot ${data.lossCase.pre.spot} · IV {data.lossCase.pre.iv}% (pctl {data.lossCase.pre.ivPctl}) · Implied {data.lossCase.pre.impliedMove}% / Hist {data.lossCase.pre.histMove}% = {data.lossCase.pre.ratio}x
             </div>
           </div>
           <div style={{ border: '1px solid #ef4444', padding: '8px', background: '#f7f8fa' }}>
             <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#ef4444', marginBottom: '4px' }}>18 小時後</div>
-            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252', lineHeight: 1.7 }}>
+            <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#374151', lineHeight: 1.7 }}>
               Spot ${data.lossCase.post.spot} (+{data.lossCase.post.actualMove}%) · 平倉 ${data.lossCase.post.costToClose.toLocaleString()} · 損益 <span style={{ color: '#ef4444', fontWeight: 600 }}>${data.lossCase.post.profit.toLocaleString()}</span>
             </div>
           </div>
         </div>
-        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#525252', marginBottom: '6px', fontWeight: 600 }}>為什麼炸：</div>
-        <ol style={{ margin: 0, paddingLeft: '20px', fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#525252', lineHeight: 1.8 }}>
+        <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#374151', marginBottom: '6px', fontWeight: 600 }}>為什麼炸：</div>
+        <ol style={{ margin: 0, paddingLeft: '20px', fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#374151', lineHeight: 1.8 }}>
           {data.lossCase.reasons.map((r, i) => <li key={i}>{r}</li>)}
         </ol>
       </div>
@@ -9875,7 +9875,7 @@ function Tb_SellerContent({ data }) {
 function Tb_Cell({ label, value }) {
   return (
     <div>
-      <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', letterSpacing: '0.1em' }}>{label}</div>
+      <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', letterSpacing: '0.1em' }}>{label}</div>
       <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#1a1a1a', marginTop: '1px' }}>{value}</div>
     </div>
   );
@@ -9887,9 +9887,9 @@ function Tb_LessonColumn({ title, color, items }) {
       <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: color, fontWeight: 700, marginBottom: '6px', borderLeft: '3px solid ' + color, paddingLeft: '6px' }}>{title}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {items.map((item, i) => (
-          <div key={i} style={{ border: '1px solid #e5e7eb', padding: '8px', background: '#f7f8fa' }}>
+          <div key={i} style={{ border: '1px solid #d6dbe3', padding: '8px', background: '#f7f8fa' }}>
             <div style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', color: '#1a1a1a', fontWeight: 600, marginBottom: '2px' }}>{item.title}</div>
-            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#525252', lineHeight: 1.6 }}>{item.detail}</div>
+            <div style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', color: '#374151', lineHeight: 1.6 }}>{item.detail}</div>
           </div>
         ))}
       </div>
@@ -10329,7 +10329,7 @@ function App() {
                   >{aiSummaryLoading ? '⋯' : '↻ refresh'}</button>
                 </div>
                 {aiSummaryLoading && !aiSummary && (
-                  <div style={{ fontSize: '14px', color: '#525252', fontFamily: 'Noto Sans TC' }}>分析中⋯</div>
+                  <div style={{ fontSize: '14px', color: '#374151', fontFamily: 'Noto Sans TC' }}>分析中⋯</div>
                 )}
                 {aiSummary && (
                   <div style={{ fontSize: '15px', color: '#f0f0f0', fontFamily: 'Noto Sans TC', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>{aiSummary}</div>
@@ -10466,8 +10466,8 @@ function App() {
         {/* Footer */}
         <div style={{
           padding: '20px 24px',
-          borderTop: '1px solid #e5e7eb',
-          color: '#a3a3a3',
+          borderTop: '1px solid #d6dbe3',
+          color: '#6b7280',
           fontSize: '13px',
           fontFamily: 'DM Mono, monospace',
           display: 'flex',
@@ -10594,7 +10594,7 @@ function HealthIndicator() {
   return (
     <div style={{ position: 'relative' }} data-health-indicator>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-        <span style={{ color: '#a3a3a3', fontSize: '13px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>串接</span>
+        <span style={{ color: '#6b7280', fontSize: '13px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>串接</span>
         <button
           onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
           style={{
@@ -10640,12 +10640,12 @@ function HealthIndicator() {
               boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
             }}
           >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', paddingBottom: '12px', borderBottom: '1px solid #e5e7eb' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', paddingBottom: '12px', borderBottom: '1px solid #d6dbe3' }}>
             <div>
               <div style={{ fontFamily: 'Noto Sans TC', fontSize: '17px', color: '#1a1a1a', fontWeight: 700 }}>
                 🩺 串接健康檢查 · 完整診斷
               </div>
-              <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252', marginTop: '4px' }}>
+              <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#374151', marginTop: '4px' }}>
                 {okCount}/{states.length} OK · {errorCount} 錯誤 · 自動 5 min 重檢
               </div>
             </div>
@@ -10698,16 +10698,16 @@ function HealthIndicator() {
               <button
                 onClick={runAll}
                 style={{
-                  background: 'transparent', border: '1px solid #e5e7eb',
-                  color: '#525252', padding: '6px 14px', borderRadius: '4px',
+                  background: 'transparent', border: '1px solid #d6dbe3',
+                  color: '#374151', padding: '6px 14px', borderRadius: '4px',
                   cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '14px',
                 }}
               >↻ 立即重檢</button>
               <button
                 onClick={() => setOpen(false)}
                 style={{
-                  background: 'transparent', border: '1px solid #e5e7eb',
-                  color: '#525252', padding: '6px 14px', borderRadius: '4px',
+                  background: 'transparent', border: '1px solid #d6dbe3',
+                  color: '#374151', padding: '6px 14px', borderRadius: '4px',
                   cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '14px',
                 }}
               >✕ 關閉</button>
@@ -10719,7 +10719,7 @@ function HealthIndicator() {
             const cIcon = c.status === 'ok' ? '✅' : c.status === 'error' ? '❌' : '⋯';
             const ageS = c.t ? Math.round((Date.now() - c.t.getTime()) / 1000) : null;
             return (
-              <div key={k} style={{ padding: '14px 0', borderBottom: '1px solid #e5e7eb' }}>
+              <div key={k} style={{ padding: '14px 0', borderBottom: '1px solid #d6dbe3' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                   <span style={{ fontSize: '18px' }}>{cIcon}</span>
                   <span style={{ fontFamily: 'DM Mono', fontSize: '15px', color: cColor, fontWeight: 700, minWidth: '80px' }}>{c.name}</span>
@@ -10734,13 +10734,13 @@ function HealthIndicator() {
                       HTTP {c.httpStatus || 'NET'}
                     </span>
                   )}
-                  <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: c.status === 'pending' ? '#ef4444' : '#737373', marginLeft: 'auto' }}>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: c.status === 'pending' ? '#ef4444' : '#4b5563', marginLeft: 'auto' }}>
                     {ageS != null ? ageS + 's ago' : (openedAt ? 'pending ' + Math.round((Date.now() - openedAt) / 1000) + 's ⏳' : 'pending')}
                   </span>
                 </div>
                 {c.path && (
-                  <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#737373', paddingLeft: '28px', marginBottom: '6px' }}>
-                    <b style={{ color: '#a3a3a3' }}>路徑：</b>{c.path}
+                  <div style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#4b5563', paddingLeft: '28px', marginBottom: '6px' }}>
+                    <b style={{ color: '#6b7280' }}>路徑：</b>{c.path}
                   </div>
                 )}
                 <div style={{
@@ -10754,7 +10754,7 @@ function HealthIndicator() {
                   background: c.status === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)',
                   padding: '10px 12px',
                   borderRadius: '4px',
-                  border: c.status === 'error' ? '1px solid #ef444444' : '1px solid #e5e7eb',
+                  border: c.status === 'error' ? '1px solid #ef444444' : '1px solid #d6dbe3',
                   lineHeight: 1.6,
                 }}>
                   {c.sample || '(no sample yet)'}
@@ -10763,15 +10763,15 @@ function HealthIndicator() {
             );
           })}
 
-          <div style={{ marginTop: '14px', paddingTop: '12px', fontFamily: 'DM Mono', fontSize: '13px', color: '#737373', lineHeight: 1.7 }}>
-            <div style={{ marginBottom: '4px', color: '#525252' }}>📌 提示：</div>
+          <div style={{ marginTop: '14px', paddingTop: '12px', fontFamily: 'DM Mono', fontSize: '13px', color: '#4b5563', lineHeight: 1.7 }}>
+            <div style={{ marginBottom: '4px', color: '#374151' }}>📌 提示：</div>
             <div>· FRED · UW · Polygon · Yahoo（每家挑 1 endpoint 代表）</div>
             <div>· Supabase 狀態看左邊「SUPABASE」徽章</div>
             <div>· 點 📋 複製診斷後直接貼回對話，問題定位最快</div>
           </div>
           </div>
 
-          <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e5e7eb', fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3', lineHeight: 1.6 }}>
+          <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #d6dbe3', fontFamily: 'DM Mono', fontSize: '12px', color: '#6b7280', lineHeight: 1.6 }}>
             <div>FRED · UW · Polygon · Yahoo（每家挑 1 endpoint 代表）</div>
             <div>Supabase 狀態看左邊「SUPABASE」徽章</div>
           </div>
@@ -10810,7 +10810,7 @@ function FreshnessBadge({ sources, label }) {
   let title = sources.join(' · ');
 
   if (noneReady) {
-    color = '#a3a3a3'; text = '尚未取得';
+    color = '#6b7280'; text = '尚未取得';
   } else if (anyFailedSinceSuccess) {
     color = '#ef4444';
     const failed = present.filter(s => s.lastErr && (!s.lastOk || s.lastErr > s.lastOk));
@@ -10860,7 +10860,7 @@ function TabNav({ activeTab, setActiveTab }) {
     <div style={{
       position: 'sticky', top: 0, zIndex: 50,
       background: 'rgba(247,248,250,0.95)', backdropFilter: 'blur(8px)',
-      borderBottom: '1px solid #e5e7eb',
+      borderBottom: '1px solid #d6dbe3',
       padding: '10px 24px',
       display: 'flex', gap: '6px', overflowX: 'auto',
     }}>
@@ -10875,9 +10875,9 @@ function TabNav({ activeTab, setActiveTab }) {
               display: 'flex', alignItems: 'center', gap: '8px',
               padding: '8px 14px',
               background: isActive ? 'rgba(234,88,12,0.12)' : '#f7f8fa',
-              border: '1px solid ' + (isActive ? '#EA580C' : '#e5e7eb'),
+              border: '1px solid ' + (isActive ? '#EA580C' : '#d6dbe3'),
               borderRadius: '6px',
-              color: isActive ? '#EA580C' : '#525252',
+              color: isActive ? '#EA580C' : '#374151',
               cursor: 'pointer',
               fontFamily: 'Noto Sans TC',
               fontSize: '14px',
@@ -10891,7 +10891,7 @@ function TabNav({ activeTab, setActiveTab }) {
             <span style={{
               fontFamily: 'DM Mono',
               fontSize: '14px',
-              color: isActive ? '#EA580C99' : '#777',
+              color: isActive ? '#EA580C99' : '#4b5563',
               fontWeight: 400,
               letterSpacing: '0.05em',
             }}>{t.sub}</span>
@@ -10921,7 +10921,7 @@ function AppHeader({
   return (
     <div style={{
       padding: '16px 24px',
-      borderBottom: '1px solid #e5e7eb',
+      borderBottom: '1px solid #d6dbe3',
       background: '#f7f8fa',
       display: 'flex',
       alignItems: 'center',
@@ -10947,7 +10947,7 @@ function AppHeader({
           <div style={{
             fontFamily: 'DM Mono, monospace',
             fontSize: '14px',
-            color: '#525252',
+            color: '#374151',
             letterSpacing: '0.1em',
           }}>
             L2 MACRO ⊕ L1 HEDGE ⊕ SUPABASE POSITIONS
@@ -10958,16 +10958,16 @@ function AppHeader({
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         {/* Portfolio summary */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <span style={{ color: '#a3a3a3', fontSize: '13px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>投資組合</span>
+          <span style={{ color: '#6b7280', fontSize: '13px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>投資組合</span>
           <span style={{ color: '#1a1a1a', fontSize: '14px', fontFamily: 'DM Mono', fontWeight: 500 }}>
             {formatMoney(portfolioTotal)}
           </span>
-          <span style={{ color: '#a3a3a3', fontSize: '14px', fontFamily: 'DM Mono' }}>
+          <span style={{ color: '#6b7280', fontSize: '14px', fontFamily: 'DM Mono' }}>
             {positionsCount} pos {optionPositionsCount > 0 ? '(' + optionPositionsCount + ' opt)' : ''}
           </span>
         </div>
 
-        <div style={{ width: '1px', height: '32px', background: '#e5e7eb' }} />
+        <div style={{ width: '1px', height: '32px', background: '#d6dbe3' }} />
 
         {/* Supabase status badge */}
         <SupabaseStatusBadge
@@ -10977,22 +10977,22 @@ function AppHeader({
           onRefresh={onRefresh}
         />
 
-        <div style={{ width: '1px', height: '32px', background: '#e5e7eb' }} />
+        <div style={{ width: '1px', height: '32px', background: '#d6dbe3' }} />
 
         {/* Live integration health (FRED / UW / Polygon / Yahoo) */}
         <HealthIndicator />
 
-        <div style={{ width: '1px', height: '32px', background: '#e5e7eb' }} />
+        <div style={{ width: '1px', height: '32px', background: '#d6dbe3' }} />
 
         {/* Auto-refresh toggle */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <span style={{ color: '#a3a3a3', fontSize: '13px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>自動同步</span>
+          <span style={{ color: '#6b7280', fontSize: '13px', letterSpacing: '0.1em', fontFamily: 'DM Mono' }}>自動同步</span>
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
             style={{
               background: 'transparent',
               border: '1px solid ' + (autoRefresh ? '#EA580C' : '#555'),
-              color: autoRefresh ? '#EA580C' : '#888',
+              color: autoRefresh ? '#EA580C' : '#374151',
               padding: '3px 10px',
               borderRadius: '3px',
               cursor: 'pointer',
@@ -11011,8 +11011,8 @@ function AppHeader({
           onClick={() => setShowSetup(!showSetup)}
           style={{
             background: 'transparent',
-            border: '1px solid #e5e7eb',
-            color: '#525252',
+            border: '1px solid #d6dbe3',
+            color: '#374151',
             padding: '6px 8px',
             borderRadius: '3px',
             cursor: 'pointer',
@@ -11026,7 +11026,7 @@ function AppHeader({
           onClick={() => setShowHelp(true)}
           style={{
             background: 'transparent',
-            border: '1px solid #e5e7eb',
+            border: '1px solid #d6dbe3',
             color: '#EA580C',
             padding: '6px 10px',
             borderRadius: '3px',
@@ -11079,7 +11079,7 @@ function SupabaseStatusBadge({ status, Icon, lastFetch, onRefresh }) {
         </span>
       </div>
       {lastFetch && (
-        <span style={{ color: '#a3a3a3', fontSize: '14px', fontFamily: 'DM Mono' }}>
+        <span style={{ color: '#6b7280', fontSize: '14px', fontFamily: 'DM Mono' }}>
           {formatTimestamp(lastFetch)}
         </span>
       )}
@@ -11087,8 +11087,8 @@ function SupabaseStatusBadge({ status, Icon, lastFetch, onRefresh }) {
         onClick={onRefresh}
         style={{
           background: 'transparent',
-          border: '1px solid #e5e7eb',
-          color: '#525252',
+          border: '1px solid #d6dbe3',
+          color: '#374151',
           padding: '4px 6px',
           borderRadius: '3px',
           cursor: 'pointer',
@@ -11126,7 +11126,7 @@ function SetupGuide({ onClose }) {
           <div style={{
             fontFamily: 'Noto Sans TC',
             fontSize: '14px',
-            color: '#525252',
+            color: '#374151',
             lineHeight: 1.6,
           }}>
             要載入 TOYWU 真實持倉，請選擇以下任一方式提供 anon key：
@@ -11139,7 +11139,7 @@ function SetupGuide({ onClose }) {
                   margin: '4px 0',
                   padding: '6px 10px',
                   background: '#f5f5f5',
-                  border: '1px solid #e5e7eb',
+                  border: '1px solid #d6dbe3',
                   borderRadius: '3px',
                   color: '#EA580C',
                   fontFamily: 'DM Mono',
@@ -11155,7 +11155,7 @@ function SetupGuide({ onClose }) {
                   margin: '4px 0',
                   padding: '6px 10px',
                   background: '#f5f5f5',
-                  border: '1px solid #e5e7eb',
+                  border: '1px solid #d6dbe3',
                   borderRadius: '3px',
                   color: '#EA580C',
                   fontFamily: 'DM Mono',
@@ -11164,7 +11164,7 @@ function SetupGuide({ onClose }) {
                 }}>{'<script>window.__SUPABASE_ANON_KEY = "eyJhbG..."<\/script>'}</pre>
               </li>
             </ol>
-            <div style={{ fontSize: '13px', color: '#737373', marginTop: '6px' }}>
+            <div style={{ fontSize: '13px', color: '#4b5563', marginTop: '6px' }}>
               連線目標：<span style={{ color: '#EA580C', fontFamily: 'DM Mono' }}>{SUPABASE_URL}</span>
               ・User filter：<span style={{ color: '#EA580C', fontFamily: 'DM Mono' }}>{USER_NAME}</span>
             </div>
@@ -11175,7 +11175,7 @@ function SetupGuide({ onClose }) {
           style={{
             background: 'transparent',
             border: '1px solid #555',
-            color: '#525252',
+            color: '#374151',
             padding: '4px 10px',
             borderRadius: '3px',
             cursor: 'pointer',
@@ -11325,14 +11325,14 @@ function CrossSignalSection({ positions }) {
   const scoreBar = s => Math.min(100, (s / 8) * 100);
 
   return (
-    <div style={{ margin: '12px 24px 0', border: '1px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden' }}>
+    <div style={{ margin: '12px 24px 0', border: '1px solid #d6dbe3', borderRadius: '6px', overflow: 'hidden' }}>
       {/* Header */}
       <div
         onClick={() => setCollapsed(v => !v)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '12px 16px', background: '#f5f5f5', cursor: 'pointer',
-          borderBottom: collapsed ? 'none' : '1px solid #e5e7eb',
+          borderBottom: collapsed ? 'none' : '1px solid #d6dbe3',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -11341,7 +11341,7 @@ function CrossSignalSection({ positions }) {
             <span style={{ fontSize: '14px', fontWeight: 600, color: '#1a1a1a', fontFamily: 'DM Mono', letterSpacing: '0.08em' }}>
               暗池 × 期權流 交叉訊號
             </span>
-            <span style={{ fontSize: '14px', color: '#a3a3a3', marginLeft: '10px', fontFamily: 'DM Mono' }}>
+            <span style={{ fontSize: '14px', color: '#6b7280', marginLeft: '10px', fontFamily: 'DM Mono' }}>
               機構同步佈局偵測
             </span>
           </div>
@@ -11366,7 +11366,7 @@ function CrossSignalSection({ positions }) {
             onClick={e => { e.stopPropagation(); refresh(); }}
             disabled={loading}
             style={{
-              background: 'transparent', border: '1px solid #333', color: '#737373',
+              background: 'transparent', border: '1px solid #333', color: '#4b5563',
               padding: '3px 8px', borderRadius: '3px', fontSize: '14px',
               cursor: loading ? 'wait' : 'pointer', fontFamily: 'DM Mono',
             }}
@@ -11384,7 +11384,7 @@ function CrossSignalSection({ positions }) {
               fontFamily: 'DM Mono',
             }}
           >{aiLoading ? '分析中⋯' : '✨ AI 推薦'}</button>
-          <span style={{ color: '#a3a3a3', fontSize: '14px' }}>{collapsed ? '▸' : '▾'}</span>
+          <span style={{ color: '#6b7280', fontSize: '14px' }}>{collapsed ? '▸' : '▾'}</span>
         </div>
       </div>
 
@@ -11403,7 +11403,7 @@ function CrossSignalSection({ positions }) {
               <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '14px' }}>{item.icon}</span>
                 <span style={{ fontSize: '13px', color: '#EA580C', fontFamily: 'DM Mono' }}>{item.label}</span>
-                <span style={{ fontSize: '14px', color: '#a3a3a3', fontFamily: 'DM Mono' }}>{item.desc}</span>
+                <span style={{ fontSize: '14px', color: '#6b7280', fontFamily: 'DM Mono' }}>{item.desc}</span>
               </div>
             ))}
           </div>
@@ -11440,7 +11440,7 @@ function CrossSignalSection({ positions }) {
                   display: 'grid',
                   gridTemplateColumns: '80px 90px 130px 130px 80px 60px 1fr',
                   padding: '10px 16px',
-                  borderBottom: '1px solid #e5e7eb',
+                  borderBottom: '1px solid #d6dbe3',
                   alignItems: 'center',
                   background: sig.inPortfolio ? 'rgba(234,88,12,0.04)' : i % 2 === 0 ? '#f8f9fa' : '#f7f8fa',
                   borderLeft: sig.inPortfolio ? '3px solid #EA580C' : '3px solid transparent',
@@ -11459,11 +11459,11 @@ function CrossSignalSection({ positions }) {
                   </div>
                   <div>
                     <div style={{ fontSize: '13px', color: '#1a1a1a', fontFamily: 'DM Mono' }}>{fmtM(sig.darkTotal)}</div>
-                    <div style={{ fontSize: '14px', color: '#a3a3a3' }}>{sig.darkCount} 筆暗池單</div>
+                    <div style={{ fontSize: '14px', color: '#6b7280' }}>{sig.darkCount} 筆暗池單</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '13px', color: '#1a1a1a', fontFamily: 'DM Mono' }}>{fmtM(sig.flowTotal)}</div>
-                    <div style={{ fontSize: '14px', color: '#a3a3a3' }}>{sig.flowCount} 筆期權</div>
+                    <div style={{ fontSize: '14px', color: '#6b7280' }}>{sig.flowCount} 筆期權</div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     {sig.hasUnusual && (
@@ -11538,7 +11538,7 @@ function CrossSignalSection({ positions }) {
                 >{aiLoading ? '⋯' : '↻ 重新分析'}</button>
               </div>
               {aiLoading ? (
-                <div style={{ fontSize: '14px', color: '#a3a3a3', fontFamily: 'DM Mono' }}>
+                <div style={{ fontSize: '14px', color: '#6b7280', fontFamily: 'DM Mono' }}>
                   正在分析機構意圖⋯
                 </div>
               ) : (
@@ -11565,7 +11565,7 @@ function CrossLayerBridge({ macroState, positions, portfolioTotal }) {
         margin: '0 24px',
         padding: '12px',
         textAlign: 'center',
-        color: '#a3a3a3',
+        color: '#6b7280',
         fontSize: '13px',
         fontFamily: 'DM Mono',
       }}>
@@ -11581,8 +11581,8 @@ function CrossLayerBridge({ macroState, positions, portfolioTotal }) {
   return (
     <div style={{
       padding: '24px',
-      borderTop: '1px solid #e5e7eb',
-      borderBottom: '1px solid #e5e7eb',
+      borderTop: '1px solid #d6dbe3',
+      borderBottom: '1px solid #d6dbe3',
       background: 'linear-gradient(180deg, #f7f8fa 0%, #f8f9fa 50%, #f7f8fa 100%)',
     }}>
       <div style={{
@@ -11594,7 +11594,7 @@ function CrossLayerBridge({ macroState, positions, portfolioTotal }) {
       }}>
         <GitBranch size={14} style={{ color: '#EA580C' }} />
         <span style={{
-          color: '#525252',
+          color: '#374151',
           fontSize: '14px',
           fontFamily: 'DM Mono',
           letterSpacing: '0.15em',
@@ -11631,7 +11631,7 @@ function CrossLayerBridge({ macroState, positions, portfolioTotal }) {
           mainValue="→"
           mainColor="#EA580C"
           sub={'L2 score band → bps base'}
-          subColor="#888"
+          subColor="#374151"
           extra={hasAlerts ? '+ ' + redAlerts.length + ' alert boost' : 'no alert boost'}
           smallMain
         />
@@ -11666,7 +11666,7 @@ function CrossLayerBridge({ macroState, positions, portfolioTotal }) {
           <span style={{ color: '#ef4444', fontSize: '13px', fontFamily: 'DM Mono', letterSpacing: '0.08em' }}>
             {redAlerts.length} L2 RED ALERT{redAlerts.length > 1 ? 'S' : ''} ACTIVE
           </span>
-          <span style={{ color: '#525252', fontSize: '13px', fontFamily: 'Noto Sans TC' }}>
+          <span style={{ color: '#374151', fontSize: '13px', fontFamily: 'Noto Sans TC' }}>
             · L1 hedge 預算已自動加碼 ·  L1 strategy 推薦僅供參考
           </span>
         </div>
@@ -11679,14 +11679,14 @@ function BridgeNode({ tag, mainValue, mainColor, sub, subColor, extra, alerts, s
   return (
     <div style={{
       background: '#f5f5f5',
-      border: '1px solid #e5e7eb',
+      border: '1px solid #d6dbe3',
       borderRadius: '6px',
       padding: '12px 14px',
       textAlign: 'center',
       position: 'relative',
     }}>
       <div style={{
-        color: '#a3a3a3',
+        color: '#6b7280',
         fontSize: '13px',
         fontFamily: 'DM Mono',
         letterSpacing: '0.12em',
@@ -11705,7 +11705,7 @@ function BridgeNode({ tag, mainValue, mainColor, sub, subColor, extra, alerts, s
       </div>
       {sub && (
         <div style={{
-          color: subColor || '#888',
+          color: subColor || '#374151',
           fontSize: '13px',
           fontFamily: 'Noto Sans TC',
           marginTop: '6px',
@@ -11716,7 +11716,7 @@ function BridgeNode({ tag, mainValue, mainColor, sub, subColor, extra, alerts, s
       )}
       {extra && (
         <div style={{
-          color: '#737373',
+          color: '#4b5563',
           fontSize: '14px',
           fontFamily: 'DM Mono',
           marginTop: '4px',
@@ -11750,7 +11750,7 @@ function BridgeArrow() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      color: '#a3a3a3',
+      color: '#6b7280',
     }}>
       <ArrowRight size={20} />
     </div>
@@ -12054,19 +12054,19 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
   const realPositions = positions.filter(p => !String(p.id || '').startsWith('mock-'));
 
   return (
-    <div style={{ background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '16px 20px', margin: '12px 24px 0' }}>
+    <div style={{ background: '#f7f8fa', border: '1px solid #d6dbe3', borderRadius: '6px', padding: '16px 20px', margin: '12px 24px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Database size={14} className="text-accent" />
           <span style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', fontWeight: 700, color: '#1a1a1a' }}>持倉管理</span>
-          <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#737373', letterSpacing: '0.1em', marginLeft: '4px' }}>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#4b5563', letterSpacing: '0.1em', marginLeft: '4px' }}>
             {realPositions.length} POSITIONS · USER: toywu
           </span>
         </div>
         {!editing && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {pricesLastRefresh && (
-              <span style={{ fontSize: '14px', color: '#737373', fontFamily: 'DM Mono' }}>
+              <span style={{ fontSize: '14px', color: '#4b5563', fontFamily: 'DM Mono' }}>
                 現價 {Math.round((Date.now() - pricesLastRefresh.getTime()) / 1000)}s ago
               </span>
             )}
@@ -12075,8 +12075,8 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
               disabled={isReadOnly || busy || pricesRefreshing}
               style={{
                 background: 'transparent',
-                border: '1px solid #e5e7eb',
-                color: pricesRefreshing ? '#EA580C' : '#888',
+                border: '1px solid #d6dbe3',
+                color: pricesRefreshing ? '#EA580C' : '#374151',
                 padding: '5px 10px', borderRadius: '3px',
                 fontFamily: 'DM Mono', fontSize: '13px',
                 cursor: pricesRefreshing ? 'wait' : 'pointer',
@@ -12135,8 +12135,8 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
               border: 'none', fontFamily: 'DM Mono', fontSize: '13px', fontWeight: 700, cursor: busy ? 'wait' : 'pointer',
             }}>{busy ? '⋯' : (editing === 'new' ? '✓ 新增' : '✓ 儲存')}</button>
             <button onClick={cancel} disabled={busy} style={{
-              background: 'transparent', color: '#525252', padding: '6px 14px', borderRadius: '3px',
-              border: '1px solid #e5e7eb', fontFamily: 'DM Mono', fontSize: '13px', cursor: busy ? 'wait' : 'pointer',
+              background: 'transparent', color: '#374151', padding: '6px 14px', borderRadius: '3px',
+              border: '1px solid #d6dbe3', fontFamily: 'DM Mono', fontSize: '13px', cursor: busy ? 'wait' : 'pointer',
             }}>取消</button>
           </div>
         </div>
@@ -12147,7 +12147,7 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', fontFamily: 'DM Mono' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #e5e7eb', color: '#737373', fontSize: '14px', letterSpacing: '0.08em' }}>
+              <tr style={{ borderBottom: '1px solid #d6dbe3', color: '#4b5563', fontSize: '14px', letterSpacing: '0.08em' }}>
                 <th style={{ textAlign: 'left', padding: '6px 8px' }}>標的</th>
                 <th style={{ textAlign: 'left', padding: '6px 8px' }}>類型</th>
                 <th style={{ textAlign: 'right', padding: '6px 8px' }}>數量</th>
@@ -12169,7 +12169,7 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
                 const mult = isOpt ? 100 : 1;
                 const plPct = (cur && cost) ? ((cur - cost) / cost) * 100 : null;
                 const plDollar = (isFinite(cur) && isFinite(cost) && isFinite(qty)) ? (cur - cost) * qty * mult : null;
-                const plColor = plPct == null ? '#666' : plPct >= 0 ? '#10b981' : '#ef4444';
+                const plColor = plPct == null ? '#4b5563' : plPct >= 0 ? '#10b981' : '#ef4444';
                 const plDollarStr = plDollar == null ? '—'
                   : (plDollar >= 0 ? '+$' : '-$') + Math.abs(plDollar).toLocaleString(undefined, { maximumFractionDigits: 0 });
                 const gk = isOpt ? greeksMap[p.id] : null;
@@ -12191,10 +12191,10 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
                         </div>
                       )}
                     </td>
-                    <td style={{ padding: '8px', color: p.option_type === 'CALL' ? '#10b981' : p.option_type === 'PUT' ? '#ef4444' : '#888', lineHeight: 1.2 }}>
+                    <td style={{ padding: '8px', color: p.option_type === 'CALL' ? '#10b981' : p.option_type === 'PUT' ? '#ef4444' : '#374151', lineHeight: 1.2 }}>
                       <div>{p.option_type || '股票'}</div>
                       {gk && (gk.delta != null || gk.theta != null) && (
-                        <div style={{ fontSize: '13px', color: '#737373', marginTop: '2px', fontWeight: 400 }}>
+                        <div style={{ fontSize: '13px', color: '#4b5563', marginTop: '2px', fontWeight: 400 }}>
                           {gk.delta != null ? 'Δ ' + gk.delta.toFixed(2) : ''}
                           {gk.delta != null && gk.theta != null ? ' · ' : ''}
                           {gk.theta != null ? 'Θ ' + gk.theta.toFixed(2) : ''}
@@ -12212,7 +12212,7 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
                     <td style={{ padding: '8px', lineHeight: 1.2 }}>
                       <div>{p.expiry || '—'}</div>
                       {gk && gk.iv != null && (
-                        <div style={{ fontSize: '13px', color: '#737373', marginTop: '2px' }}>IV {(gk.iv * 100).toFixed(0)}%</div>
+                        <div style={{ fontSize: '13px', color: '#4b5563', marginTop: '2px' }}>IV {(gk.iv * 100).toFixed(0)}%</div>
                       )}
                       {earningsDays != null && earningsDays >= 0 && earningsDays <= 21 && (
                         <div style={{ fontSize: '13px', color: earningsDays <= 7 ? '#ef4444' : '#10b981', marginTop: '2px', fontFamily: 'DM Mono' }}>
@@ -12224,7 +12224,7 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
                     <td style={{ padding: '8px', textAlign: 'right', color: '#EA580C' }}>${(p.value || 0).toLocaleString()}</td>
                     <td style={{ padding: '8px', textAlign: 'right' }}>
                       <button onClick={() => startEdit(p)} disabled={busy || editing} style={{
-                        background: 'transparent', border: '1px solid #e5e7eb', color: '#525252',
+                        background: 'transparent', border: '1px solid #d6dbe3', color: '#374151',
                         padding: '3px 8px', borderRadius: '3px', fontSize: '14px', cursor: 'pointer', marginRight: '4px',
                       }}>✎</button>
                       <button onClick={() => remove(p.id, p.ticker)} disabled={busy || editing} style={{
@@ -12253,13 +12253,13 @@ function PositionsManager({ positions, supabaseStatus, onChange }) {
                 const plColor = tot.pl >= 0 ? '#10b981' : '#ef4444';
                 const fmt = (n) => (n >= 0 ? '+$' : '-$') + Math.abs(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
                 return (
-                  <tr style={{ borderTop: '2px solid #e5e7eb', color: '#1a1a1a', fontWeight: 600 }}>
-                    <td style={{ padding: '10px 8px', fontSize: '14px', letterSpacing: '0.08em', color: '#737373' }} colSpan={5}>合計 · {realPositions.length} 筆持倉</td>
+                  <tr style={{ borderTop: '2px solid #d6dbe3', color: '#1a1a1a', fontWeight: 600 }}>
+                    <td style={{ padding: '10px 8px', fontSize: '14px', letterSpacing: '0.08em', color: '#4b5563' }} colSpan={5}>合計 · {realPositions.length} 筆持倉</td>
                     <td style={{ padding: '10px 8px', textAlign: 'right', color: plColor, lineHeight: 1.2 }}>
                       <div>{(plPct >= 0 ? '+' : '') + plPct.toFixed(1) + '%'}</div>
                       <div style={{ fontSize: '14px', opacity: 0.75 }}>{fmt(tot.pl)}</div>
                     </td>
-                    <td colSpan={2} style={{ padding: '10px 8px', textAlign: 'right', fontSize: '14px', color: '#737373' }}>cost ${tot.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                    <td colSpan={2} style={{ padding: '10px 8px', textAlign: 'right', fontSize: '14px', color: '#4b5563' }}>cost ${tot.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                     <td style={{ padding: '10px 8px', textAlign: 'right', color: '#EA580C' }}>${tot.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                     <td></td>
                   </tr>
@@ -12354,12 +12354,12 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
   );
 
   return (
-    <div style={{ background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '16px 20px', margin: '12px 24px 0' }}>
+    <div style={{ background: '#f7f8fa', border: '1px solid #d6dbe3', borderRadius: '6px', padding: '16px 20px', margin: '12px 24px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <BookOpen size={14} className="text-accent" />
           <span style={{ fontFamily: 'Noto Sans TC', fontSize: '13px', fontWeight: 700, color: '#1a1a1a' }}>分析師備忘</span>
-          <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#737373', letterSpacing: '0.1em', marginLeft: '4px' }}>
+          <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#4b5563', letterSpacing: '0.1em', marginLeft: '4px' }}>
             {items.length} REPORTS · 自動納入 AI 摘要 context
           </span>
         </div>
@@ -12390,14 +12390,14 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
             <FormField label="來源" value={form.source} onChange={(v) => setForm({ ...form, source: v })} placeholder="Goldman Sachs" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-            <label style={{ fontSize: '14px', color: '#525252', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>內容 * (貼上報告重點 / 摘要)</label>
+            <label style={{ fontSize: '14px', color: '#374151', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>內容 * (貼上報告重點 / 摘要)</label>
             <textarea
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
               placeholder="貼上分析師結論、目標價、風險點、催化劑..."
               rows={8}
               style={{
-                background: '#f7f8fa', border: '1px solid #e5e7eb', color: '#1a1a1a',
+                background: '#f7f8fa', border: '1px solid #d6dbe3', color: '#1a1a1a',
                 padding: '8px 10px', borderRadius: '3px', fontSize: '14px',
                 fontFamily: 'Noto Sans TC, DM Mono', resize: 'vertical', lineHeight: 1.5,
               }}
@@ -12412,15 +12412,15 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
               border: 'none', fontFamily: 'DM Mono', fontSize: '13px', fontWeight: 700, cursor: busy ? 'wait' : 'pointer',
             }}>{busy ? '⋯' : (editing === 'new' ? '✓ 新增' : '✓ 儲存')}</button>
             <button onClick={cancel} disabled={busy} style={{
-              background: 'transparent', color: '#525252', padding: '6px 14px', borderRadius: '3px',
-              border: '1px solid #e5e7eb', fontFamily: 'DM Mono', fontSize: '13px', cursor: busy ? 'wait' : 'pointer',
+              background: 'transparent', color: '#374151', padding: '6px 14px', borderRadius: '3px',
+              border: '1px solid #d6dbe3', fontFamily: 'DM Mono', fontSize: '13px', cursor: busy ? 'wait' : 'pointer',
             }}>取消</button>
           </div>
         </div>
       )}
 
       {items.length === 0 && !editing && (
-        <div style={{ fontSize: '13px', color: '#737373', fontFamily: 'Noto Sans TC', padding: '12px 0', textAlign: 'center' }}>
+        <div style={{ fontSize: '13px', color: '#4b5563', fontFamily: 'Noto Sans TC', padding: '12px 0', textAlign: 'center' }}>
           還沒有分析師備忘。按「+ 新增備忘」貼上報告重點，AI 摘要會自動參考這些內容。
         </div>
       )}
@@ -12434,7 +12434,7 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
             const agoStr = ago == null ? '' : (ago < 60 ? ago + 'm ago' : ago < 1440 ? Math.round(ago/60) + 'h ago' : Math.round(ago/1440) + 'd ago');
             const preview = (r.content || '').replace(/\s+/g, ' ').slice(0, 140);
             return (
-              <div key={r.id} style={{ background: '#f7f8fa', border: '1px solid #e5e7eb', borderRadius: '4px', padding: '10px 12px' }}>
+              <div key={r.id} style={{ background: '#f7f8fa', border: '1px solid #d6dbe3', borderRadius: '4px', padding: '10px 12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
                     <span style={{ fontFamily: 'Noto Sans TC', fontSize: '14px', fontWeight: 600, color: '#1a1a1a' }}>{r.title}</span>
@@ -12442,17 +12442,17 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
                       <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#EA580C', padding: '1px 5px', background: 'rgba(234,88,12,0.12)', borderRadius: '2px' }}>{r.ticker}</span>
                     )}
                     {r.source && (
-                      <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#525252' }}>· {r.source}</span>
+                      <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#374151' }}>· {r.source}</span>
                     )}
-                    <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#a3a3a3', marginLeft: 'auto' }}>{agoStr}</span>
+                    <span style={{ fontFamily: 'DM Mono', fontSize: '14px', color: '#6b7280', marginLeft: 'auto' }}>{agoStr}</span>
                   </div>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     <button onClick={() => setExpanded({ ...expanded, [r.id]: !isExp })} disabled={busy} style={{
-                      background: 'transparent', border: '1px solid #e5e7eb', color: '#525252',
+                      background: 'transparent', border: '1px solid #d6dbe3', color: '#374151',
                       padding: '2px 7px', borderRadius: '3px', fontSize: '14px', cursor: 'pointer', fontFamily: 'DM Mono',
                     }}>{isExp ? '▲' : '▼'}</button>
                     <button onClick={() => startEdit(r)} disabled={isReadOnly || busy || editing} style={{
-                      background: 'transparent', border: '1px solid #e5e7eb', color: '#525252',
+                      background: 'transparent', border: '1px solid #d6dbe3', color: '#374151',
                       padding: '2px 7px', borderRadius: '3px', fontSize: '14px', cursor: 'pointer',
                     }}>✎</button>
                     <button onClick={() => remove(r.id, r.title)} disabled={isReadOnly || busy || editing} style={{
@@ -12477,17 +12477,17 @@ function AnalystReportsManager({ reports, supabaseStatus, onChange }) {
 function FormField({ label, value, onChange, placeholder, type, options, disabled, wide }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: wide ? 'span 4' : 'auto' }}>
-      <label style={{ fontSize: '14px', color: '#525252', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>{label}</label>
+      <label style={{ fontSize: '14px', color: '#374151', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>{label}</label>
       {type === 'select' ? (
         <select value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} style={{
-          background: '#f7f8fa', border: '1px solid #e5e7eb', color: '#1a1a1a',
+          background: '#f7f8fa', border: '1px solid #d6dbe3', color: '#1a1a1a',
           padding: '6px 8px', borderRadius: '3px', fontSize: '14px', fontFamily: 'DM Mono',
         }}>
           {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       ) : (
         <input type={type || 'text'} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} disabled={disabled} style={{
-          background: '#f7f8fa', border: '1px solid #e5e7eb', color: '#1a1a1a',
+          background: '#f7f8fa', border: '1px solid #d6dbe3', color: '#1a1a1a',
           padding: '6px 8px', borderRadius: '3px', fontSize: '14px', fontFamily: 'DM Mono',
           opacity: disabled ? 0.4 : 1,
         }} />
@@ -12504,14 +12504,14 @@ function CollapsibleSection({ title, subtitle, icon: Icon, collapsed, setCollaps
         style={{
           padding: '12px 24px',
           background: '#f5f5f5',
-          borderBottom: collapsed ? '1px solid #e5e7eb' : 'none',
+          borderBottom: collapsed ? '1px solid #d6dbe3' : 'none',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           transition: 'background 0.15s',
         }}
-        onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
+        onMouseEnter={(e) => e.currentTarget.style.background = '#d6dbe3'}
         onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -12527,12 +12527,12 @@ function CollapsibleSection({ title, subtitle, icon: Icon, collapsed, setCollaps
           <span style={{
             fontFamily: 'DM Mono',
             fontSize: '13px',
-            color: '#737373',
+            color: '#4b5563',
           }}>
             {subtitle}
           </span>
         </div>
-        {collapsed ? <ChevronDown size={14} style={{ color: '#525252' }} /> : <ChevronUp size={14} style={{ color: '#525252' }} />}
+        {collapsed ? <ChevronDown size={14} style={{ color: '#374151' }} /> : <ChevronUp size={14} style={{ color: '#374151' }} />}
       </div>
       {!collapsed && <div>{children}</div>}
     </div>
@@ -12584,7 +12584,7 @@ if (envErrors.length > 0) {
     '<div style="padding:40px;color:#ef4444;font-family:DM Mono,monospace;">' +
     '<h2>⚠ MEP System 載入失敗</h2>' +
     '<ul>' + envErrors.map(function(e) { return '<li>' + e + '</li>'; }).join('') + '</ul>' +
-    '<p style="color:#888;font-size:12px;margin-top:20px;">' +
+    '<p style="color:#374151;font-size:12px;margin-top:20px;">' +
     '可能原因：CDN unpkg / jsdelivr 暫時無法存取。檢查 Network 分頁、或試試切換到不同 CDN（jsdelivr/esm.sh）。' +
     '</p></div>';
 } else {
