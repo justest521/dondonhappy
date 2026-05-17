@@ -3926,39 +3926,45 @@ if (typeof window !== 'undefined') {
 async function fetchScannerBatchAndCache(tickers) {
   if (!Array.isArray(tickers) || tickers.length === 0) return { ok: false };
   try {
-    const r = await fetch(WORKER_URL + '/api/scanner/batch?tickers=' + tickers.map(encodeURIComponent).join(','));
-    if (!r.ok) {
-      recordSourceHealth('ivr', false, 'batch HTTP ' + r.status);
-      recordSourceHealth('earnings', false, 'batch HTTP ' + r.status);
-      return { ok: false, reason: 'HTTP ' + r.status };
-    }
-    const d = await r.json();
-    if (!d || !Array.isArray(d.tickers)) {
-      return { ok: false, reason: 'invalid shape' };
-    }
     let ivrSeen = 0, earnSeen = 0, spotSeen = 0;
-    d.tickers.forEach(item => {
-      const t = (item.ticker || '').toUpperCase();
-      if (item.ivr) {
-        window.__IVR_CACHE = window.__IVR_CACHE || {};
-        window.__IVR_CACHE[t] = item.ivr;
-        ivrSeen++;
+    let count = 0;
+    const unique = Array.from(new Set(tickers.map(t => (t || '').toUpperCase()).filter(Boolean)));
+    for (let i = 0; i < unique.length; i += 30) {
+      const chunk = unique.slice(i, i + 30);
+      const r = await fetch(WORKER_URL + '/api/scanner/batch?tickers=' + chunk.map(encodeURIComponent).join(','));
+      if (!r.ok) {
+        recordSourceHealth('ivr', false, 'batch HTTP ' + r.status);
+        recordSourceHealth('earnings', false, 'batch HTTP ' + r.status);
+        return { ok: false, reason: 'HTTP ' + r.status };
       }
-      if (item.earnings) {
-        window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {};
-        window.__EARNINGS_CACHE[t] = item.earnings;
-        earnSeen++;
+      const d = await r.json();
+      if (!d || !Array.isArray(d.tickers)) {
+        return { ok: false, reason: 'invalid shape' };
       }
-      if (item.quote && item.quote.price != null) {
-        window.__SPOT_CACHE = window.__SPOT_CACHE || {};
-        window.__SPOT_CACHE[t] = item.quote.price;
-        spotSeen++;
-      }
-    });
+      count += d.tickers.length;
+      d.tickers.forEach(item => {
+        const t = (item.ticker || '').toUpperCase();
+        if (item.ivr) {
+          window.__IVR_CACHE = window.__IVR_CACHE || {};
+          window.__IVR_CACHE[t] = item.ivr;
+          ivrSeen++;
+        }
+        if (item.earnings) {
+          window.__EARNINGS_CACHE = window.__EARNINGS_CACHE || {};
+          window.__EARNINGS_CACHE[t] = item.earnings;
+          earnSeen++;
+        }
+        if (item.quote && item.quote.price != null) {
+          window.__SPOT_CACHE = window.__SPOT_CACHE || {};
+          window.__SPOT_CACHE[t] = item.quote.price;
+          spotSeen++;
+        }
+      });
+    }
     if (ivrSeen > 0) recordSourceHealth('ivr', true);
     if (earnSeen > 0) recordSourceHealth('earnings', true);
     if (spotSeen > 0) recordSourceHealth('spot', true);
-    return { ok: true, count: d.tickers.length, ivrSeen, earnSeen, spotSeen };
+    return { ok: true, count, ivrSeen, earnSeen, spotSeen };
   } catch (e) {
     recordSourceHealth('ivr', false, 'batch: ' + e.message);
     recordSourceHealth('earnings', false, 'batch: ' + e.message);
@@ -6120,6 +6126,8 @@ function MacroContextBanner({ score, band, alerts, hedgeBudgetBps }) {
     fetchIVR, fetchEarnings, fetchUWFlow, fetchUWDark,
     fetchScannerBatchAndCache,
     fetchTickerDetails,
+    getBeta,
+    computeBeta,
     classifyTickerProfile,
     recordSourceHealth,
     bsGreeks: typeof bsGreeks !== 'undefined' ? bsGreeks : null,
@@ -6132,6 +6140,8 @@ const {
   fetchIVR, fetchEarnings, fetchUWFlow, fetchUWDark,
   fetchScannerBatchAndCache,
   fetchTickerDetails,
+  getBeta,
+  computeBeta,
   classifyTickerProfile,
   recordSourceHealth,
 } = VIXModule;
@@ -6284,6 +6294,32 @@ const formatMoney = (n) => {
 // 資料來源: window.__IVR_CACHE / __EARNINGS_CACHE / __BETA_CACHE / __UW_FLOW_CACHE
 // ============================================================
 
+const SCANNER_SECTOR_UNIVERSE = [
+  { id: 'xlk', name: '科技', etf: 'XLK', tickers: ['AAPL', 'MSFT', 'NVDA', 'AVGO', 'ORCL', 'AMD', 'CRM', 'ADBE', 'CSCO', 'ACN', 'INTC', 'QCOM', 'TXN', 'MU', 'AMAT', 'LRCX', 'KLAC', 'PANW', 'SNOW', 'PLTR'] },
+  { id: 'xly', name: '非必需消費', etf: 'XLY', tickers: ['AMZN', 'TSLA', 'HD', 'MCD', 'NKE', 'LOW', 'SBUX', 'BKNG', 'TJX', 'CMG', 'ORLY', 'AZO', 'MAR', 'HLT', 'ABNB', 'RCL', 'GM', 'F', 'YUM', 'LULU'] },
+  { id: 'xlc', name: '通訊服務', etf: 'XLC', tickers: ['META', 'GOOGL', 'GOOG', 'NFLX', 'DIS', 'TMUS', 'VZ', 'T', 'CMCSA', 'CHTR', 'EA', 'TTWO', 'LYV', 'WBD', 'PINS', 'SNAP', 'RDDT', 'SPOT', 'ROKU', 'PARA'] },
+  { id: 'xlf', name: '金融', etf: 'XLF', tickers: ['JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'AXP', 'BLK', 'SCHW', 'CB', 'PGR', 'AIG', 'MET', 'USB', 'PNC', 'COF', 'DFS', 'KKR', 'BX', 'ICE'] },
+  { id: 'xlv', name: '醫療', etf: 'XLV', tickers: ['LLY', 'UNH', 'JNJ', 'ABBV', 'MRK', 'TMO', 'ABT', 'DHR', 'PFE', 'AMGN', 'ISRG', 'VRTX', 'REGN', 'GILD', 'CVS', 'CI', 'HUM', 'BSX', 'SYK', 'MDT'] },
+  { id: 'xli', name: '工業', etf: 'XLI', tickers: ['GE', 'CAT', 'RTX', 'UNP', 'HON', 'BA', 'UPS', 'DE', 'LMT', 'ETN', 'ADP', 'PH', 'ITW', 'MMM', 'NOC', 'GD', 'EMR', 'FDX', 'CSX', 'NSC'] },
+  { id: 'xlp', name: '必需消費', etf: 'XLP', tickers: ['WMT', 'COST', 'PG', 'KO', 'PEP', 'PM', 'MO', 'MDLZ', 'CL', 'TGT', 'KMB', 'KVUE', 'KHC', 'GIS', 'HSY', 'SYY', 'KR', 'STZ', 'EL', 'MNST'] },
+  { id: 'xle', name: '能源', etf: 'XLE', tickers: ['XOM', 'CVX', 'COP', 'SLB', 'EOG', 'MPC', 'PSX', 'VLO', 'OXY', 'HES', 'BKR', 'HAL', 'DVN', 'FANG', 'APA', 'EQT', 'KMI', 'WMB', 'LNG', 'MRO'] },
+  { id: 'xlb', name: '原物料', etf: 'XLB', tickers: ['LIN', 'SHW', 'APD', 'ECL', 'FCX', 'NEM', 'CTVA', 'DD', 'DOW', 'NUE', 'MLM', 'VMC', 'PPG', 'IFF', 'ALB', 'CF', 'MOS', 'CE', 'EMN', 'STLD'] },
+  { id: 'xlu', name: '公用事業', etf: 'XLU', tickers: ['NEE', 'SO', 'DUK', 'CEG', 'AEP', 'SRE', 'D', 'EXC', 'XEL', 'PEG', 'ED', 'WEC', 'AWK', 'EIX', 'PCG', 'DTE', 'PPL', 'ETR', 'FE', 'AES'] },
+  { id: 'xlre', name: '房地產', etf: 'XLRE', tickers: ['PLD', 'AMT', 'EQIX', 'WELL', 'SPG', 'PSA', 'O', 'DLR', 'CCI', 'CBRE', 'VICI', 'AVB', 'EQR', 'EXR', 'IRM', 'WY', 'INVH', 'ESS', 'MAA', 'ARE'] },
+];
+
+function getScannerSector(ticker) {
+  const t = (ticker || '').toUpperCase();
+  const sector = SCANNER_SECTOR_UNIVERSE.find(s => s.tickers.includes(t));
+  return sector ? sector : null;
+}
+
+function getScannerSortValue(item, mode) {
+  if (mode === 'seller') return item.seller.score || 0;
+  if (mode === 'buyer') return item.buyer.score || 0;
+  return Math.max(item.buyer.score || 0, item.seller.score || 0);
+}
+
 // SCANNER scoring helpers
 function scoreBuyerSignal_iv(ivr) {
   // 爆噴 buyer wants IV in the 50-70 sweet spot (cheap-ish, room to expand)
@@ -6385,7 +6421,7 @@ function computeScannerScores(ticker, opts) {
   const t = (ticker || '').toUpperCase();
   const ivrData = ivrCache[t];
   const earnData = earningsCache[t];
-  const beta = betaCache[t];
+  const beta = betaCache[t] != null ? betaCache[t] : (typeof getBeta === 'function' ? getBeta(t) : null);
 
   const ivr = ivrData ? ivrData.ivr : null;
   const iv = ivrData ? ivrData.iv : null;
@@ -8289,19 +8325,25 @@ function OptionsScanner({ positions }) {
   const [expandedTicker, setExpandedTicker] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [sectorPage, setSectorPage] = useState(0);
+
+  const activeSector = SCANNER_SECTOR_UNIVERSE[sectorPage] || SCANNER_SECTOR_UNIVERSE[0];
 
   // Persist watchlist
   useEffect(() => {
     try { localStorage.setItem('ddh_scanner_watchlist', JSON.stringify(watchlist)); } catch (_) {}
   }, [watchlist]);
 
-  // Combine positions + watchlist into unique ticker list
+  // Combine positions + watchlist + active sector top20 into unique ticker list.
+  // Each sector is its own page so we can cover all 11 sectors without
+  // hammering UW/Polygon with a full-market scan on every load.
   const allTickers = useMemo(() => {
     const set = new Set();
+    (activeSector?.tickers || []).forEach(t => set.add(t.toUpperCase()));
     (positions || []).forEach(p => { if (p.ticker) set.add(p.ticker.toUpperCase()); });
     watchlist.forEach(t => set.add(t.toUpperCase()));
     return Array.from(set);
-  }, [positions, watchlist]);
+  }, [positions, watchlist, activeSector]);
 
   // Auto-warm caches on mount via worker server-side batch (1 fetch vs N×2)
   // — bypasses browser-side flakiness from extensions / SW
@@ -8318,28 +8360,38 @@ function OptionsScanner({ positions }) {
     });
   }, [allTickers]);
 
+  // Beta is not part of the scanner batch yet; hydrate it for the visible page
+  // so the beta column and buyer/seller stability scores are usable.
+  useEffect(() => {
+    const betaCache = window.__BETA_CACHE || {};
+    const missingBeta = allTickers.filter(t => betaCache[t] == null).slice(0, 30);
+    if (missingBeta.length === 0) return;
+    Promise.allSettled(missingBeta.map(t => computeBeta(t).then(b => {
+      if (b != null && isFinite(b) && Math.abs(b) < 5) {
+        window.__BETA_CACHE = window.__BETA_CACHE || {};
+        window.__BETA_CACHE[t] = parseFloat(b.toFixed(3));
+      }
+    }))).then(() => setRefreshTick(x => x + 1));
+  }, [allTickers]);
+
   // Score every ticker (recomputes when refreshTick changes)
   const scoredList = useMemo(() => {
     return allTickers.map(t => {
       const s = computeScannerScores(t);
       const inPosition = (positions || []).some(p => (p.ticker || '').toUpperCase() === t);
-      return { ...s, inPosition };
+      const sector = getScannerSector(t);
+      return { ...s, inPosition, sector };
     });
   }, [allTickers, positions, refreshTick]);
 
   // Sort by relevant score based on mode
   const sortedList = useMemo(() => {
     const list = scoredList.slice();
-    if (mode === 'seller') {
-      list.sort((a, b) => (b.seller.score || 0) - (a.seller.score || 0));
-    } else if (mode === 'buyer') {
-      list.sort((a, b) => (b.buyer.score || 0) - (a.buyer.score || 0));
-    } else {
-      // both: sort by max of either score
-      list.sort((a, b) => Math.max(b.buyer.score || 0, b.seller.score || 0) - Math.max(a.buyer.score || 0, a.seller.score || 0));
-    }
+    list.sort((a, b) => getScannerSortValue(b, mode) - getScannerSortValue(a, mode));
     return list;
   }, [scoredList, mode]);
+
+  const displayList = useMemo(() => sortedList.slice(0, 20), [sortedList]);
 
   const handleAddTicker = () => {
     const t = newTicker.toUpperCase().trim();
@@ -8359,7 +8411,7 @@ function OptionsScanner({ positions }) {
   const handleRefreshAll = async () => {
     setLoading(true);
     try {
-      // Use server-side batch — 1 fetch instead of N×2
+      // Use server-side batch for the current sector page.
       await fetchScannerBatchAndCache(allTickers);
       setRefreshTick(x => x + 1);
     } finally {
@@ -8441,6 +8493,53 @@ function OptionsScanner({ positions }) {
         </div>
       </div>
 
+      {/* Sector pager */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'auto 1fr auto',
+        gap: '10px',
+        alignItems: 'center',
+        marginBottom: '16px',
+        padding: '10px 12px',
+        border: '1px solid #e5e7eb',
+        background: '#fff',
+      }}>
+        <button
+          onClick={() => { setSectorPage((sectorPage + SCANNER_SECTOR_UNIVERSE.length - 1) % SCANNER_SECTOR_UNIVERSE.length); setExpandedTicker(null); }}
+          style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#525252', padding: '5px 10px', fontFamily: 'DM Mono', fontSize: '12px', cursor: 'pointer', borderRadius: '3px' }}
+        >← 上一板塊</button>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#a3a3a3', letterSpacing: '0.12em' }}>SECTOR PAGE {sectorPage + 1}/{SCANNER_SECTOR_UNIVERSE.length}</span>
+            <span style={{ fontFamily: 'Noto Sans TC', fontSize: '15px', fontWeight: 700, color: '#111827' }}>{activeSector.name}</span>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#EA580C' }}>{activeSector.etf} · top20 universe</span>
+            <span style={{ fontFamily: 'DM Mono', fontSize: '12px', color: '#737373' }}>顯示前 20 / 本頁掃描 {allTickers.length} 檔</span>
+          </div>
+          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '8px' }}>
+            {SCANNER_SECTOR_UNIVERSE.map((s, idx) => (
+              <button
+                key={s.id}
+                onClick={() => { setSectorPage(idx); setExpandedTicker(null); }}
+                style={{
+                  background: idx === sectorPage ? '#EA580C14' : 'transparent',
+                  border: '1px solid ' + (idx === sectorPage ? '#EA580C' : '#e5e7eb'),
+                  color: idx === sectorPage ? '#EA580C' : '#737373',
+                  padding: '3px 7px',
+                  fontFamily: 'DM Mono',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  borderRadius: '3px',
+                }}
+              >{s.etf}</button>
+            ))}
+          </div>
+        </div>
+        <button
+          onClick={() => { setSectorPage((sectorPage + 1) % SCANNER_SECTOR_UNIVERSE.length); setExpandedTicker(null); }}
+          style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#525252', padding: '5px 10px', fontFamily: 'DM Mono', fontSize: '12px', cursor: 'pointer', borderRadius: '3px' }}
+        >下一板塊 →</button>
+      </div>
+
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
         <ScannerStat label="買方 PREMIUM" value={stats.buyerPremium} color="#EA580C" />
@@ -8473,7 +8572,7 @@ function OptionsScanner({ positions }) {
           <div style={{ textAlign: 'right', color: mode === 'buyer' ? '#444' : '#14b8a6' }}>SELLER</div>
           <div></div>
         </div>
-        {sortedList.map(s => (
+        {displayList.map(s => (
           <ScannerRow
             key={s.ticker}
             data={s}
@@ -8484,7 +8583,7 @@ function OptionsScanner({ positions }) {
             isInWatchlist={watchlist.includes(s.ticker)}
           />
         ))}
-        {sortedList.length === 0 && (
+        {displayList.length === 0 && (
           <div style={{ padding: '24px', textAlign: 'center', color: '#737373', fontFamily: 'DM Mono', fontSize: '13px' }}>
             無 ticker。加入 watchlist 或新增 positions。
           </div>
@@ -8494,6 +8593,7 @@ function OptionsScanner({ positions }) {
       {/* Footnote */}
       <div style={{ marginTop: '12px', fontSize: '14px', color: '#a3a3a3', fontFamily: 'DM Mono', lineHeight: 1.6 }}>
         資料來源: window.__IVR_CACHE / __EARNINGS_CACHE / __BETA_CACHE (UW + Polygon · 15min cache)。
+        目前用板塊分頁：每頁載入該 GICS 板塊 top20 universe，加上你的持倉與自訂 watchlist。
         缺資料的訊號自動跳過，分數依可用訊號重新標準化。
         BUYER mode 找「IV 便宜 + 高 beta + 接近財報」；SELLER mode 找「IV 過熱 + 低 beta + 高 implied move」。
       </div>
@@ -8536,6 +8636,7 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
         <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#1a1a1a', fontWeight: 600 }}>{s.ticker}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#525252', fontFamily: 'DM Mono' }}>
           {s.inPosition && <span style={{ color: '#EA580C', fontSize: '13px' }}>★ 持倉中</span>}
+          {s.sector && <span style={{ color: '#14b8a6', fontSize: '12px' }}>{s.sector.etf}</span>}
           {!s.hasData && <span style={{ color: '#737373' }}>無資料</span>}
           {s.earnDate && (
             <span style={{ color: s.daysToEarnings <= 7 ? '#EA580C' : '#666' }}>
