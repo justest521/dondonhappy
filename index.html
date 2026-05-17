@@ -6490,18 +6490,20 @@ const SCANNER_HOT_TICKERS = [
   'DDOG', 'CELH', 'NIO', 'LI', 'BABA',
 ];
 
+const SCANNER_PAGE_SCAN_LIMIT = 20;
+
 const SCANNER_SPECIAL_PAGES = [
-  { id: 'top50', name: '全部市場 Top 50', short: 'TOP50', kind: 'top', limit: 50 },
-  { id: 'strong', name: '只看 Strong+', short: 'STRONG+', kind: 'strong', limit: 50 },
-  { id: 'earnings7', name: '本週財報', short: 'EPS 7D', kind: 'earnings', maxDays: 7, limit: 50 },
-  { id: 'earnings30', name: '30天內財報', short: 'EPS 30D', kind: 'earnings', maxDays: 30, limit: 50 },
-  { id: 'ivr70', name: 'IVR 70+', short: 'IVR70+', kind: 'ivr', minIvr: 70, limit: 50 },
-  { id: 'hot', name: '高IV/高成交量熱門股', short: 'HOT', kind: 'hot', limit: 50 },
+  { id: 'top20', name: '全部市場 Top 20', short: 'TOP20', kind: 'top', limit: SCANNER_PAGE_SCAN_LIMIT },
+  { id: 'strong', name: '只看 Strong+', short: 'STRONG+', kind: 'strong', limit: SCANNER_PAGE_SCAN_LIMIT },
+  { id: 'earnings7', name: '本週財報', short: 'EPS 7D', kind: 'earnings', maxDays: 7, limit: SCANNER_PAGE_SCAN_LIMIT },
+  { id: 'earnings30', name: '30天內財報', short: 'EPS 30D', kind: 'earnings', maxDays: 30, limit: SCANNER_PAGE_SCAN_LIMIT },
+  { id: 'ivr70', name: 'IVR 70+', short: 'IVR70+', kind: 'ivr', minIvr: 70, limit: SCANNER_PAGE_SCAN_LIMIT },
+  { id: 'hot', name: '高IV/高成交量熱門股', short: 'HOT', kind: 'hot', limit: SCANNER_PAGE_SCAN_LIMIT },
 ];
 
 const SCANNER_PAGES = [
   ...SCANNER_SPECIAL_PAGES,
-  ...SCANNER_SECTOR_UNIVERSE.map(s => ({ ...s, kind: 'sector', short: s.etf, limit: 20 })),
+  ...SCANNER_SECTOR_UNIVERSE.map(s => ({ ...s, kind: 'sector', short: s.etf, limit: SCANNER_PAGE_SCAN_LIMIT })),
 ];
 
 const SCANNER_ALL_UNIVERSE = Array.from(new Set([
@@ -6517,9 +6519,10 @@ function getScannerSector(ticker) {
 
 function scannerPageTickers(page) {
   if (!page) return [];
-  if (page.kind === 'sector') return page.tickers || [];
-  if (page.kind === 'hot') return SCANNER_HOT_TICKERS;
-  return SCANNER_ALL_UNIVERSE;
+  const limit = page.limit || SCANNER_PAGE_SCAN_LIMIT;
+  if (page.kind === 'sector') return (page.tickers || []).slice(0, limit);
+  if (page.kind === 'hot') return SCANNER_HOT_TICKERS.slice(0, limit);
+  return SCANNER_ALL_UNIVERSE.slice(0, limit);
 }
 
 function getScannerSortValue(item, mode) {
@@ -8592,14 +8595,18 @@ function OptionsScanner({ positions }) {
     try { localStorage.setItem('ddh_scanner_watchlist', JSON.stringify(watchlist)); } catch (_) {}
   }, [watchlist]);
 
-  // Combine positions + watchlist + active scanner page universe.
-  // Special pages intentionally scan the full built-in universe in chunks;
-  // sector pages stay lighter and scan only that sector's top20.
+  // Combine positions + watchlist + active scanner page universe, capped to
+  // 20 total tickers per page so UW quota is predictable.
   const allTickers = useMemo(() => {
     const set = new Set();
-    scannerPageTickers(activePage).forEach(t => set.add(t.toUpperCase()));
-    (positions || []).forEach(p => { if (p.ticker) set.add(p.ticker.toUpperCase()); });
-    watchlist.forEach(t => set.add(t.toUpperCase()));
+    const add = (ticker) => {
+      if (set.size >= SCANNER_PAGE_SCAN_LIMIT) return;
+      const t = (ticker || '').toUpperCase().trim();
+      if (t) set.add(t);
+    };
+    (positions || []).forEach(p => add(p.ticker));
+    watchlist.forEach(add);
+    scannerPageTickers(activePage).forEach(add);
     return Array.from(set);
   }, [positions, watchlist, activePage]);
 
@@ -8869,7 +8876,7 @@ function OptionsScanner({ positions }) {
         background: '#cbd5e1',
       }}>
         資料來源: window.__IVR_CACHE / __EARNINGS_CACHE / __BETA_CACHE (UW + Polygon · 15min cache)。
-        目前用分頁掃描：總榜 Top50 / Strong+ / 本週財報 / 30天財報 / IVR70+ / 高IV熱門股 / 11 個 GICS 板塊 top20。
+        目前用分頁掃描：每頁最多 20 檔；總榜 Top20 / Strong+ / 本週財報 / 30天財報 / IVR70+ / 高IV熱門股 / 11 個 GICS 板塊 top20。
         缺 UW 選擇權資料時不顯示 Strong 分數；β 後方 * 代表 fallback 預設值，不可單獨當成交易訊號。
         BUYER mode 找「IV 便宜 + 高 beta + 接近財報」；SELLER mode 找「IV 過熱 + 低 beta + 高 implied move」。
       </div>
