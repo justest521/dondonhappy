@@ -43,6 +43,7 @@
       --v2-fg-dim: #4d5468;
       --v2-accent: #EA580C;
       --v2-accent-2: #FB923C;
+      --v2-success: #10b981;
     }
     /* Base + font swap */
     html, body {
@@ -60,6 +61,7 @@
     .text-primary  { color: var(--v2-fg) !important; }
     .text-muted    { color: var(--v2-fg-mute) !important; }
     .text-muted-2  { color: var(--v2-fg-dim) !important; }
+    .text-green    { color: var(--v2-success) !important; }
     /* Hairline borders → cooler */
     .hair-border { border-color: var(--v2-line) !important; }
     [class*="border"] { border-color: var(--v2-line); }
@@ -82,6 +84,7 @@
     input[type="range"]::-moz-range-thumb { background: var(--v2-accent) !important; }
     input[type="range"] { background: var(--v2-line) !important; }
     /* Pulse dot — keep red/green/amber semantics for signals; amber → accent for non-signal use */
+    .pulse-dot.green { background: var(--v2-success) !important; }
     .pulse-dot.amber { background: var(--v2-accent) !important; }
     /* Quadrant active state */
     .quadrant-cell:hover { background: color-mix(in oklab, var(--v2-accent) 6%, transparent) !important; }
@@ -90,6 +93,7 @@
       border-color: var(--v2-accent) !important;
     }
     /* Signal-light: keep semantic colors but make amber → accent */
+    .signal-light.green { background: color-mix(in oklab, var(--v2-success) 22%, transparent) !important; border-color: var(--v2-success) !important; }
     .signal-light.amber { background: color-mix(in oklab, var(--v2-accent) 22%, transparent) !important; border-color: var(--v2-accent) !important; }
     /* Gauge bar background */
     .gauge-bar { background: var(--v2-line) !important; }
@@ -440,7 +444,7 @@ const styleSheet = [
 '  .text-primary { color: #1a1a1a; }',
 '  .text-muted { color: #888; }',
 '  .text-muted-2 { color: #555; }',
-'  .text-green { color: #EA580C; }',
+'  .text-green { color: #10b981; }',
 '  .text-red { color: #ef4444; }',
 '  .text-blue { color: #60a5fa; }',
 '  .text-purple { color: #EA580C; }',
@@ -535,7 +539,7 @@ const styleSheet = [
 '    border-radius: 50%;',
 '    animation: pulse 1.5s infinite;',
 '  }',
-'  .pulse-dot.green { background: #EA580C; }',
+'  .pulse-dot.green { background: #10b981; }',
 '  .pulse-dot.red { background: #ef4444; box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }',
 '  .pulse-dot.amber { background: #EA580C; }',
 '  @keyframes pulse {',
@@ -587,7 +591,7 @@ const styleSheet = [
 '    flex-shrink: 0;',
 '    border: 1.5px solid;',
 '  }',
-'  .signal-light.green { background: #EA580C30; border-color: #EA580C; }',
+'  .signal-light.green { background: #10b98130; border-color: #10b981; }',
 '  .signal-light.amber { background: #EA580C30; border-color: #EA580C; }',
 '  .signal-light.red { background: #ef444430; border-color: #ef4444; }',
 '',
@@ -3492,7 +3496,7 @@ const styleSheet = [
 '  .text-primary { color: #1a1a1a; }',
 '  .text-muted { color: #888; }',
 '  .text-muted-2 { color: #555; }',
-'  .text-green { color: #EA580C; }',
+'  .text-green { color: #10b981; }',
 '  .text-red { color: #ef4444; }',
 '  .text-blue { color: #60a5fa; }',
 '  .text-purple { color: #EA580C; }',
@@ -6259,7 +6263,7 @@ function mapSupabasePosition(row) {
 // 連線狀態的 visual mapping
 const STATUS_CONFIG = {
   connecting: { label: '連線中', color: '#EA580C', icon: RefreshCw, animate: 'spin' },
-  connected:  { label: '已連線',  color: '#EA580C', icon: Wifi,      animate: null   },
+  connected:  { label: '已連線',  color: '#10b981', icon: Wifi,      animate: null   },
   error:      { label: '錯誤',      color: '#ef4444', icon: AlertCircle, animate: null },
   no_key:     { label: '缺 API KEY', color: '#fb923c', icon: WifiOff,   animate: null   },
   mock:       { label: '示範資料',  color: '#525252',    icon: Database,  animate: null   },
@@ -6457,18 +6461,22 @@ function scoreFlowSignal(ticker, flowCache) {
   return Math.max(0, Math.min(100, 30 + cpRatio * 15));
 }
 
+const SCANNER_BUYER_COLOR = '#EA580C';
+const SCANNER_SELLER_COLOR = '#14b8a6';
+const SCANNER_BAD_COLOR = '#ef4444';
+
 function gradeOfBuyer(score) {
-  if (score >= 85) return { label: 'PREMIUM', color: '#EA580C' };
-  if (score >= 70) return { label: 'STRONG', color: '#EA580C' };
-  if (score >= 55) return { label: 'WATCH', color: '#EA580C' };
-  return { label: 'SKIP', color: '#ef4444' };
+  if (score >= 85) return { label: 'PREMIUM', color: SCANNER_BUYER_COLOR };
+  if (score >= 70) return { label: 'STRONG', color: SCANNER_BUYER_COLOR };
+  if (score >= 55) return { label: 'WATCH', color: SCANNER_BUYER_COLOR };
+  return { label: 'SKIP', color: SCANNER_BAD_COLOR };
 }
 
 function gradeOfSeller(score) {
-  if (score >= 85) return { label: 'PRIME', color: '#14b8a6' };
-  if (score >= 70) return { label: 'STRONG', color: '#EA580C' };
-  if (score >= 55) return { label: 'WATCH', color: '#EA580C' };
-  return { label: 'AVOID', color: '#ef4444' };
+  if (score >= 85) return { label: 'PRIME', color: SCANNER_SELLER_COLOR };
+  if (score >= 70) return { label: 'STRONG', color: SCANNER_SELLER_COLOR };
+  if (score >= 55) return { label: 'WATCH', color: SCANNER_SELLER_COLOR };
+  return { label: 'AVOID', color: SCANNER_BAD_COLOR };
 }
 
 function computeScannerScores(ticker, opts) {
@@ -8606,10 +8614,10 @@ function OptionsScanner({ positions }) {
 
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
-        <ScannerStat label="買方 PREMIUM" value={stats.buyerPremium} color="#EA580C" />
-        <ScannerStat label="買方 STRONG" value={stats.buyerStrong} color="#EA580C" />
-        <ScannerStat label="賣方 PRIME" value={stats.sellerPrime} color="#14b8a6" />
-        <ScannerStat label="賣方 STRONG" value={stats.sellerStrong} color="#EA580C" />
+        <ScannerStat label="買方 PREMIUM" value={stats.buyerPremium} color={SCANNER_BUYER_COLOR} />
+        <ScannerStat label="買方 STRONG" value={stats.buyerStrong} color={SCANNER_BUYER_COLOR} />
+        <ScannerStat label="賣方 PRIME" value={stats.sellerPrime} color={SCANNER_SELLER_COLOR} />
+        <ScannerStat label="賣方 STRONG" value={stats.sellerStrong} color={SCANNER_SELLER_COLOR} />
       </div>
 
       {/* Results */}
@@ -8694,7 +8702,7 @@ function ScannerRow({ data, mode, isExpanded, onToggle, onRemove, isInWatchlist 
           alignItems: 'center',
           transition: 'background 0.1s',
         }}
-        onMouseEnter={e => e.currentTarget.style.background = '#161616'}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(20, 184, 166, 0.06)'}
         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
       >
         <div style={{ fontFamily: 'DM Mono', fontSize: '13px', color: '#1a1a1a', fontWeight: 600 }}>{s.ticker}</div>
@@ -11421,7 +11429,7 @@ function CrossSignalSection({ positions }) {
                   padding: '10px 16px',
                   borderBottom: '1px solid #e5e7eb',
                   alignItems: 'center',
-                  background: sig.inPortfolio ? 'rgba(234,88,12,0.04)' : i % 2 === 0 ? '#f8f9fa' : '#080808',
+                  background: sig.inPortfolio ? 'rgba(234,88,12,0.04)' : i % 2 === 0 ? '#f8f9fa' : '#f7f8fa',
                   borderLeft: sig.inPortfolio ? '3px solid #EA580C' : '3px solid transparent',
                 }}>
                   <div>
