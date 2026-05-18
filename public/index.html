@@ -4176,7 +4176,7 @@ async function fetchUWDark(limit = 50) {
 function computeCrossSignals(flowData, darkData, positionTickers) {
   if (!flowData || !darkData) return [];
   const now = Date.now();
-  const h72 = 72 * 3600 * 1000;
+  const h72 = 48 * 3600 * 1000;
   const signals = [];
 
   // 建立暗池索引 by ticker
@@ -4185,7 +4185,7 @@ function computeCrossSignals(flowData, darkData, positionTickers) {
     const sym = (d.symbol || d.ticker || '').toUpperCase();
     if (!sym) return;
     const ts = d.date ? new Date(d.date).getTime() : now;
-    if (now - ts > h72) return; // 只看72小時內
+    if (now - ts > h72) return; // 只看48小時內
     if (!darkByTicker[sym]) darkByTicker[sym] = [];
     darkByTicker[sym].push(d);
   });
@@ -4209,7 +4209,7 @@ function computeCrossSignals(flowData, darkData, positionTickers) {
 
     // 計算暗池總金額
     const darkTotal = dark.reduce((s, d) => s + (Number(d.size) * Number(d.price) || Number(d.premium) || 0), 0);
-    if (darkTotal < 500000) return; // 門檻 $500K
+    if (darkTotal < 250000) return; // 門檻 $250K
 
     // 計算期權溢價
     const flowTotal = flow.reduce((s, f) => s + (Number(f.premium) || Number(f.prem) || 0), 0);
@@ -11690,8 +11690,8 @@ function CrossSignalSection({ positions }) {
             display: 'flex', gap: '20px', flexWrap: 'wrap',
           }}>
             {[
-              { icon: '🏦', label: '暗池大單', desc: '機構場外交易，$500K+ 門檻' },
-              { icon: '⚡', label: '異常期權', desc: '72hr內同標的異常/掃單' },
+              { icon: '🏦', label: '暗池大單', desc: '機構場外交易，$250K+ 門檻' },
+              { icon: '⚡', label: '異常期權', desc: '48hr內同標的異常/掃單' },
               { icon: '🔴', label: '持倉加權', desc: '你持有的標的額外+2分' },
             ].map(item => (
               <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
